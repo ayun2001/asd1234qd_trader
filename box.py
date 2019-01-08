@@ -127,9 +127,10 @@ class GenerateBox(object):
         else:
             bool_up_cross_kdj = False
             bool_down_cross_kdj = False
-        print "[stage2 过滤] -> 股票代码: %s, 股票名称: %s, 股票市场: %s, KDJ_J值>=100: %s, KDJ死叉: %s, KDJ金叉(错过买点1天): %s, 涨幅操过%.2f%%: %s" % (
-            stock_code, stock_name, market_desc, str(bool_max_j_value), str(bool_down_cross_kdj),
-            str(bool_up_cross_kdj), MIN_60M_PRICE_RISE, str(bool_more_than_spec_raise))
+        self.log.logger.info(
+            "stage2 -> stock: %s, name: %s, market: %s, kdj_value>=100: %s, down_cross_kdj: %s, miss_buy_point(>1day): %s, rise>=%.2f%%: %s" % (
+                stock_code, stock_name, market_desc, str(bool_max_j_value), str(bool_down_cross_kdj),
+                str(bool_up_cross_kdj), MIN_60M_PRICE_RISE, str(bool_more_than_spec_raise)))
         # KDJ的j值大于100，KDJ死叉，出现过金叉，但是某天涨幅超过5%
         if bool_max_j_value or bool_up_cross_kdj or bool_down_cross_kdj or bool_more_than_spec_raise:
             return True, None
