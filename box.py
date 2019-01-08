@@ -1,24 +1,38 @@
 # coding=utf-8
+
 import time
 
 import adapter
 import common
+import mail
 from log import Logger
 
 _box_log_filename = "%s/%s" % (common.CONST_DIR_LOG, common.CONST_LOG_BOX_FILENAME)
+_box_db_filename = "%s/%s" % (common.CONST_DIR_DATABASE, common.CONST_DB_BOX_FILENAME)
 
 MIN_HOURS = 4
 MIN_60M_TIMEDELTA = MIN_HOURS * 4
 MIN_60M_PRICE_RISE = 5.0
 
 
+# 保存股票盒到硬盘
+def _storage_box_data(data):
+    if not common.file_exist(common.CONST_DIR_DATABASE):
+        common.create_directory(common.CONST_DIR_DATABASE)
+
+    common.dict_to_file(data, _box_db_filename)
+
+
+# 发送股票盒邮件
+def _generate_box_mail_message(data):
+    return "%s" % str(data)
+
+
+# 生成股票盒
 class GenerateBox(object):
     def __init__(self):
         if not common.file_exist(common.CONST_DIR_LOG):
             common.create_directory(common.CONST_DIR_LOG)
-
-        if not common.file_exist(common.CONST_DIR_DATABASE):
-            common.create_directory(common.CONST_DIR_DATABASE)
 
         self.log = Logger(_box_log_filename, level='debug')
         self.connect_instance = None
@@ -85,7 +99,7 @@ class GenerateBox(object):
                 self.log.logger.error("stock: %s error: %s" % (stock_code, err.message))
             continue
 
-    def _stock_60m_k_type_filter(self, market_name="", market_desc="", stock_code="300729", stock_name="", days=0):
+    def _stock_60m_k_type_filter(self, market_name="", stock_code="300729", days=0):
         try:
             market_code = common.MARKET_CODE_MAPPING[market_name]
         except KeyError:
@@ -128,8 +142,8 @@ class GenerateBox(object):
             bool_up_cross_kdj = False
             bool_down_cross_kdj = False
         self.log.logger.info(
-            "stage2 -> stock: %s, name: %s, market: %s, kdj_value>=100: %s, down_cross_kdj: %s, miss_buy_point(>1day): %s, rise>=%.2f%%: %s" % (
-                stock_code, stock_name, market_desc, str(bool_max_j_value), str(bool_down_cross_kdj),
+            "stage2 -> stock: %s, kdj_value>=100: %s, down_cross_kdj: %s, miss_buy_point(>1day): %s, rise>=%.2f%%: %s" % (
+                stock_code, str(bool_max_j_value), str(bool_down_cross_kdj),
                 str(bool_up_cross_kdj), MIN_60M_PRICE_RISE, str(bool_more_than_spec_raise)))
         # KDJ的j值大于100，KDJ死叉，出现过金叉，但是某天涨幅超过5%
         if bool_max_j_value or bool_up_cross_kdj or bool_down_cross_kdj or bool_more_than_spec_raise:
@@ -147,7 +161,7 @@ class GenerateBox(object):
             return None
 
         # debug
-        # stockCodeList = {CONST_SZ_MARKET: {'count': 1, 'desc': "xx主板", 'values': [{'code': '300745', 'name': "xxxx"}]}}
+        # stock_codes = {CONST_SZ_MARKET: {'count': 1, 'desc': "xx主板", 'values': [{'code': '300745', 'name': "xxxx"}]}}
 
         valid_stock_info_list = self._get_stock_temp_list(stock_codes)
         if valid_stock_info_list is None:
@@ -186,15 +200,15 @@ class GenerateBox(object):
                     max_turn_over = max(stock_turn_over_list)
                     meta_close_price = stock_meta_data['close']
                     meta_low_price = stock_meta_data['low']
-                    stock_name = stock_meta_data['name']
+                    # stock_name = stock_meta_data['name']
                     interval_days = stock_meta_data['days']
                     market_name = stock_meta_data['marketName']
-                    market_desc = stock_meta_data['marketDesc']
+                    # market_desc = stock_meta_data['marketDesc']
 
                     bool_filter_result, err_info = self._stock_60m_k_type_filter(market_name=market_name,
                                                                                  stock_code=stock_code,
-                                                                                 stock_name=stock_name,
-                                                                                 market_desc=market_desc,
+                                                                                 # stock_name=stock_name,
+                                                                                 # market_desc=market_desc,
                                                                                  days=interval_days)
                     if err_info is not None:
                         self.log.logger.error("%s", err_info)
@@ -280,4 +294,9 @@ class GenerateBox(object):
 
 if __name__ == '__main__':
     gen_box = GenerateBox()
-    gen_box.generate()
+    valid_stock_box = gen_box.generate()
+    # 保存股票盒
+    _storage_box_data(data={"timestamp": common.get_current_timestamp(), "value": valid_stock_box})
+    # 发送已经选的股票
+    mail.send_mail(title=u"[%s] 选中的股票箱" % (time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))),
+                   msg=_generate_box_mail_message(valid_stock_box))

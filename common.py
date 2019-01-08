@@ -1,6 +1,8 @@
 # coding=utf-8
 
 import os
+import pickle
+import time
 import types
 
 # ============================================
@@ -14,6 +16,8 @@ CONST_CONFIG_MAIL_FILENAME = "mail.conf"
 CONST_LOG_MAIL_FILENAME = "mail.log"
 CONST_LOG_TA_FILENAME = "ta.log"
 CONST_LOG_BOX_FILENAME = "box.log"
+
+CONST_DB_BOX_FILENAME = "box.db"
 
 CONST_SH_MARKET = 'SH'
 CONST_SZ_MARKET = 'SZ'
@@ -89,3 +93,17 @@ def delete_file(filename):
             return True
         else:
             return False
+
+
+def get_current_timestamp():
+    return int(time.time())
+
+
+def dict_to_file(data, filename):
+    with open(filename, 'wb') as _f:
+        pickle.dump(data, _f)
+
+
+def file_to_dict(filename):
+    with open(filename) as _f:
+        return pickle.load(_f)
