@@ -49,8 +49,11 @@ TDX_ORDER_SERVER_LIST = [
 
 ]
 
-MARKET_NAME_MAPPING = {CONST_ZX_MARKET: "中小板", CONST_SZ_MARKET: "深圳主板", CONST_SH_MARKET: "上海主板", CONST_CY_MARKET: "创业板"}
+MARKET_NAME_MAPPING = {CONST_ZX_MARKET: "中小板", CONST_SZ_MARKET: "深圳主板", CONST_SH_MARKET: "上海主板",
+                       CONST_CY_MARKET: "创业板"}
 MARKET_CODE_MAPPING = {CONST_SH_MARKET: 1, CONST_SZ_MARKET: 0, CONST_ZX_MARKET: 0, CONST_CY_MARKET: 0}
+STOCK_TYPE_NAME_MAPPING = {CONST_STOCK_TYPE_1: "一类", CONST_STOCK_TYPE_2: "二类", CONST_STOCK_TYPE_3: "三类",
+                           CONST_STOCK_TYPE_4: "四类"}
 
 
 # ============================================

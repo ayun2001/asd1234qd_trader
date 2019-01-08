@@ -2,9 +2,12 @@
 
 import random
 import re
-import pandas as pd
+
 import TradeX2
+import pandas as pd
+
 import common
+from ta import TA
 
 
 def _make_hq_query_index_list(count, step):
@@ -25,7 +28,7 @@ def check_stop_trade_stock(dataset):
         return False, "check stock was halted error: %s" % err.message
 
 
-def create_connect():
+def create_connect_instance():
     try:
         host, port = random.choice(common.TDX_HQ_SERVER_LIST).split(':')
         port = int(port)
@@ -211,9 +214,28 @@ def get_history_data_frame(instance, market, code, ktype=common.CONST_K_DAY, kco
         if check_stop_trade_stock(history_data_frame):
             return False, None, "the stock: %s was halted, skipping..." % code
 
+        ta_instance = TA()
+        # 添加ma5, ma10均线数据
+        ta_instance.make_ma_data(history_data_frame)
+        # 添加价格变动
+        ta_instance.make_change_data(history_data_frame)
+        # 添加 KDJ 数据属性
+        ta_instance.make_kdj_data(history_data_frame)
+        # 添加 MACD 数据属性
+        ta_instance.make_macd_data(history_data_frame)
+        # 添加 RSI 数据属性
+        ta_instance.make_rsi_data(history_data_frame)
+        # 添加 CCI 数据属性
+        ta_instance.make_cci_data(history_data_frame)
+        # 添加 cross 数据
+        ta_instance.make_macd_cross(history_data_frame)
+        ta_instance.make_kdj_cross(history_data_frame)
+        ta_instance.make_rsi_cross(history_data_frame)
+
         # 数据处理, 删除之前多预留出来的行数, 这个实用index获得连续索引, 注意取值长度
         drop_start = 0 - len(history_data_frame.index)
         drop_end = 0 - kcount
         history_data_frame.drop(history_data_frame[drop_start:drop_end].index, inplace=True)
+
         # 返回结果
-        return True, history_data_frame
+        return True, history_data_frame, None
