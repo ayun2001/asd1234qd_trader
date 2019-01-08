@@ -175,7 +175,7 @@ def get_history_dataframe(instance, market, code, ktype=common.CONST_K_DAY, kcou
         if len(contents) < 2:
             return False, None, "get stock: %s data incomplete." % code
         try:
-            circulatingEquityNumber = float(contents[1].split('\t')[2]) * 10000  # 变成标准股数
+            circulating_equity_number = float(contents[1].split('\t')[2]) * 10000  # 变成标准股数
         except Exception as err:
             return False, None, "get stock: %s total number error: %s" % (code, err.message)
 
@@ -199,7 +199,7 @@ def get_history_dataframe(instance, market, code, ktype=common.CONST_K_DAY, kcou
                 data_frame_spec_data_set.append(
                     {'time': fields[0], 'open': float(fields[1]), 'close': float(fields[2]),
                      'high': float(fields[3]), 'low': float(fields[4]), 'volume': float(fields[5]),
-                     'pvolume': float(fields[6]), 'turnover': float(fields[5]) * 100 / circulatingEquityNumber})
+                     'pvolume': float(fields[6]), 'turnover': float(fields[5]) * 100 / circulating_equity_number})
             except Exception as err:
                 return False, None, "get stock: %s data is not enough, error: %s" % (code, err.message)
 

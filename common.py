@@ -5,8 +5,9 @@ import types
 
 # ============================================
 # 全局常量
-CONST_DIR_LOG = "./logs"
+CONST_DIR_LOG = "./log"
 CONST_DIR_CONF = "./conf"
+CONST_DIR_DATABASE = "./db"
 
 CONST_CONFIG_MAIL_FILENAME = "mail.conf"
 
@@ -30,8 +31,8 @@ CONST_RETRY_INTERVAL = 300
 
 TDX_HQ_SERVER_LIST = [
     "119.147.212.81:7709",
-    "221.231.141.60:7709",
-    "101.227.73.20:7709",
+    # "221.231.141.60:7709",
+    # "101.227.73.20:7709",
     "14.215.128.18:7709",
     "59.173.18.140:7709",
 ]

@@ -11,6 +11,9 @@ class GenerateBox(object):
         if not common.file_exist(common.CONST_DIR_LOG):
             common.create_directory(common.CONST_DIR_LOG)
 
+        if not common.file_exist(common.CONST_DIR_DATABASE):
+            common.create_directory(common.CONST_DIR_DATABASE)
+
         self.log = Logger(_box_log_filename, level='debug')
 
     def stage1_compute_data(self):
