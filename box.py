@@ -318,6 +318,7 @@ class GenerateBox(object):
 
 
 if __name__ == '__main__':
+    current_datetime = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
     start_timestamp = time.time()
     gen_box = GenerateBox()
     valid_stock_box = gen_box.generate()
@@ -325,8 +326,7 @@ if __name__ == '__main__':
 
     if valid_stock_box is None:
         gen_box.log.logger.error("generate stock box is None")
-        mail.send_mail(title=u"[%s] 股票箱计算错误" % (time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))),
-                       msg="[ERROR]")
+        mail.send_mail(title=u"[%s] 股票箱计算错误" % current_datetime, msg="[ERROR]")
         exit(0)
 
     total_compute_time = u"<p>计算总费时: %s</p>" % common.change_seconds_to_time(int(end_timestamp - start_timestamp))
@@ -335,5 +335,4 @@ if __name__ == '__main__':
     # 保存股票盒
     _storage_box_data(data={"timestamp": common.get_current_timestamp(), "value": valid_stock_box})
     # 发送已经选的股票
-    mail.send_mail(title=u"[%s] 选中的股票箱" % (time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))),
-                   msg=sendmail_message)
+    mail.send_mail(title=u"[%s] 选中的股票箱" % current_datetime, msg=sendmail_message)

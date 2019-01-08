@@ -2,9 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="ea61e7c0-b131-4b2b-a7b1-9c6b290db9da" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/box.py" beforeDir="false" afterPath="$PROJECT_DIR$/box.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/common.py" beforeDir="false" afterPath="$PROJECT_DIR$/common.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -19,8 +17,8 @@
           <file pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/box.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="682">
-                  <caret line="323" column="31" selection-start-line="323" selection-start-column="31" selection-end-line="323" selection-end-column="31" />
+                <state relative-caret-position="698">
+                  <caret line="323" column="40" selection-start-line="323" selection-start-column="40" selection-end-line="323" selection-end-column="40" />
                 </state>
               </provider>
             </entry>
@@ -165,12 +163,12 @@
       <workItem from="1546941851754" duration="215000" />
       <workItem from="1546942081636" duration="2205000" />
       <workItem from="1546952571178" duration="4230000" />
-      <workItem from="1546956888656" duration="1792000" />
+      <workItem from="1546956888656" duration="1943000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="8442000" />
+    <option name="totallyTimeSpent" value="8593000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="161" y="72" width="2276" height="1173" extended-state="0" />
@@ -253,8 +251,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/box.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="682">
-          <caret line="323" column="31" selection-start-line="323" selection-start-column="31" selection-end-line="323" selection-end-column="31" />
+        <state relative-caret-position="698">
+          <caret line="323" column="40" selection-start-line="323" selection-start-column="40" selection-end-line="323" selection-end-column="40" />
         </state>
       </provider>
     </entry>
