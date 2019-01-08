@@ -115,7 +115,7 @@ def get_stock_codes(instance):
 
     # 拉取整个深圳股票列表
     index = 0
-    err_info, szStep, stock_code_content = instance.GetSecurityList(sz_market, 0)
+    err_info, sz_step, stock_code_content = instance.GetSecurityList(sz_market, 0)
     if err_info != "":
         return False, None, "get SZ market stocks list error: [%d] %s" % (index, err_info)
     else:
@@ -134,9 +134,9 @@ def get_stock_codes(instance):
                         {'code': fields[0], 'name': fields[2]})
 
     # 不用再拉第一份数据了, 已经有了
-    for start in _make_hq_query_index_list(sz_stock_count, szStep)[1:]:  # 循环中去掉第一行标题
+    for start in _make_hq_query_index_list(sz_stock_count, sz_step)[1:]:  # 循环中去掉第一行标题
         index += 1
-        err_info, szStep, stock_code_content = instance.GetSecurityList(sz_market, start)
+        err_info, sz_step, stock_code_content = instance.GetSecurityList(sz_market, start)
         if err_info != "":
             return False, None, "get SZ market stocks list error: [%d] %s" % (index, err_info)
         else:
@@ -167,7 +167,6 @@ def get_stock_codes(instance):
 def get_history_dataframe(instance, market, code, ktype=common.CONST_K_DAY, kcount=common.CONST_K_LENGTH):
     min_k_type_field_count = 7
     # 获得公司流通总股本, 用来算换手率（注意是单位： 万股）
-    # errInfo, stockFinanceContent = self.connectInstance.GetFinanceInfo(market, code)
     finance_content, err_info = get_finance_info(instance, market, code)
     if err_info != "":
         return False, None, err_info
@@ -181,7 +180,6 @@ def get_history_dataframe(instance, market, code, ktype=common.CONST_K_DAY, kcou
             return False, None, "get stock: %s total number error: %s" % (code, err.message)
 
     # 获得K线详细信息
-    # errInfo, dataCount, stockHistoryDataContent = self.connectInstance.GetSecurityBars(kType, market, code, 0, kCount * 3)
     err_info, data_count, history_data_content = get_stock_bars(instance, ktype, market, code, 0, kcount * 3)
     if data_count <= 0:
         return False, None, "stock is not being listed. skipping..." % code
