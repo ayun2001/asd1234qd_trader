@@ -1,5 +1,5 @@
 # coding=utf-8
-
+import math
 import os
 import pickle
 import time
@@ -107,3 +107,20 @@ def dict_to_file(data, filename):
 def file_to_dict(filename):
     with open(filename) as _f:
         return pickle.load(_f)
+
+
+def change_seconds_to_time(total_time):
+    day_time_length = 24 * 60 * 60
+    hour_time_length = 60 * 60
+    min_time_length = 60
+    if total_time < 60:
+        return "%d seconds" % math.ceil(total_time)
+    elif total_time > day_time_length:
+        days = divmod(total_time, day_time_length)
+        return "%d days, %s" % (int(days[0]), change_seconds_to_time(days[1]))
+    elif total_time > hour_time_length:
+        hours = divmod(total_time, hour_time_length)
+        return '%d hours, %s' % (int(hours[0]), change_seconds_to_time(hours[1]))
+    else:
+        mins = divmod(total_time, min_time_length)
+    return "%d minutes, %d seconds" % (int(mins[0]), math.ceil(mins[1]))

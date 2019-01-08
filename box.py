@@ -2,6 +2,8 @@
 
 import time
 
+from prettytable import PrettyTable
+
 import adapter
 import common
 import mail
@@ -25,7 +27,30 @@ def _storage_box_data(data):
 
 # 发送股票盒邮件
 def _generate_box_mail_message(data):
-    return "%s" % str(data)
+    total_number = 0
+    cy_number = 0
+    zx_number = 0
+    sh_number = 0
+    sz_number = 0
+
+    table = PrettyTable([u"股票大盘", u"股票分类", u"数量", u"待选股票"])
+    for market_name, market_values in data.items():
+        for stock_class_type, class_type_values in market_values.items():
+            count = len(class_type_values.keys())
+            total_number += count
+            if market_name == common.CONST_SZ_MARKET:
+                sz_number += count
+            if market_name == common.CONST_SH_MARKET:
+                sh_number += count
+            if market_name == common.CONST_ZX_MARKET:
+                zx_number += count
+            if market_name == common.CONST_CY_MARKET:
+                cy_number += count
+            table.add_row([common.MARKET_NAME_MAPPING[market_name], common.STOCK_TYPE_NAME_MAPPING[stock_class_type],
+                           count, ','.join(class_type_values.keys()) if count > 0 else '无'])
+
+    return table.get_html_string() + u"<p>总共选取股票数量: %d --> 上海: %d, 深圳: %d, 中小: %d, 创业: %d </p>" % (
+        total_number, sh_number, sz_number, zx_number, cy_number)
 
 
 # 生成股票盒
@@ -175,6 +200,9 @@ class GenerateBox(object):
         return valid_stock_data_set
 
     def stage2_filter_data(self, stock_pool):
+        if stock_pool is None:
+            return None
+
         valid_stock_data_set = {
             common.CONST_SH_MARKET: {common.CONST_STOCK_TYPE_1: {}, common.CONST_STOCK_TYPE_2: {},
                                      common.CONST_STOCK_TYPE_3: {}, common.CONST_STOCK_TYPE_4: {}},
@@ -185,9 +213,6 @@ class GenerateBox(object):
             common.CONST_CY_MARKET: {common.CONST_STOCK_TYPE_1: {}, common.CONST_STOCK_TYPE_2: {},
                                      common.CONST_STOCK_TYPE_3: {}, common.CONST_STOCK_TYPE_4: {}},
         }
-
-        if stock_pool is None:
-            return valid_stock_data_set
 
         for market_code, market_values in stock_pool.items():
             for stock_code, stock_info_values in market_values.items():
@@ -283,20 +308,32 @@ class GenerateBox(object):
         self.connect_instance, err_info = adapter.create_connect_instance()
         if self.connect_instance is None:
             self.log.logger.error("create hq connect instance error: %s" % err_info)
-            return
+            return None
 
         valid_stock_pool = self.stage1_compute_data()
         if valid_stock_pool is None:
-            return
+            return None
 
         return self.stage2_filter_data(valid_stock_pool)
 
 
 if __name__ == '__main__':
+    start_timestamp = time.time()
     gen_box = GenerateBox()
     valid_stock_box = gen_box.generate()
+    end_timestamp = time.time()
+
+    if valid_stock_box is None:
+        gen_box.log.logger.error("generate stock box is None")
+        mail.send_mail(title=u"[%s] 股票箱计算错误" % (time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))),
+                       msg="[ERROR]")
+        exit(0)
+
+    total_compute_time = u"<p>计算总费时: %s</p>" % common.change_seconds_to_time(int(end_timestamp - start_timestamp))
+    sendmail_message = _generate_box_mail_message(valid_stock_box) + total_compute_time
+
     # 保存股票盒
     _storage_box_data(data={"timestamp": common.get_current_timestamp(), "value": valid_stock_box})
     # 发送已经选的股票
     mail.send_mail(title=u"[%s] 选中的股票箱" % (time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))),
-                   msg=_generate_box_mail_message(valid_stock_box))
+                   msg=sendmail_message)
