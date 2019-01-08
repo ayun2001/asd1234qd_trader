@@ -164,7 +164,7 @@ def get_stock_codes(instance):
     return True, stock_codes, None
 
 
-def get_history_dataframe(instance, market, code, ktype=common.CONST_K_DAY, kcount=common.CONST_K_LENGTH):
+def get_history_data_frame(instance, market, code, ktype=common.CONST_K_DAY, kcount=common.CONST_K_LENGTH):
     min_k_type_field_count = 7
     # 获得公司流通总股本, 用来算换手率（注意是单位： 万股）
     finance_content, err_info = get_finance_info(instance, market, code)
