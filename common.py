@@ -12,6 +12,7 @@ import types
 CONST_DIR_LOG = "./log"
 CONST_DIR_CONF = "./conf"
 CONST_DIR_DATABASE = "./db"
+CONST_DIR_BACKUP = "./bak"
 
 CONST_CONFIG_HOLIDAY_FILENAME = "holidays.json"
 CONST_CONFIG_MAIL_FILENAME = "mail.json"

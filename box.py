@@ -11,6 +11,7 @@ from log import Logger
 
 box_log_filename = "%s/%s" % (common.CONST_DIR_LOG, common.CONST_LOG_BOX_FILENAME)
 box_db_filename = "%s/%s" % (common.CONST_DIR_DATABASE, common.CONST_DB_BOX_FILENAME)
+box_bak_filename = "%s/box_" % common.CONST_DIR_BACKUP
 
 MIN_HOURS = 4
 MIN_60M_TIMEDELTA = MIN_HOURS * 4
@@ -22,7 +23,15 @@ def _storage_box_data(data):
     if not common.file_exist(common.CONST_DIR_DATABASE):
         common.create_directory(common.CONST_DIR_DATABASE)
 
+    if not common.file_exist(common.CONST_DIR_BACKUP):
+        common.create_directory(common.CONST_DIR_BACKUP)
+
+    # 保存数据到db目录
     common.dict_to_file(data, box_db_filename)
+
+    # 保存数据到bak文件
+    backup_datetime = time.strftime('%Y%m%d%H%M%S', time.localtime(time.time()))
+    common.dict_to_file(data, box_bak_filename + backup_datetime)
 
 
 # 发送股票盒邮件
