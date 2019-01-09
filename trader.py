@@ -12,7 +12,7 @@ trader_db_records_filename = "%s/%s" % (common.CONST_DIR_DATABASE, common.CONST_
 trader_db_position_filename = "%s/%s" % (common.CONST_DIR_DATABASE, common.CONST_DB_POSITION_FILENAME)
 trader_db_box_filename = box.box_db_filename
 
-MAX_VALID_BOX_INTERVAL_HOURS = 4  # 票箱会在每天的早上8：30，和中午12：00 左右开始选取，所以不会有操过
+MAX_VALID_BOX_INTERVAL_HOURS = 4  # 票箱会在每天的早上8：30，和中午12：00 左右开始选取，所以不会有操过4个小时
 
 
 class Trader(object):
