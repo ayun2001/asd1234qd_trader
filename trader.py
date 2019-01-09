@@ -28,9 +28,6 @@ class Trader(object):
 
         self.log = Logger(trader_log_filename, level='debug')
 
-    def _send_trader_records_mail(self):
-        pass
-
     @staticmethod
     def _load_box_db_file():
         if not common.file_exist(trader_db_box_filename):
@@ -84,6 +81,9 @@ class Trader(object):
                 return json.load(_file), None
         except Exception as err:
             return None, err.message
+
+    def _send_trader_records_mail(self):
+        pass
 
     # 记录交易记录
     def _save_trader_records(self):
