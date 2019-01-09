@@ -8,15 +8,15 @@ from email.header import Header
 import common
 from log import Logger
 
-_mail_log_filename = "%s/%s" % (common.CONST_DIR_LOG, common.CONST_LOG_MAIL_FILENAME)
-_mail_config_filename = "%s/%s" % (common.CONST_DIR_CONF, common.CONST_CONFIG_MAIL_FILENAME)
+mail_log_filename = "%s/%s" % (common.CONST_DIR_LOG, common.CONST_LOG_MAIL_FILENAME)
+mail_config_filename = "%s/%s" % (common.CONST_DIR_CONF, common.CONST_CONFIG_MAIL_FILENAME)
 
 
 def _load_config():
-    if not common.file_exist(_mail_config_filename):
+    if not common.file_exist(mail_config_filename):
         return None, "config file: %s is not exist."
     try:
-        with open(_mail_config_filename, "r") as _file:
+        with open(mail_config_filename, "r") as _file:
             return json.load(_file), None
     except Exception as err:
         return None, err.message
@@ -29,7 +29,7 @@ def send_mail(title, msg):
     if not common.file_exist(common.CONST_DIR_CONF):
         common.create_directory(common.CONST_DIR_CONF)
 
-    log = Logger(_mail_log_filename, level='debug')
+    log = Logger(mail_log_filename, level='debug')
 
     config, err = _load_config()
     if config is None:

@@ -5,7 +5,7 @@ import talib
 import common
 from log import Logger
 
-_mail_log_filename = "%s/%s" % (common.CONST_DIR_LOG, common.CONST_LOG_TA_FILENAME)
+ta_log_filename = "%s/%s" % (common.CONST_DIR_LOG, common.CONST_LOG_TA_FILENAME)
 
 
 class TA(object):
@@ -13,7 +13,7 @@ class TA(object):
         if not common.file_exist(common.CONST_DIR_LOG):
             common.create_directory(common.CONST_DIR_LOG)
 
-        self.log = Logger(_mail_log_filename, level='debug')
+        self.log = Logger(ta_log_filename, level='debug')
 
     def make_macd_data(self, dataset, s=12, l=26, m=9):  # MACD数据一定要长时间的数据 30个数据点不够, 至少需要90, 这样数据才准
         try:

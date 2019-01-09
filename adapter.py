@@ -10,6 +10,9 @@ import common
 from ta import TA
 
 
+# ============================================
+# 行情接口函数
+
 def _make_hq_query_index_list(count, step):
     numbers = int(count / step)
     if count - int(count / step) * step > 0:
@@ -239,3 +242,6 @@ def get_history_data_frame(instance, market, code, ktype=common.CONST_K_DAY, kco
 
         # 返回结果
         return True, history_data_frame, None
+
+# ============================================
+# 下单接口函数

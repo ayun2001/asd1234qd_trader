@@ -1,4 +1,6 @@
 # coding=utf-8
+
+import json
 import math
 import os
 import pickle
@@ -11,11 +13,14 @@ CONST_DIR_LOG = "./log"
 CONST_DIR_CONF = "./conf"
 CONST_DIR_DATABASE = "./db"
 
-CONST_CONFIG_MAIL_FILENAME = "mail.conf"
+CONST_CONFIG_HOLIDAY_FILENAME = "holidays.json"
+CONST_CONFIG_MAIL_FILENAME = "mail.json"
+CONST_CONFIG_TRADER_FILENAME = "trader.json"
 
 CONST_LOG_MAIL_FILENAME = "mail.log"
 CONST_LOG_TA_FILENAME = "ta.log"
 CONST_LOG_BOX_FILENAME = "box.log"
+CONST_LOG_TRADER_FILENAME = "trader.log"
 
 CONST_DB_BOX_FILENAME = "box.db"
 
@@ -124,3 +129,24 @@ def change_seconds_to_time(total_time):
     else:
         mins = divmod(total_time, min_time_length)
     return "%d minutes, %d seconds" % (int(mins[0]), math.ceil(mins[1]))
+
+
+def check_today_is_holiday_time():
+    _holiday_config_filename = "%s/%s" % (CONST_DIR_CONF, CONST_CONFIG_HOLIDAY_FILENAME)
+    if not file_exist(_holiday_config_filename):
+        return False
+
+    try:
+        with open(_holiday_config_filename, "r") as _file:
+            holidays = json.load(_file).get("holidays", None)
+    except Exception:
+        return False
+
+    if holidays is None:
+        return False
+
+    current_datetime = time.strftime('%Y%m%d', time.localtime(time.time()))
+    if isinstance(current_datetime, types.ListType) and (current_datetime in holidays):
+        return True
+    else:
+        return False

@@ -9,8 +9,8 @@ import common
 import mail
 from log import Logger
 
-_box_log_filename = "%s/%s" % (common.CONST_DIR_LOG, common.CONST_LOG_BOX_FILENAME)
-_box_db_filename = "%s/%s" % (common.CONST_DIR_DATABASE, common.CONST_DB_BOX_FILENAME)
+box_log_filename = "%s/%s" % (common.CONST_DIR_LOG, common.CONST_LOG_BOX_FILENAME)
+box_db_filename = "%s/%s" % (common.CONST_DIR_DATABASE, common.CONST_DB_BOX_FILENAME)
 
 MIN_HOURS = 4
 MIN_60M_TIMEDELTA = MIN_HOURS * 4
@@ -22,7 +22,7 @@ def _storage_box_data(data):
     if not common.file_exist(common.CONST_DIR_DATABASE):
         common.create_directory(common.CONST_DIR_DATABASE)
 
-    common.dict_to_file(data, _box_db_filename)
+    common.dict_to_file(data, box_db_filename)
 
 
 # 发送股票盒邮件
@@ -59,7 +59,7 @@ class GenerateBox(object):
         if not common.file_exist(common.CONST_DIR_LOG):
             common.create_directory(common.CONST_DIR_LOG)
 
-        self.log = Logger(_box_log_filename, level='debug')
+        self.log = Logger(box_log_filename, level='debug')
         self.connect_instance = None
 
     # 扩展股票数据
