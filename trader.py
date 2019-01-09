@@ -6,7 +6,7 @@ from log import Logger
 
 trader_log_filename = "%s/%s" % (common.CONST_DIR_LOG, common.CONST_LOG_TRADER_FILENAME)
 trader_config_filename = "%s/%s" % (common.CONST_DIR_CONF, common.CONST_CONFIG_TRADER_FILENAME)
-trader_db_records_filename = ""
+trader_db_records_filename = "%s/%s" % (common.CONST_DIR_DATABASE, common.CONST_DB_TRADER_FILENAME)
 trader_db_box_filename = box.box_db_filename
 
 
@@ -18,7 +18,13 @@ class Trader(object):
         if not common.file_exist(common.CONST_DIR_CONF):
             common.create_directory(common.CONST_DIR_CONF)
 
-        self.log = Logger(_trader_log_filename, level='debug')
+        if not common.file_exist(common.CONST_DIR_DATABASE):
+            common.create_directory(common.CONST_DIR_DATABASE)
+
+        self.log = Logger(trader_log_filename, level='debug')
+
+    def _send_trader_records_mail(self):
+        pass
 
     def _load_box_db_file(self):
         pass
