@@ -1,15 +1,18 @@
 # coding=utf-8
 
+import codecs
+import datetime
 import json
 
 import box
 import common
 from log import Logger
 
+current_year = datetime.datetime.now().year
 trader_log_filename = "%s/%s" % (common.CONST_DIR_LOG, common.CONST_LOG_TRADER_FILENAME)
 trader_config_filename = "%s/%s" % (common.CONST_DIR_CONF, common.CONST_CONFIG_TRADER_FILENAME)
-trader_db_records_filename = "%s/%s" % (common.CONST_DIR_DATABASE, common.CONST_DB_RECORDS_FILENAME)
-trader_db_position_filename = "%s/%s" % (common.CONST_DIR_DATABASE, common.CONST_DB_POSITION_FILENAME)
+trader_db_records_filename = "%s/%s_%s" % (common.CONST_DIR_DATABASE, current_year, common.CONST_DB_RECORDS_FILENAME)
+trader_db_position_filename = "%s/%s_%s" % (common.CONST_DIR_DATABASE, current_year, common.CONST_DB_POSITION_FILENAME)
 trader_db_box_filename = box.box_db_filename
 
 MAX_VALID_BOX_INTERVAL_HOURS = 4  # 票箱会在每天的早上8：30，和中午12：00 左右开始选取，所以不会有操过4个小时
@@ -82,12 +85,19 @@ class Trader(object):
         except Exception as err:
             return None, err.message
 
-    def _send_trader_records_mail(self):
-        pass
+    # # 发送交易信息
+    # def _send_trader_records_mail(self, data):
+    #     pass
 
     # 记录交易记录
-    def _save_trader_records(self):
-        pass
+    def _save_trader_records(self, dataset):
+        with codecs.open(trader_db_records_filename, 'a', 'utf-8') as _f:
+            for record in dataset:
+                try:
+                    _f.write(json.dumps(record))
+                except Exception as err:
+                    self.log.logger.error("save record data error: %s" % err.message)
+                    continue
 
     # 对加载得BOX进行初始筛选和排序，选择最合适得前几个（默认type1>type2>type3>type4）
     def _box_prepare_filter(self, top=5):
