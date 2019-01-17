@@ -21,14 +21,11 @@ def _make_hq_query_index_list(count, step):
 
 
 def check_stop_trade_stock(dataset):
-    try:
-        stock_trade_volume_list = dataset['volume'].values
-        if len(stock_trade_volume_list) == 0 or stock_trade_volume_list[-1] == 0.0:
-            return True, None
-        else:
-            return False, None
-    except Exception as err:
-        return False, "check stock was halted error: %s" % err.message
+    stock_trade_volume_list = dataset['volume'].values
+    if len(stock_trade_volume_list) == 0 or stock_trade_volume_list[-1] == 0.0:
+        return True
+    else:
+        return False
 
 
 def create_connect_instance():
@@ -174,7 +171,7 @@ def get_history_data_frame(instance, market, code, ktype=common.CONST_K_DAY, kco
     min_k_type_field_count = 7
     # 获得公司流通总股本, 用来算换手率（注意是单位： 万股）
     finance_content, err_info = get_finance_info(instance, market, code)
-    if err_info != "":
+    if err_info is not None:
         return None, err_info
     else:
         contents = finance_content.split('\n')
@@ -186,10 +183,10 @@ def get_history_data_frame(instance, market, code, ktype=common.CONST_K_DAY, kco
             return None, "get stock: %s total number error: %s" % (code, err.message)
 
     # 获得K线详细信息
-    err_info, data_count, history_data_content = get_stock_bars(instance, ktype, market, code, 0, kcount * 3)
+    history_data_content, data_count, err_info = get_stock_bars(instance, ktype, market, code, 0, kcount * 3)
     if data_count <= 0:
         return None, "stock is not being listed. skipping..." % code
-    if err_info != "":
+    if err_info is not None:
         return None, err_info
     else:
         contents = history_data_content.split('\n')
@@ -217,23 +214,25 @@ def get_history_data_frame(instance, market, code, ktype=common.CONST_K_DAY, kco
         if check_stop_trade_stock(history_data_frame):
             return None, "the stock: %s was halted, skipping..." % code
 
-        ta_instance = TA()
-        # 添加ma5, ma10均线数据
-        ta_instance.make_ma_data(history_data_frame)
-        # 添加价格变动
-        ta_instance.make_change_data(history_data_frame)
-        # 添加 KDJ 数据属性
-        ta_instance.make_kdj_data(history_data_frame)
-        # 添加 MACD 数据属性
-        ta_instance.make_macd_data(history_data_frame)
-        # 添加 RSI 数据属性
-        ta_instance.make_rsi_data(history_data_frame)
-        # 添加 CCI 数据属性
-        ta_instance.make_cci_data(history_data_frame)
-        # 添加 cross 数据
-        ta_instance.make_macd_cross(history_data_frame)
-        ta_instance.make_kdj_cross(history_data_frame)
-        ta_instance.make_rsi_cross(history_data_frame)
+        try:
+            # 添加ma5, ma10均线数据
+            TA.make_ma_data(history_data_frame)
+            # 添加价格变动
+            TA.make_change_data(history_data_frame)
+            # 添加 KDJ 数据属性
+            TA.make_kdj_data(history_data_frame)
+            # 添加 MACD 数据属性
+            TA.make_macd_data(history_data_frame)
+            # 添加 RSI 数据属性
+            TA.make_rsi_data(history_data_frame)
+            # 添加 CCI 数据属性
+            TA.make_cci_data(history_data_frame)
+            # 添加 cross 数据
+            TA.make_macd_cross(history_data_frame)
+            TA.make_kdj_cross(history_data_frame)
+            TA.make_rsi_cross(history_data_frame)
+        except Exception, err_info:
+            return None, "error adding history calculation data: %s" % err_info
 
         # 数据处理, 删除之前多预留出来的行数, 这个实用index获得连续索引, 注意取值长度
         drop_start = 0 - len(history_data_frame.index)

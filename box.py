@@ -85,7 +85,7 @@ class GenerateBox(object):
             self.log.logger.error("input stock data is null, check input source ...")
             return
         market_name, desc_info, stock_code, stock_name = input_data
-        self.log.logger.error("process stock: %s data ..." % stock_code)
+        self.log.logger.info("process stock: %s data ..." % stock_code)
         try:
             market_code = common.MARKET_CODE_MAPPING[market_name]
         except KeyError:
@@ -95,8 +95,8 @@ class GenerateBox(object):
         history_data_frame, err_info = adapter.get_history_data_frame(instance, market=market_code, code=stock_code,
                                                                       ktype=common.CONST_K_DAY,
                                                                       kcount=common.CONST_K_LENGTH)
-        if history_data_frame is None:
-            self.log.logger.error("stock: %s get history data error %s" % (stock_code, err_info))
+        if err_info is not None:
+            self.log.logger.error("get stock: %s history data error: %s" % (stock_code, err_info))
             return
 
         history_data_frame_index_list = history_data_frame.index
@@ -118,7 +118,7 @@ class GenerateBox(object):
                                          'low': low_value, 'code': stock_code, 'name': stock_name,
                                          'marketName': market_name, 'marketDesc': desc_info},
                             'dataFrame': history_data_frame}  # 这里是否包去掉以前的历史数据，还要分析下
-                        self.log.logger.error(
+                        self.log.logger.info(
                             "stock: %s have been selected, rise close value: %.3f, datetime: %s, days: %d" % (
                                 stock_code, close_value, item_data_time, interval_days))
                         output_dataset[market_name][stock_code] = stock_content_info
@@ -132,10 +132,11 @@ class GenerateBox(object):
         except KeyError:
             return False, "stock: %s market code mapping error" % stock_code
 
-        ok, history_data_frame, err_info = adapter.get_history_data_frame(self.connect_instance, market=market_code,
-                                                                          code=stock_code, ktype=common.CONST_K_60M,
-                                                                          kcount=common.CONST_K_LENGTH)
-        if not ok:
+        history_data_frame, err_info = adapter.get_history_data_frame(self.connect_instance, market=market_code,
+                                                                      code=stock_code, ktype=common.CONST_K_60M,
+                                                                      kcount=common.CONST_K_LENGTH)
+        if err_info is not None:
+            self.log.logger.error("get stock: %s history data error %s" % (stock_code, err_info))
             return False, err_info
 
         # 翻转这个dataframe
@@ -310,11 +311,11 @@ class GenerateBox(object):
         self.connect_instance, err_info = adapter.create_connect_instance()
         if self.connect_instance is None:
             self.log.logger.error("create hq connect instance error: %s" % err_info)
-            return None
+            return
 
         valid_stock_pool = self.stage1_compute_data()
         if valid_stock_pool is None:
-            return None
+            return
 
         return self.stage2_filter_data(valid_stock_pool)
 
