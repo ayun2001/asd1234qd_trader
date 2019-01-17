@@ -9,7 +9,8 @@ import common
 import mail
 from log import Logger
 
-box_log_filename = "%s/%s" % (common.CONST_DIR_LOG, common.CONST_LOG_BOX_FILENAME)
+box_log_filename = "%s/%s_%s" % (common.CONST_DIR_LOG, time.strftime('%Y%m%d', time.localtime(time.time())),
+                                 common.CONST_LOG_BOX_FILENAME)
 box_db_filename = "%s/%s" % (common.CONST_DIR_DATABASE, common.CONST_DB_BOX_FILENAME)
 
 MIN_HOURS = 4
@@ -85,7 +86,11 @@ class GenerateBox(object):
             self.log.logger.error("input stock data is null, check input source ...")
             return
         market_name, desc_info, stock_code, stock_name = input_data
+<<<<<<< HEAD
         self.log.logger.info("process stock: %s data ..." % stock_code)
+=======
+        self.log.logger.info("processing stock: %s data ..." % stock_code)
+>>>>>>> test
         try:
             market_code = common.MARKET_CODE_MAPPING[market_name]
         except KeyError:

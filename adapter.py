@@ -185,7 +185,11 @@ def get_history_data_frame(instance, market, code, ktype=common.CONST_K_DAY, kco
     # 获得K线详细信息
     history_data_content, data_count, err_info = get_stock_bars(instance, ktype, market, code, 0, kcount * 3)
     if data_count <= 0:
+<<<<<<< HEAD
         return None, "stock is not being listed. skipping..." % code
+=======
+        return None, "stock: %s is not being listed. skipping..." % code
+>>>>>>> test
     if err_info is not None:
         return None, err_info
     else:

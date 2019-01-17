@@ -12,6 +12,7 @@ import types
 CONST_DIR_LOG = "./log"
 CONST_DIR_CONF = "./conf"
 CONST_DIR_DATABASE = "./db"
+CONST_DIR_BACKUP = "./bak"
 
 CONST_CONFIG_HOLIDAY_FILENAME = "holidays.json"
 CONST_CONFIG_MAIL_FILENAME = "mail.json"
@@ -22,7 +23,8 @@ CONST_LOG_BOX_FILENAME = "box.log"
 CONST_LOG_TRADER_FILENAME = "trader.log"
 
 CONST_DB_BOX_FILENAME = "box.db"
-CONST_DB_TRADER_FILENAME = "records.db"
+CONST_DB_RECORDS_FILENAME = "records.db"
+CONST_DB_POSITION_FILENAME = "position.db"
 
 CONST_SH_MARKET = 'SH'
 CONST_SZ_MARKET = 'SZ'
