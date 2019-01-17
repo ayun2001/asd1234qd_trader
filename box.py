@@ -92,9 +92,11 @@ class GenerateBox(object):
             self.log.logger.error("stock: %s market mapping error." % stock_code)
             return
 
-        ok, history_data_frame = adapter.get_history_data_frame(instance, market=market_code, code=stock_code,
-                                                                ktype=common.CONST_K_DAY, kcount=common.CONST_K_LENGTH)
-        if not ok:
+        history_data_frame, err_info = adapter.get_history_data_frame(instance, market=market_code, code=stock_code,
+                                                                      ktype=common.CONST_K_DAY,
+                                                                      kcount=common.CONST_K_LENGTH)
+        if history_data_frame is None:
+            self.log.logger.error("stock: %s get history data error %s" % (stock_code, err_info))
             return
 
         history_data_frame_index_list = history_data_frame.index
@@ -180,8 +182,8 @@ class GenerateBox(object):
         valid_stock_data_set = {common.CONST_SH_MARKET: {}, common.CONST_SZ_MARKET: {}, common.CONST_ZX_MARKET: {},
                                 common.CONST_CY_MARKET: {}}
 
-        ok, stock_codes, err_info = adapter.get_stock_codes(self.connect_instance)
-        if not ok:
+        stock_codes, err_info = adapter.get_stock_codes(self.connect_instance)
+        if stock_codes is None:
             self.log.logger.error("stage1 get stock codes error: %s", err_info)
             return None
 
