@@ -14,7 +14,7 @@ mail_config_filename = "%s/%s" % (common.CONST_DIR_CONF, common.CONST_CONFIG_MAI
 
 def _load_config():
     if not common.file_exist(mail_config_filename):
-        return None, "mail config file: %s is not exist."
+        return None, "config file: %s is not exist."
     try:
         with open(mail_config_filename, "r") as _file:
             return json.load(_file), None

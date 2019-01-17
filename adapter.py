@@ -21,14 +21,11 @@ def _make_hq_query_index_list(count, step):
 
 
 def check_stop_trade_stock(dataset):
-    try:
-        stock_trade_volume_list = dataset['volume'].values
-        if len(stock_trade_volume_list) == 0 or stock_trade_volume_list[-1] == 0.0:
-            return True, None
-        else:
-            return False, None
-    except Exception as err:
-        return False, "check stock was halted error: %s" % err.message
+    stock_trade_volume_list = dataset['volume'].values
+    if len(stock_trade_volume_list) == 0 or stock_trade_volume_list[-1] == 0.0:
+        return True
+    else:
+        return False
 
 
 def create_connect_instance():
@@ -86,17 +83,17 @@ def get_stock_codes(instance):
 
     err_info, sh_stock_count = instance.GetSecurityCount(sh_market)
     if err_info != "":
-        return False, None, "get SH market stock number error: %s" % err_info
+        return None, "get SH market stock number error: %s" % err_info
 
     err_info, sz_stock_count = instance.GetSecurityCount(sz_market)
     if err_info != "":
-        return False, None, "get SZ market stock number error: %s" % err_info
+        return None, "get SZ market stock number error: %s" % err_info
 
     # 拉取整个上海股票列表
     index = 0
     err_info, sh_step, stock_code_content = instance.GetSecurityList(sh_market, 0)
     if err_info != "":
-        return False, None, "get SH market stocks list error: [%d] %s" % (index, err_info)
+        return None, "get SH market stocks list error: [%d] %s" % (index, err_info)
     else:
         for line in stock_code_content.split('\n')[1:]:  # 循环中去掉第一行标题
             fields = line.split('\t')
@@ -110,7 +107,7 @@ def get_stock_codes(instance):
         index += 1
         err_info, sh_step, stock_code_content = instance.GetSecurityList(sh_market, start)
         if err_info != "":
-            return False, None, "get SH market stocks list error: [%d] %s" % (index, err_info)
+            return None, "get SH market stocks list error: [%d] %s" % (index, err_info)
         else:
             for line in stock_code_content.split('\n')[1:]:  # 循环中去掉第一行标题
                 fields = line.split('\t')
@@ -123,7 +120,7 @@ def get_stock_codes(instance):
     index = 0
     err_info, sz_step, stock_code_content = instance.GetSecurityList(sz_market, 0)
     if err_info != "":
-        return False, None, "get SZ market stocks list error: [%d] %s" % (index, err_info)
+        return None, "get SZ market stocks list error: [%d] %s" % (index, err_info)
     else:
         for line in stock_code_content.split('\n')[1:]:  # 循环中去掉第一行标题
             fields = line.split('\t')
@@ -144,7 +141,7 @@ def get_stock_codes(instance):
         index += 1
         err_info, sz_step, stock_code_content = instance.GetSecurityList(sz_market, start)
         if err_info != "":
-            return False, None, "get SZ market stocks list error: [%d] %s" % (index, err_info)
+            return None, "get SZ market stocks list error: [%d] %s" % (index, err_info)
         else:
             for line in stock_code_content.split('\n')[1:]:
                 fields = line.split('\t')
@@ -167,34 +164,34 @@ def get_stock_codes(instance):
     stock_codes[common.CONST_CY_MARKET]['count'] = len(stock_codes[common.CONST_CY_MARKET]['values'])
 
     # 返回数据
-    return True, stock_codes, None
+    return stock_codes, None
 
 
 def get_history_data_frame(instance, market, code, ktype=common.CONST_K_DAY, kcount=common.CONST_K_LENGTH):
     min_k_type_field_count = 7
     # 获得公司流通总股本, 用来算换手率（注意是单位： 万股）
     finance_content, err_info = get_finance_info(instance, market, code)
-    if err_info != "":
-        return False, None, err_info
+    if err_info is not None:
+        return None, err_info
     else:
         contents = finance_content.split('\n')
         if len(contents) < 2:
-            return False, None, "get stock: %s data incomplete." % code
+            return None, "get stock: %s data incomplete." % code
         try:
             circulating_equity_number = float(contents[1].split('\t')[2]) * 10000  # 变成标准股数
         except Exception as err:
-            return False, None, "get stock: %s total number error: %s" % (code, err.message)
+            return None, "get stock: %s total number error: %s" % (code, err.message)
 
     # 获得K线详细信息
-    err_info, data_count, history_data_content = get_stock_bars(instance, ktype, market, code, 0, kcount * 3)
+    history_data_content, data_count, err_info = get_stock_bars(instance, ktype, market, code, 0, kcount * 3)
     if data_count <= 0:
-        return False, None, "stock is not being listed. skipping..." % code
-    if err_info != "":
-        return False, None, err_info
+        return None, "stock is not being listed. skipping..." % code
+    if err_info is not None:
+        return None, err_info
     else:
         contents = history_data_content.split('\n')
         if len(contents) < 2:
-            return False, None, "get stock: %s data incomplete." % code
+            return None, "get stock: %s data incomplete." % code
 
         data_frame_spec_data_set = []
         for line in contents[1:]:  # 去掉标题头
@@ -207,7 +204,7 @@ def get_history_data_frame(instance, market, code, ktype=common.CONST_K_DAY, kco
                      'high': float(fields[3]), 'low': float(fields[4]), 'volume': float(fields[5]),
                      'pvolume': float(fields[6]), 'turnover': float(fields[5]) * 100 / circulating_equity_number})
             except Exception as err:
-                return False, None, "get stock: %s data is not enough, error: %s" % (code, err.message)
+                return None, "get stock: %s data is not enough, error: %s" % (code, err.message)
 
         # 生成数据集
         history_data_frame = pd.DataFrame(data_frame_spec_data_set)
@@ -215,25 +212,27 @@ def get_history_data_frame(instance, market, code, ktype=common.CONST_K_DAY, kco
 
         # 检查股票是否停牌
         if check_stop_trade_stock(history_data_frame):
-            return False, None, "the stock: %s was halted, skipping..." % code
+            return None, "the stock: %s was halted, skipping..." % code
 
-        ta_instance = TA()
-        # 添加ma5, ma10均线数据
-        ta_instance.make_ma_data(history_data_frame)
-        # 添加价格变动
-        ta_instance.make_change_data(history_data_frame)
-        # 添加 KDJ 数据属性
-        ta_instance.make_kdj_data(history_data_frame)
-        # 添加 MACD 数据属性
-        ta_instance.make_macd_data(history_data_frame)
-        # 添加 RSI 数据属性
-        ta_instance.make_rsi_data(history_data_frame)
-        # 添加 CCI 数据属性
-        ta_instance.make_cci_data(history_data_frame)
-        # 添加 cross 数据
-        ta_instance.make_macd_cross(history_data_frame)
-        ta_instance.make_kdj_cross(history_data_frame)
-        ta_instance.make_rsi_cross(history_data_frame)
+        try:
+            # 添加ma5, ma10均线数据
+            TA.make_ma_data(history_data_frame)
+            # 添加价格变动
+            TA.make_change_data(history_data_frame)
+            # 添加 KDJ 数据属性
+            TA.make_kdj_data(history_data_frame)
+            # 添加 MACD 数据属性
+            TA.make_macd_data(history_data_frame)
+            # 添加 RSI 数据属性
+            TA.make_rsi_data(history_data_frame)
+            # 添加 CCI 数据属性
+            TA.make_cci_data(history_data_frame)
+            # 添加 cross 数据
+            TA.make_macd_cross(history_data_frame)
+            TA.make_kdj_cross(history_data_frame)
+            TA.make_rsi_cross(history_data_frame)
+        except Exception, err_info:
+            return None, "error adding history calculation data: %s" % err_info
 
         # 数据处理, 删除之前多预留出来的行数, 这个实用index获得连续索引, 注意取值长度
         drop_start = 0 - len(history_data_frame.index)
@@ -241,7 +240,7 @@ def get_history_data_frame(instance, market, code, ktype=common.CONST_K_DAY, kco
         history_data_frame.drop(history_data_frame[drop_start:drop_end].index, inplace=True)
 
         # 返回结果
-        return True, history_data_frame, None
+        return history_data_frame, None
 
 # ============================================
 # 下单接口函数
