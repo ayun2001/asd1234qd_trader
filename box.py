@@ -86,11 +86,11 @@ class GenerateBox(object):
             self.log.logger.error(u"股票数据为空, 检查源数据 ...")
             return
         market_name, desc_info, stock_code, stock_name = input_data
-        self.log.logger.info(u"[第1阶段] 正在获得并处理 市场: %s 股票: %s 名称：%s 的数据 ..." % (desc_info, stock_code, stock_name))
+        self.log.logger.info(u"[第1阶段] 正在获得并处理 市场: %s, 股票: %s, 名称：%s 的数据 ..." % (desc_info, stock_code, stock_name))
         try:
             market_code = common.MARKET_CODE_MAPPING[market_name]
         except KeyError:
-            self.log.logger.error(u"获得股票: %s 名称：%s 市场映射关系数据不存在." % (stock_code, stock_name))
+            self.log.logger.error(u"获得股票: %s, 名称：%s, 市场映射关系数据不存在." % (stock_code, stock_name))
             return
 
         history_data_frame, err_info = adapter.get_history_data_frame(instance, market=market_code, code=stock_code,
@@ -98,14 +98,16 @@ class GenerateBox(object):
                                                                       ktype=common.CONST_K_DAY,
                                                                       kcount=common.CONST_K_LENGTH)
         if err_info is not None:
-            self.log.logger.warn(u"获得市场: %s 股票: %s 名称：%s 历史K线数据错误: %s" % (desc_info, stock_code, stock_name, err_info))
+            self.log.logger.warn(
+                u"获得市场: %s, 股票: %s, 名称：%s, 历史K线数据错误: %s" % (desc_info, stock_code, stock_name, err_info))
             return
 
         history_data_frame_index_list = history_data_frame.index
         history_data_count = len(history_data_frame_index_list)
         # 这里需要高度关注下，因为默认可能只有14天
         if history_data_count < (common.CONST_K_LENGTH / 2 if common.CONST_K_LENGTH < 3 else 14):
-            self.log.logger.error(u"参与计算得市场: %s 股票: %s 名称：%s K数据不够(>=14)." % (desc_info, stock_code, stock_name))
+            self.log.logger.error(u"参与计算得市场: %s, 股票: %s, 名称：%s, K数据: %d (不够>=14)." % (
+                desc_info, stock_code, stock_name, history_data_count))
             return
         express_stock_hist_data_frame = history_data_frame[['close', 'low', 'open', 'pct_change']]
         for item_data_time in history_data_frame_index_list:
@@ -120,11 +122,11 @@ class GenerateBox(object):
                                          'low': low_value, 'code': stock_code, 'name': stock_name,
                                          'marketName': market_name, 'marketDesc': desc_info},
                             'dataFrame': history_data_frame}  # 这里是否包去掉以前的历史数据，还要分析下
-                        self.log.logger.info(u"[第1阶段] 市场: %s 股票: %s 名称: %s 涨停价(元): %.3f 涨停时间: %s 距近时间(天): %d" % (
+                        self.log.logger.info(u"[第1阶段] 市场: %s, 股票: %s, 名称: %s, 涨停价(元): %.3f, 涨停时间: %s, 距近时间(天): %d" % (
                             desc_info, stock_code, stock_name, close_value, item_data_time, interval_days))
                         output_dataset[market_name][stock_code] = stock_content_info
             except Exception as err:
-                self.log.logger.error(u"市场: %s 股票: %s 名称: %s 数据时间: %s, 错误: %s" % (
+                self.log.logger.error(u"市场: %s, 股票: %s, 名称: %s, 数据时间: %s, 错误: %s" % (
                     desc_info, stock_code, stock_name, item_data_time, err.message))
             continue
 
@@ -132,7 +134,7 @@ class GenerateBox(object):
         try:
             market_code = common.MARKET_CODE_MAPPING[market_name]
         except KeyError:
-            return False, u"获得股票: %s 名称：%s 市场映射关系数据不存在." % (stock_code, stock_name)
+            return False, u"获得股票: %s, 名称：%s 市场映射关系数据不存在." % (stock_code, stock_name)
 
         history_data_frame, err_info = adapter.get_history_data_frame(self.connect_instance, market=market_code,
                                                                       code=stock_code, market_desc=market_desc,
@@ -140,7 +142,8 @@ class GenerateBox(object):
                                                                       kcount=common.CONST_K_LENGTH)
 
         if err_info is not None:
-            self.log.logger.error(u"获得市场: %s 股票: %s 名称：%s 历史数据错误: %s" % (market_desc, stock_code, stock_name, err_info))
+            self.log.logger.error(
+                u"获得市场: %s, 股票: %s, 名称：%s, 历史数据错误: %s" % (market_desc, stock_code, stock_name, err_info))
             return False, err_info
 
         # 翻转这个dataframe
@@ -174,7 +177,7 @@ class GenerateBox(object):
             bool_up_cross_kdj = False
             bool_down_cross_kdj = False
         self.log.logger.info(
-            u"[stage2 过滤] -> 市场: %s, 股票: %s, 名称：%s KDJ_J值>=100: %s, KDJ死叉: %s, KDJ金叉(错过买点1天): %s, 涨幅操过%.2f%%: %s" % (
+            u"[第2阶段] 市场: %s, 股票: %s, 名称：%s, KDJ_J值>=100: %s, KDJ死叉: %s, KDJ金叉(错过买点1天): %s, 涨幅操过%.2f%%: %s" % (
                 market_desc, stock_code, stock_name, str(bool_max_j_value), str(bool_down_cross_kdj),
                 str(bool_up_cross_kdj), MIN_60M_PRICE_RISE, str(bool_more_than_spec_raise)))
         # KDJ的j值大于100，KDJ死叉，出现过金叉，但是某天涨幅超过5%
@@ -306,7 +309,7 @@ class GenerateBox(object):
                             continue
 
                 except Exception as err:
-                    self.log.logger.error(u"[第2阶段] 股票: %s 分类错误: %s" % (stock_code, err.message))
+                    self.log.logger.error(u"[第2阶段] 股票: %s, 分类错误: %s" % (stock_code, err.message))
                     continue
 
         return valid_stock_data_set
@@ -326,20 +329,23 @@ class GenerateBox(object):
 
 if __name__ == '__main__':
     current_datetime = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
-    start_timestamp = time.time()
     gen_box = GenerateBox()
+    gen_box.log.logger.info(u"============== [开始计算票箱] ==============")
+    start_timestamp = time.time()
     valid_stock_box = gen_box.generate()
     end_timestamp = time.time()
+    gen_box.log.logger.info(u"============== [结束计算票箱] ==============")
 
     if valid_stock_box is None:
         gen_box.log.logger.error(u"生成的表股票箱为空")
         mail.send_mail(title=u"[%s] 股票箱计算错误" % current_datetime, msg="[ERROR]")
         exit(0)
 
-    total_compute_time = u"<p>计算总费时: %s</p>" % common.change_seconds_to_time(int(end_timestamp - start_timestamp))
-    sendmail_message = _generate_box_mail_message(valid_stock_box) + total_compute_time
+    total_compute_time = common.change_seconds_to_time(int(end_timestamp - start_timestamp))
+    gen_box.log.logger.info(u"计算总费时: %s" % total_compute_time)
+    sendmail_message = _generate_box_mail_message(valid_stock_box) + u"<p>计算总费时: %s</p>" % total_compute_time
 
     # 保存股票盒
     _storage_box_data(data={"timestamp": common.get_current_timestamp(), "value": valid_stock_box})
     # 发送已经选的股票
-    mail.send_mail(title=u"[%s] 选中的股票箱" % current_datetime, msg=sendmail_message)
+    mail.send_mail(title=u"日期:%s, 选中的股票箱" % current_datetime, msg=sendmail_message)

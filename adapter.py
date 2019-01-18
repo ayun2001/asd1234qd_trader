@@ -46,7 +46,7 @@ def create_connect_instance():
 def get_finance_info(instance, market, code):
     err_info, content = instance.GetFinanceInfo(market, code)
     if err_info != "":
-        return None, u"获得市场: %s 股票: %s 财务信息错误: %s" % (market, code, err_info)
+        return None, u"获得股票: %s 财务信息错误: %s" % (code, err_info)
     else:
         return content, None
 
