@@ -34,7 +34,7 @@ class Trader(object):
     @staticmethod
     def _load_box_db_file():
         if not common.file_exist(trader_db_box_filename):
-            return None, "stock box file is not exist."
+            return None, u"股票箱文件: %s 不存在." % trader_db_box_filename
 
         try:
             box_data_set = common.file_to_dict(trader_db_box_filename)
@@ -44,19 +44,19 @@ class Trader(object):
         box_timestamp = box_data_set.get("timestamp", None)
         box_value = box_data_set.get("value", None)
         if box_timestamp is None or box_value is None:
-            return None, "stock box data error, data is null."
+            return None, u"股票箱数据为空."
 
         current_timestamp = common.get_current_timestamp()
         if current_timestamp - box_timestamp > MAX_VALID_BOX_INTERVAL_HOURS:
-            return None, "stock box data is too old."
+            return None, u"股票箱数据文件太旧, 时间超过：%d 小时" % MAX_VALID_BOX_INTERVAL_HOURS
 
         return box_value, None
 
     @staticmethod
     def _load_position_db_file():
         if not common.file_exist(trader_db_position_filename):
-            return None, "position file is not exist."
-
+            return None, u"股票持仓数据文件: %s 不存在." % trader_db_position_filename
+        
         try:
             position_data_set = common.file_to_dict(trader_db_position_filename)
             return position_data_set, None
@@ -78,7 +78,7 @@ class Trader(object):
     @staticmethod
     def _load_trader_config():
         if not common.file_exist(trader_config_filename):
-            return None, "config file: %s is not exist."
+            return None, u"交易模块配置文件: %s 不存在." % trader_config_filename
         try:
             with codecs.open(trader_config_filename, 'r', 'utf-8') as _file:
                 return json.load(_file), None
@@ -96,7 +96,7 @@ class Trader(object):
                 try:
                     json.dump(record, _file)
                 except Exception as err:
-                    self.log.logger.error("save record data error: %s" % err.message)
+                    self.log.logger.error(u"保存交易记录数据出错: %s" % err.message)
                     continue
 
     # 对加载得BOX进行初始筛选和排序，选择最合适得前几个（默认type1>type2>type3>type4）
