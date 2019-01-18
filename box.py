@@ -304,7 +304,7 @@ class GenerateBox(object):
                             continue
 
                 except Exception as err:
-                    self.log.logger.error(u"[第2阶段] 股票: %s 分类错误: %s", (stock_code, err.message))
+                    self.log.logger.error(u"[第2阶段] 股票: %s 分类错误: %s" % (stock_code, err.message))
                     continue
 
         return valid_stock_data_set
