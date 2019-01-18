@@ -328,13 +328,14 @@ class GenerateBox(object):
 
 
 if __name__ == '__main__':
-    current_datetime = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
     gen_box = GenerateBox()
     gen_box.log.logger.info(u"============== [开始计算票箱] ==============")
     start_timestamp = time.time()
     valid_stock_box = gen_box.generate()
     end_timestamp = time.time()
     gen_box.log.logger.info(u"============== [结束计算票箱] ==============")
+
+    current_datetime = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
 
     if valid_stock_box is None:
         gen_box.log.logger.error(u"生成的表股票箱为空")
