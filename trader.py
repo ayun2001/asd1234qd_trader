@@ -80,7 +80,7 @@ class Trader(object):
         if not common.file_exist(trader_config_filename):
             return None, "config file: %s is not exist."
         try:
-            with open(trader_config_filename, "r") as _file:
+            with codecs.open(trader_config_filename, 'r', 'utf-8') as _file:
                 return json.load(_file), None
         except Exception as err:
             return None, err.message

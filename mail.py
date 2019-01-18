@@ -1,9 +1,10 @@
 # coding=utf-8
 
+import codecs
 import json
 import smtplib
-from email.mime.text import MIMEText
 from email.header import Header
+from email.mime.text import MIMEText
 
 import common
 from log import Logger
@@ -16,7 +17,7 @@ def _load_config():
     if not common.file_exist(mail_config_filename):
         return None, "config file: %s is not exist."
     try:
-        with open(mail_config_filename, "r") as _file:
+        with codecs.open(mail_config_filename, 'r', 'utf-8') as _file:
             return json.load(_file), None
     except Exception as err:
         return None, err.message

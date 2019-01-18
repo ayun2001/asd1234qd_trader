@@ -1,5 +1,6 @@
 # coding=utf-8
 
+import codecs
 import json
 import math
 import os
@@ -107,12 +108,12 @@ def get_current_timestamp():
 
 
 def dict_to_file(data, filename):
-    with open(filename, 'wb') as _f:
+    with codecs.open(filename, 'wb', 'utf-8') as _f:
         pickle.dump(data, _f)
 
 
 def file_to_dict(filename):
-    with open(filename) as _f:
+    with codecs.open(filename, 'r', 'utf-8') as _f:
         return pickle.load(_f)
 
 
@@ -139,7 +140,7 @@ def check_today_is_holiday_time():
         return False
 
     try:
-        with open(_holiday_config_filename, "r") as _file:
+        with codecs.open(_holiday_config_filename, 'r', 'utf-8') as _file:
             holidays = json.load(_file).get("holidays", None)
     except Exception:
         return False
