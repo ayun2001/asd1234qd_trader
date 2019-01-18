@@ -1,5 +1,6 @@
 # coding=utf-8
 
+import codecs
 import json
 import math
 import os
@@ -60,11 +61,11 @@ TDX_ORDER_SERVER_LIST = [
 
 ]
 
-MARKET_NAME_MAPPING = {CONST_ZX_MARKET: "中小板", CONST_SZ_MARKET: "深圳主板", CONST_SH_MARKET: "上海主板",
-                       CONST_CY_MARKET: "创业板"}
+MARKET_NAME_MAPPING = {CONST_ZX_MARKET: u"中小板", CONST_SZ_MARKET: u"深圳主板", CONST_SH_MARKET: u"上海主板",
+                       CONST_CY_MARKET: u"创业板"}
 MARKET_CODE_MAPPING = {CONST_SH_MARKET: 1, CONST_SZ_MARKET: 0, CONST_ZX_MARKET: 0, CONST_CY_MARKET: 0}
-STOCK_TYPE_NAME_MAPPING = {CONST_STOCK_TYPE_1: "一类", CONST_STOCK_TYPE_2: "二类", CONST_STOCK_TYPE_3: "三类",
-                           CONST_STOCK_TYPE_4: "四类"}
+STOCK_TYPE_NAME_MAPPING = {CONST_STOCK_TYPE_1: u"一类", CONST_STOCK_TYPE_2: u"二类", CONST_STOCK_TYPE_3: u"三类",
+                           CONST_STOCK_TYPE_4: u"四类"}
 
 
 # ============================================
@@ -107,12 +108,12 @@ def get_current_timestamp():
 
 
 def dict_to_file(data, filename):
-    with open(filename, 'wb') as _f:
+    with codecs.open(filename, 'wb', 'utf-8') as _f:
         pickle.dump(data, _f)
 
 
 def file_to_dict(filename):
-    with open(filename) as _f:
+    with codecs.open(filename, 'r', 'utf-8') as _f:
         return pickle.load(_f)
 
 
@@ -121,16 +122,16 @@ def change_seconds_to_time(total_time):
     hour_time_length = 60 * 60
     min_time_length = 60
     if total_time < 60:
-        return "%d seconds" % math.ceil(total_time)
+        return u"%d 秒" % math.ceil(total_time)
     elif total_time > day_time_length:
         days = divmod(total_time, day_time_length)
-        return "%d days, %s" % (int(days[0]), change_seconds_to_time(days[1]))
+        return u"%d 日, %s" % (int(days[0]), change_seconds_to_time(days[1]))
     elif total_time > hour_time_length:
         hours = divmod(total_time, hour_time_length)
-        return '%d hours, %s' % (int(hours[0]), change_seconds_to_time(hours[1]))
+        return u"%d 小时, %s" % (int(hours[0]), change_seconds_to_time(hours[1]))
     else:
         mins = divmod(total_time, min_time_length)
-    return "%d minutes, %d seconds" % (int(mins[0]), math.ceil(mins[1]))
+    return u"%d 分钟, %d 秒" % (int(mins[0]), math.ceil(mins[1]))
 
 
 def check_today_is_holiday_time():
@@ -139,7 +140,7 @@ def check_today_is_holiday_time():
         return False
 
     try:
-        with open(_holiday_config_filename, "r") as _file:
+        with codecs.open(_holiday_config_filename, 'r', 'utf-8') as _file:
             holidays = json.load(_file).get("holidays", None)
     except Exception:
         return False

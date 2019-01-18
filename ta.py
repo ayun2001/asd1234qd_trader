@@ -17,7 +17,7 @@ class TA(object):
             dataset['macd_dea'] = dataset['macd_dif'].ewm(span=m).mean()
             dataset['macd'] = 2 * (dataset['macd_dif'] - dataset['macd_dea'])
         except Exception as err:
-            raise Exception, "add macd data error: %s" % err.message
+            raise Exception, u"添加 MACD 指标数据错误: %s" % err.message
 
     @staticmethod
     def make_macd_cross(dataset):
@@ -29,7 +29,7 @@ class TA(object):
             dataset.loc[
                 macd_pos[(macd_pos == False) & (macd_pos.shift(1) == True)].index, 'macd_cross'] = "down_cross"  # 死叉
         except Exception as err:
-            raise Exception, "add macd cross data error: %s" % err.message
+            raise Exception, u"添加 MACD 交叉指标数据错误: %s" % err.message
 
     @staticmethod
     def make_kdj_data(dataset, n1=9, n2=3):
@@ -43,7 +43,7 @@ class TA(object):
             dataset['kdj_d'] = dataset['kdj_k'].ewm(com=2).mean()
             dataset['kdj_j'] = n2 * dataset['kdj_k'] - 2 * dataset['kdj_d']
         except Exception as err:
-            raise Exception, "add kdj data error: %s" % err.message
+            raise Exception, u"添加 KDJ 指标数据错误: %s" % err.message
 
     @staticmethod
     def make_kdj_cross(dataset):
@@ -54,7 +54,7 @@ class TA(object):
             dataset.loc[
                 kdj_pos[(kdj_pos == False) & (kdj_pos.shift(1) == True)].index, 'kdj_cross'] = "down_cross"  # 死叉
         except Exception as err:
-            raise Exception, "add kdj cross data error: %s" % err.message
+            raise Exception, u"添加 KDJ 交叉指标数据错误: %s" % err.message
 
     @staticmethod
     def make_change_data(dataset):
@@ -62,7 +62,7 @@ class TA(object):
             dataset['change'] = dataset['close'].diff()  # 计算价格偏差
             dataset['pct_change'] = dataset['close'].pct_change() * 100  # 计算百分比
         except Exception as err:
-            raise Exception, "add change data error: %s" % err.message
+            raise Exception, u"添加 CHANGE 数据错误: %s" % err.message
 
     @staticmethod
     def make_ma_data(dataset):
@@ -73,7 +73,7 @@ class TA(object):
             dataset['ma30'] = dataset['close'].rolling(window=30).mean()
             dataset['ma60'] = dataset['close'].rolling(window=60).mean()
         except Exception as err:
-            raise Exception, "add ma data error: %s" % err.message
+            raise Exception, u"添加 MA 均线指标数据错误: %s" % err.message
 
     @staticmethod
     def make_rsi_data(dataset, n1=6, n2=12, n3=24):
@@ -82,7 +82,7 @@ class TA(object):
             dataset['rsi12'] = talib.RSI(dataset['close'].values, n2)
             dataset['rsi24'] = talib.RSI(dataset['close'].values, n3)
         except Exception as err:
-            raise Exception, "add rsi data error: %s" % err.message
+            raise Exception, u"添加 RSI 指标数据错误: %s" % err.message
 
     @staticmethod
     def make_rsi_cross(dataset):
@@ -93,11 +93,11 @@ class TA(object):
             dataset.loc[
                 rsi_pos[(rsi_pos == False) & (rsi_pos.shift(1) == True)].index, 'rsi_cross'] = "down_cross"  # 死叉
         except Exception as err:
-            raise Exception, "add rsi cross data error: %s" % err.message
+            raise Exception, u"添加 RSI 交叉指标数据错误: %s" % err.message
 
     @staticmethod
     def make_cci_data(dataset):
         try:
             dataset['cci'] = talib.CCI(dataset['high'].values, dataset['low'].values, dataset['close'].values)
         except Exception as err:
-            raise Exception, "add cci data error: %s" % err.message
+            raise Exception, u"添加 CCI 指标数据错误: %s" % err.message

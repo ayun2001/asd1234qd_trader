@@ -66,7 +66,7 @@ class GenerateBox(object):
     # 扩展股票数据
     def _get_stock_temp_list(self, stock_list=None):
         if stock_list is None:
-            self.log.logger.error("stock list is null, check data source ...")
+            self.log.logger.error(u"股票清单为空, 检查源数据 ...")
             return None
         stock_t_list = []
         for key, data in stock_list.items():
@@ -75,7 +75,7 @@ class GenerateBox(object):
             except KeyError:
                 continue
         if len(stock_t_list) == common.CONST_STOCK_LIST_IS_NULL:
-            self.log.logger.error("turnover stock list is null, check data source ...")
+            self.log.logger.error(u"转换后的股票清单为空, 检查源数据 ...")
             return None
         else:
             return stock_t_list
@@ -83,32 +83,28 @@ class GenerateBox(object):
     # 跳出涨停盘的股票
     def _compute_task_handler(self, instance, input_data=None, output_dataset=None):
         if input_data is None:
-            self.log.logger.error("input stock data is null, check input source ...")
+            self.log.logger.error(u"股票数据为空, 检查源数据 ...")
             return
         market_name, desc_info, stock_code, stock_name = input_data
-<<<<<<< HEAD
-        self.log.logger.info("process stock: %s data ..." % stock_code)
-=======
-        self.log.logger.info("processing stock: %s data ..." % stock_code)
->>>>>>> test
+        self.log.logger.info(u"[第1阶段] 正在获得并处理市场: %s 股票: %s 名称：%s 的数据 ..." % (desc_info, stock_code, stock_name))
         try:
             market_code = common.MARKET_CODE_MAPPING[market_name]
         except KeyError:
-            self.log.logger.error("stock: %s market mapping error." % stock_code)
+            self.log.logger.error(u"获得股票: %s 名称：%s 市场映射关系数据不存在." % (stock_code, stock_name))
             return
 
         history_data_frame, err_info = adapter.get_history_data_frame(instance, market=market_code, code=stock_code,
                                                                       ktype=common.CONST_K_DAY,
                                                                       kcount=common.CONST_K_LENGTH)
         if err_info is not None:
-            self.log.logger.error("get stock: %s history data error: %s" % (stock_code, err_info))
+            self.log.logger.warn(u"获得市场: %s 股票: %s 历史K线数据错误: %s" % (desc_info, stock_code, err_info))
             return
 
         history_data_frame_index_list = history_data_frame.index
         history_data_count = len(history_data_frame_index_list)
         # 这里需要高度关注下，因为默认可能只有14天
         if history_data_count < (common.CONST_K_LENGTH / 2 if common.CONST_K_LENGTH < 3 else 14):
-            self.log.logger.error("stock: %s data not enough." % stock_code)
+            self.log.logger.error(u"参与计算得市场: %s 股票: %s K数据不够(>=14)." % (desc_info, stock_code))
             return
         express_stock_hist_data_frame = history_data_frame[['close', 'low', 'open', 'pct_change']]
         for item_data_time in history_data_frame_index_list:
@@ -123,25 +119,25 @@ class GenerateBox(object):
                                          'low': low_value, 'code': stock_code, 'name': stock_name,
                                          'marketName': market_name, 'marketDesc': desc_info},
                             'dataFrame': history_data_frame}  # 这里是否包去掉以前的历史数据，还要分析下
-                        self.log.logger.info(
-                            "stock: %s have been selected, rise close value: %.3f, datetime: %s, days: %d" % (
-                                stock_code, close_value, item_data_time, interval_days))
+                        self.log.logger.info(u"[第1阶段] 市场: %s 股票: %s 名称: %s 涨停价(元): %.3f 涨停时间: %s 距近时间(天): %d" % (
+                            desc_info, stock_code, stock_name, close_value, item_data_time, interval_days))
                         output_dataset[market_name][stock_code] = stock_content_info
             except Exception as err:
-                self.log.logger.error("stock: %s error: %s" % (stock_code, err.message))
+                self.log.logger.error(u"市场: %s 股票: %s 名称: %s 数据时间: %s, 错误: %s" % (
+                    desc_info, stock_code, stock_name, item_data_time, err.message))
             continue
 
-    def _stock_60m_k_type_filter(self, market_name="", stock_code="300729", days=0):
+    def _stock_60m_k_type_filter(self, market_name="", market_desc="", stock_name="", stock_code="300729", days=0):
         try:
             market_code = common.MARKET_CODE_MAPPING[market_name]
         except KeyError:
-            return False, "stock: %s market code mapping error" % stock_code
+            return False, u"获得股票: %s 名称：%s 市场映射关系数据不存在." % (stock_code, stock_name)
 
         history_data_frame, err_info = adapter.get_history_data_frame(self.connect_instance, market=market_code,
                                                                       code=stock_code, ktype=common.CONST_K_60M,
                                                                       kcount=common.CONST_K_LENGTH)
         if err_info is not None:
-            self.log.logger.error("get stock: %s history data error %s" % (stock_code, err_info))
+            self.log.logger.error(u"获得市场: %s 股票: %s 历史数据错误: %s" % (market_desc, stock_code, err_info))
             return False, err_info
 
         # 翻转这个dataframe
@@ -175,8 +171,8 @@ class GenerateBox(object):
             bool_up_cross_kdj = False
             bool_down_cross_kdj = False
         self.log.logger.info(
-            "stage2 -> stock: %s, kdj_value>=100: %s, down_cross_kdj: %s, miss_buy_point(>1day): %s, rise>=%.2f%%: %s" % (
-                stock_code, str(bool_max_j_value), str(bool_down_cross_kdj),
+            u"[stage2 过滤] -> 市场: %s, 股票: %s, KDJ_J值>=100: %s, KDJ死叉: %s, KDJ金叉(错过买点1天): %s, 涨幅操过%.2f%%: %s" % (
+                market_desc, stock_code, str(bool_max_j_value), str(bool_down_cross_kdj),
                 str(bool_up_cross_kdj), MIN_60M_PRICE_RISE, str(bool_more_than_spec_raise)))
         # KDJ的j值大于100，KDJ死叉，出现过金叉，但是某天涨幅超过5%
         if bool_max_j_value or bool_up_cross_kdj or bool_down_cross_kdj or bool_more_than_spec_raise:
@@ -190,7 +186,7 @@ class GenerateBox(object):
 
         stock_codes, err_info = adapter.get_stock_codes(self.connect_instance)
         if stock_codes is None:
-            self.log.logger.error("stage1 get stock codes error: %s", err_info)
+            self.log.logger.error(u"[第1阶段] 获得股票代码池错误: %s", err_info)
             return None
 
         # debug
@@ -233,15 +229,15 @@ class GenerateBox(object):
                     max_turn_over = max(stock_turn_over_list)
                     meta_close_price = stock_meta_data['close']
                     meta_low_price = stock_meta_data['low']
-                    # stock_name = stock_meta_data['name']
+                    stock_name = stock_meta_data['name']
                     interval_days = stock_meta_data['days']
                     market_name = stock_meta_data['marketName']
-                    # market_desc = stock_meta_data['marketDesc']
+                    market_desc = stock_meta_data['marketDesc']
 
                     bool_filter_result, err_info = self._stock_60m_k_type_filter(market_name=market_name,
                                                                                  stock_code=stock_code,
-                                                                                 # stock_name=stock_name,
-                                                                                 # market_desc=market_desc,
+                                                                                 stock_name=stock_name,
+                                                                                 market_desc=market_desc,
                                                                                  days=interval_days)
                     if err_info is not None:
                         self.log.logger.error("%s", err_info)
@@ -307,7 +303,7 @@ class GenerateBox(object):
                             continue
 
                 except Exception as err:
-                    self.log.logger.warn("stage2 stock: %s classify error: %s", (stock_code, err.message))
+                    self.log.logger.error(u"[第2阶段] 股票: %s 分类错误: %s", (stock_code, err.message))
                     continue
 
         return valid_stock_data_set
@@ -315,7 +311,7 @@ class GenerateBox(object):
     def generate(self):
         self.connect_instance, err_info = adapter.create_connect_instance()
         if self.connect_instance is None:
-            self.log.logger.error("create hq connect instance error: %s" % err_info)
+            self.log.logger.error(u"创建行情服务器连接实例失败: %s" % err_info)
             return
 
         valid_stock_pool = self.stage1_compute_data()
@@ -333,7 +329,7 @@ if __name__ == '__main__':
     end_timestamp = time.time()
 
     if valid_stock_box is None:
-        gen_box.log.logger.error("generate stock box is None")
+        gen_box.log.logger.error(u"生成的表股票箱为空")
         mail.send_mail(title=u"[%s] 股票箱计算错误" % current_datetime, msg="[ERROR]")
         exit(0)
 
