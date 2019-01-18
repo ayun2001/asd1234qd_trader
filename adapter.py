@@ -46,7 +46,7 @@ def create_connect_instance():
 def get_finance_info(instance, market, code):
     err_info, content = instance.GetFinanceInfo(market, code)
     if err_info != "":
-        return None, u"获得股票: %s 财务信息错误: %s" % (code, err_info.decode('gbk'))  # 这里一定要decode(gbk), 要不然后面报错
+        return None, u"获得股票: %s, 财务信息错误: %s" % (code, err_info.decode('gbk'))  # 这里一定要decode(gbk), 要不然后面报错
     else:
         return content, None
 
@@ -54,7 +54,7 @@ def get_finance_info(instance, market, code):
 def get_stock_bars(instance, category, market, code, start, count):
     err_info, number, content = instance.GetSecurityBars(category, market, code, start, count)
     if err_info != "":
-        return None, 0, u"股票: %s K线数据错误: %s" % (code, err_info.decode('gbk'))  # 这里一定要decode(gbk), 要不然后面报错
+        return None, 0, u"股票: %s, K线数据错误: %s" % (code, err_info.decode('gbk'))  # 这里一定要decode(gbk), 要不然后面报错
     else:
         return content, number, None
 
@@ -177,22 +177,22 @@ def get_history_data_frame(instance, market, market_desc, code, name, ktype=comm
     else:
         contents = finance_content.split('\n')
         if len(contents) < 2:
-            return None, u"获得市场: %s 股票: %s 名称: %s 数据结构不完整..." % (market_desc, code, name)
+            return None, u"获得市场: %s, 股票:, %s 名称: %s, 数据结构不完整..." % (market_desc, code, name)
         try:
             circulating_equity_number = float(contents[1].split('\t')[2]) * 10000  # 变成标准股数
         except Exception as err:
-            return None, u"获得市场: %s 股票: %s 名称: %s 流通股总数错误: %s" % (market_desc, code, name, err.message)
+            return None, u"获得市场: %s, 股票:, %s 名称: %s, 流通股总数错误: %s" % (market_desc, code, name, err.message)
 
     # 获得K线详细信息
     history_data_content, data_count, err_info = get_stock_bars(instance, ktype, market, code, 0, kcount * 3)
     if data_count <= 0:
-        return None, u"获得市场: %s 股票: %s 名称: %s K数据总数不合法(<=0), 跳过..." % (market_desc, code, name)
+        return None, u"获得市场: %s, 股票:, %s, 名称: %s, K数据总数不合法(<=0), 跳过..." % (market_desc, code, name)
     if err_info is not None:
         return None, err_info
     else:
         contents = history_data_content.split('\n')
         if len(contents) < 2:
-            return None, u"获得市场: %s 股票: %s 名称: %s K线数据结构不完整" % (market_desc, code, name)
+            return None, u"获得市场: %s, 股票: %s, 名称: %s, K线数据结构不完整" % (market_desc, code, name)
 
         data_frame_spec_data_set = []
         for line in contents[1:]:  # 去掉标题头
@@ -205,7 +205,7 @@ def get_history_data_frame(instance, market, market_desc, code, name, ktype=comm
                      'high': float(fields[3]), 'low': float(fields[4]), 'volume': float(fields[5]),
                      'pvolume': float(fields[6]), 'turnover': float(fields[5]) * 100 / circulating_equity_number})
             except Exception as err:
-                return None, u"获得市场: %s 股票: %s 名称: %s K线数据元素不完整, 错误: %s" % (market_desc, code, name, err.message)
+                return None, u"获得市场: %s, 股票: %s, 名称: %s, K线数据元素不完整, 错误: %s" % (market_desc, code, name, err.message)
 
         # 生成数据集
         history_data_frame = pd.DataFrame(data_frame_spec_data_set)
@@ -213,7 +213,7 @@ def get_history_data_frame(instance, market, market_desc, code, name, ktype=comm
 
         # 检查股票是否停牌
         if check_stop_trade_stock(history_data_frame):
-            return None, u"发现市场: %s 股票: %s 名称: %s 已经停牌，跳过..." % (market_desc, code, name)
+            return None, u"发现市场: %s, 股票: %s, 名称: %s, 已经停牌，跳过..." % (market_desc, code, name)
 
         try:
             # 添加ma5, ma10均线数据
