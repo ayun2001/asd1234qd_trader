@@ -86,7 +86,7 @@ class GenerateBox(object):
             self.log.logger.error(u"股票数据为空, 检查源数据 ...")
             return
         market_name, desc_info, stock_code, stock_name = input_data
-        self.log.logger.info(u"[第1阶段] 正在获得并处理市场: %s 股票: %s 名称：%s 的数据 ..." % (desc_info, stock_code, stock_name))
+        self.log.logger.info(u"[第1阶段] 正在获得并处理 市场: %s 股票: %s 名称：%s 的数据 ..." % (desc_info, stock_code, stock_name))
         try:
             market_code = common.MARKET_CODE_MAPPING[market_name]
         except KeyError:
@@ -94,17 +94,18 @@ class GenerateBox(object):
             return
 
         history_data_frame, err_info = adapter.get_history_data_frame(instance, market=market_code, code=stock_code,
+                                                                      market_desc=desc_info, name=stock_name,
                                                                       ktype=common.CONST_K_DAY,
                                                                       kcount=common.CONST_K_LENGTH)
         if err_info is not None:
-            self.log.logger.warn(u"获得市场: %s 股票: %s 历史K线数据错误: %s" % (desc_info, stock_code, err_info))
+            self.log.logger.warn(u"获得市场: %s 股票: %s 名称：%s 历史K线数据错误: %s" % (desc_info, stock_code, stock_name, err_info))
             return
 
         history_data_frame_index_list = history_data_frame.index
         history_data_count = len(history_data_frame_index_list)
         # 这里需要高度关注下，因为默认可能只有14天
         if history_data_count < (common.CONST_K_LENGTH / 2 if common.CONST_K_LENGTH < 3 else 14):
-            self.log.logger.error(u"参与计算得市场: %s 股票: %s K数据不够(>=14)." % (desc_info, stock_code))
+            self.log.logger.error(u"参与计算得市场: %s 股票: %s 名称：%s K数据不够(>=14)." % (desc_info, stock_code, stock_name))
             return
         express_stock_hist_data_frame = history_data_frame[['close', 'low', 'open', 'pct_change']]
         for item_data_time in history_data_frame_index_list:
@@ -137,7 +138,7 @@ class GenerateBox(object):
                                                                       code=stock_code, ktype=common.CONST_K_60M,
                                                                       kcount=common.CONST_K_LENGTH)
         if err_info is not None:
-            self.log.logger.error(u"获得市场: %s 股票: %s 历史数据错误: %s" % (market_desc, stock_code, err_info))
+            self.log.logger.error(u"获得市场: %s 股票: %s 名称：%s 历史数据错误: %s" % (market_desc, stock_code, stock_name, err_info))
             return False, err_info
 
         # 翻转这个dataframe
@@ -171,8 +172,8 @@ class GenerateBox(object):
             bool_up_cross_kdj = False
             bool_down_cross_kdj = False
         self.log.logger.info(
-            u"[stage2 过滤] -> 市场: %s, 股票: %s, KDJ_J值>=100: %s, KDJ死叉: %s, KDJ金叉(错过买点1天): %s, 涨幅操过%.2f%%: %s" % (
-                market_desc, stock_code, str(bool_max_j_value), str(bool_down_cross_kdj),
+            u"[stage2 过滤] -> 市场: %s, 股票: %s, 名称：%s KDJ_J值>=100: %s, KDJ死叉: %s, KDJ金叉(错过买点1天): %s, 涨幅操过%.2f%%: %s" % (
+                market_desc, stock_code, stock_name, str(bool_max_j_value), str(bool_down_cross_kdj),
                 str(bool_up_cross_kdj), MIN_60M_PRICE_RISE, str(bool_more_than_spec_raise)))
         # KDJ的j值大于100，KDJ死叉，出现过金叉，但是某天涨幅超过5%
         if bool_max_j_value or bool_up_cross_kdj or bool_down_cross_kdj or bool_more_than_spec_raise:
