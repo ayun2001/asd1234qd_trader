@@ -117,12 +117,14 @@ def get_current_timestamp():
 
 def dict_to_file(data, filename):
     with codecs.open(filename, 'wb', 'utf-8') as _file:
-        pickle.dump(data, _file)
+        # pickle.dump(data, _file)
+        _file.write(get_encrypted_string(pickle.dumps(data)))
 
 
 def file_to_dict(filename):
     with codecs.open(filename, 'r', 'utf-8') as _file:
-        return pickle.load(_file)
+        # return pickle.load(_file)
+        return get_decrypted_string(pickle.loads(_file.read()))
 
 
 def change_seconds_to_time(total_time):

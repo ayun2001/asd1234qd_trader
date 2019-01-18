@@ -39,8 +39,6 @@ def send_mail(title, msg):
         log.logger.error(u"邮件发送客户端配置文件加载错误: %s", err)
         return
 
-    print config
-
     host = config.get("host", "localhost")
     port = config.get("port", 25)
     user = config.get("user", "root")
@@ -48,7 +46,7 @@ def send_mail(title, msg):
     # pwd = config.get("pwd", "")
     sender = config.get("sender", "localhost")
     receivers = config.get("receivers", [])
-    message = MIMEText(msg, 'plain', 'utf-8')
+    message = MIMEText(msg, 'html', 'utf-8')  # 'plain' 普通文本邮件， 'html' HTML邮件
     message['Subject'] = Header(title, 'utf-8')
     message['From'] = Header(sender, 'utf-8')  # 发送者
     message['To'] = Header(';'.join(receivers), 'utf-8')  # 接收者
@@ -64,4 +62,4 @@ def send_mail(title, msg):
 
 
 if __name__ == '__main__':
-    send_mail("test", "test")
+    send_mail("test", "<p>test</p>")
