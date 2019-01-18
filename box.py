@@ -66,7 +66,7 @@ class GenerateBox(object):
     # 扩展股票数据
     def _get_stock_temp_list(self, stock_list=None):
         if stock_list is None:
-            self.log.logger.error("stock list is null, check data source ...")
+            self.log.logger.error(u"股票清单为空, 检查源数据 ...")
             return None
         stock_t_list = []
         for key, data in stock_list.items():
@@ -75,7 +75,7 @@ class GenerateBox(object):
             except KeyError:
                 continue
         if len(stock_t_list) == common.CONST_STOCK_LIST_IS_NULL:
-            self.log.logger.error("turnover stock list is null, check data source ...")
+            self.log.logger.error(u"转换后的股票清单为空, 检查源数据 ...")
             return None
         else:
             return stock_t_list
@@ -83,10 +83,10 @@ class GenerateBox(object):
     # 跳出涨停盘的股票
     def _compute_task_handler(self, instance, input_data=None, output_dataset=None):
         if input_data is None:
-            self.log.logger.error("input stock data is null, check input source ...")
+            self.log.logger.error(u"股票数据为空, 检查源数据 ...")
             return
         market_name, desc_info, stock_code, stock_name = input_data
-        self.log.logger.info("processing stock: %s data ..." % stock_code)
+        self.log.logger.info(u"[第1阶段] 正在获得并处理 市场: %s 股票代码: %s 的数据 ..." % (desc_info, stock_code))
         try:
             market_code = common.MARKET_CODE_MAPPING[market_name]
         except KeyError:
@@ -186,7 +186,7 @@ class GenerateBox(object):
 
         stock_codes, err_info = adapter.get_stock_codes(self.connect_instance)
         if stock_codes is None:
-            self.log.logger.error("stage1 get stock codes error: %s", err_info)
+            self.log.logger.error(u"[第1阶段] 获得股票代码池错误: %s", err_info)
             return None
 
         # debug
@@ -303,7 +303,7 @@ class GenerateBox(object):
                             continue
 
                 except Exception as err:
-                    self.log.logger.warn("stage2 stock: %s classify error: %s", (stock_code, err.message))
+                    self.log.logger.error(u"[第2阶段] 股票代码: %s 分类错误: %s", (stock_code, err.message))
                     continue
 
         return valid_stock_data_set
@@ -311,7 +311,7 @@ class GenerateBox(object):
     def generate(self):
         self.connect_instance, err_info = adapter.create_connect_instance()
         if self.connect_instance is None:
-            self.log.logger.error("create hq connect instance error: %s" % err_info)
+            self.log.logger.error(u"创建行情服务器连接实例失败: %s" % err_info)
             return
 
         valid_stock_pool = self.stage1_compute_data()
@@ -329,7 +329,7 @@ if __name__ == '__main__':
     end_timestamp = time.time()
 
     if valid_stock_box is None:
-        gen_box.log.logger.error("generate stock box is None")
+        gen_box.log.logger.error(u"生成的表股票箱为空")
         mail.send_mail(title=u"[%s] 股票箱计算错误" % current_datetime, msg="[ERROR]")
         exit(0)
 
