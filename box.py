@@ -135,8 +135,10 @@ class GenerateBox(object):
             return False, u"获得股票: %s 名称：%s 市场映射关系数据不存在." % (stock_code, stock_name)
 
         history_data_frame, err_info = adapter.get_history_data_frame(self.connect_instance, market=market_code,
-                                                                      code=stock_code, ktype=common.CONST_K_60M,
+                                                                      code=stock_code, market_desc=market_desc,
+                                                                      name=stock_name, ktype=common.CONST_K_DAY,
                                                                       kcount=common.CONST_K_LENGTH)
+
         if err_info is not None:
             self.log.logger.error(u"获得市场: %s 股票: %s 名称：%s 历史数据错误: %s" % (market_desc, stock_code, stock_name, err_info))
             return False, err_info

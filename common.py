@@ -7,9 +7,17 @@ import os
 import pickle
 import time
 import types
+from binascii import b2a_hex, a2b_hex
+
+from Crypto.Cipher import AES
 
 # ============================================
 # 全局常量
+
+# 这里密钥key 长度必须为16（AES-128）、24（AES-192）、或32（AES-256）Bytes 长度.目前AES-128足够用
+CONST_AES_CBC_KEY = "ZMdzdhYeVTaAAe5OAWjAkUHs"
+CONST_AES_CBC_KEY_LENGTH = len(CONST_AES_CBC_KEY)
+
 CONST_DIR_LOG = "./log"
 CONST_DIR_CONF = "./conf"
 CONST_DIR_DATABASE = "./db"
@@ -153,3 +161,20 @@ def check_today_is_holiday_time():
         return True
     else:
         return False
+
+
+def get_encrypted_string(plain_text):
+    aes_crypto = AES.new(CONST_AES_CBC_KEY, AES.MODE_CBC, CONST_AES_CBC_KEY)
+    count = len(plain_text)
+    if count % CONST_AES_CBC_KEY_LENGTH != 0:
+        add = CONST_AES_CBC_KEY_LENGTH - (count % CONST_AES_CBC_KEY_LENGTH)
+    else:
+        add = 0
+    plain_text += ('\0' * add)
+    return b2a_hex(aes_crypto.encrypt(plain_text))
+
+
+def get_decrypted_string(secret_text):
+    aes_crypto = AES.new(CONST_AES_CBC_KEY, AES.MODE_CBC, CONST_AES_CBC_KEY)
+    plain_text = aes_crypto.decrypt(a2b_hex(secret_text))
+    return plain_text.rstrip('\0')

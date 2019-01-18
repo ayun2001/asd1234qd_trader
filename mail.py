@@ -42,7 +42,7 @@ def send_mail(title, msg):
     host = config.get("host", "localhost")
     port = config.get("port", 25)
     user = config.get("user", "root")
-    pwd = config.get("pwd", "")
+    pwd = common.get_decrypted_string(config.get("pwd", ""))
     sender = config.get("sender", "localhost")
     receivers = config.get("receivers", [])
     message = MIMEText(msg, 'plain', 'utf-8')
