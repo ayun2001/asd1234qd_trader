@@ -100,7 +100,7 @@ def get_stock_codes(instance):
             if len(fields) >= min_field_count and sh_market_stock_expr.match(
                     fields[0]) is not None and st_stock_filter_expr.match(fields[2]) is None:
                 stock_codes[common.CONST_SH_MARKET]['values'].append(
-                    {'code': fields[0], 'name': fields[2]})
+                    {'code': fields[0], 'name': fields[2].decode('gbk')})  # 这里一定要decode(gbk), 要不然后面报错
 
     # 不用再拉第一份数据了, 已经有了
     for start in _make_hq_query_index_list(sh_stock_count, sh_step)[1:]:
@@ -114,7 +114,7 @@ def get_stock_codes(instance):
                 if len(fields) >= min_field_count and sh_market_stock_expr.match(
                         fields[0]) is not None and st_stock_filter_expr.match(fields[2]) is None:
                     stock_codes[common.CONST_SH_MARKET]['values'].append(
-                        {'code': fields[0], 'name': fields[2]})
+                        {'code': fields[0], 'name': fields[2].decode('gbk')})
 
     # 拉取整个深圳股票列表
     index = 0
@@ -128,13 +128,13 @@ def get_stock_codes(instance):
                     fields[0]) is not None and st_stock_filter_expr.match(fields[2]) is None:
                 if zx_market_stock_expr.match(fields[0]) is not None:
                     stock_codes[common.CONST_ZX_MARKET]['values'].append(
-                        {'code': fields[0], 'name': fields[2]})
+                        {'code': fields[0], 'name': fields[2].decode('gbk')})
                 elif cy_market_stock_expr.match(fields[0]) is not None:
                     stock_codes[common.CONST_CY_MARKET]['values'].append(
-                        {'code': fields[0], 'name': fields[2]})
+                        {'code': fields[0], 'name': fields[2].decode('gbk')})
                 else:
                     stock_codes[common.CONST_SZ_MARKET]['values'].append(
-                        {'code': fields[0], 'name': fields[2]})
+                        {'code': fields[0], 'name': fields[2].decode('gbk')})
 
     # 不用再拉第一份数据了, 已经有了
     for start in _make_hq_query_index_list(sz_stock_count, sz_step)[1:]:  # 循环中去掉第一行标题
@@ -149,13 +149,13 @@ def get_stock_codes(instance):
                         fields[0]) is not None and st_stock_filter_expr.match(fields[2]) is None:
                     if zx_market_stock_expr.match(fields[0]) is not None:
                         stock_codes[common.CONST_ZX_MARKET]['values'].append(
-                            {'code': fields[0], 'name': fields[2]})
+                            {'code': fields[0], 'name': fields[2].decode('gbk')})
                     elif cy_market_stock_expr.match(fields[0]) is not None:
                         stock_codes[common.CONST_CY_MARKET]['values'].append(
-                            {'code': fields[0], 'name': fields[2]})
+                            {'code': fields[0], 'name': fields[2].decode('gbk')})
                     else:
                         stock_codes[common.CONST_SZ_MARKET]['values'].append(
-                            {'code': fields[0], 'name': fields[2]})
+                            {'code': fields[0], 'name': fields[2].decode('gbk')})
 
     # 各板块股票数量统计
     stock_codes[common.CONST_SH_MARKET]['count'] = len(stock_codes[common.CONST_SH_MARKET]['values'])
