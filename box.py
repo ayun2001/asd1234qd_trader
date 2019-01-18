@@ -86,25 +86,25 @@ class GenerateBox(object):
             self.log.logger.error(u"股票数据为空, 检查源数据 ...")
             return
         market_name, desc_info, stock_code, stock_name = input_data
-        self.log.logger.info(u"[第1阶段] 正在获得并处理 市场: %s 股票代码: %s 的数据 ..." % (desc_info, stock_code))
+        self.log.logger.info(u"[第1阶段] 正在获得并处理市场: %s 股票: %s 的数据 ..." % (desc_info, stock_code))
         try:
             market_code = common.MARKET_CODE_MAPPING[market_name]
         except KeyError:
-            self.log.logger.error("stock: %s market mapping error." % stock_code)
+            self.log.logger.error(u"获得股票: %s 市场映射关系数据不存在." % stock_code)
             return
 
         history_data_frame, err_info = adapter.get_history_data_frame(instance, market=market_code, code=stock_code,
                                                                       ktype=common.CONST_K_DAY,
                                                                       kcount=common.CONST_K_LENGTH)
         if err_info is not None:
-            self.log.logger.error("get stock: %s history data error: %s" % (stock_code, err_info))
+            self.log.logger.error(u"获得市场: %s 股票: %s 历史K线数据错误: %s" % (desc_info, stock_code, err_info))
             return
 
         history_data_frame_index_list = history_data_frame.index
         history_data_count = len(history_data_frame_index_list)
         # 这里需要高度关注下，因为默认可能只有14天
         if history_data_count < (common.CONST_K_LENGTH / 2 if common.CONST_K_LENGTH < 3 else 14):
-            self.log.logger.error("stock: %s data not enough." % stock_code)
+            self.log.logger.error(u"参与计算得市场: %s 股票: %s K数据不够(>=14)." % (desc_info, stock_code))
             return
         express_stock_hist_data_frame = history_data_frame[['close', 'low', 'open', 'pct_change']]
         for item_data_time in history_data_frame_index_list:
@@ -127,17 +127,17 @@ class GenerateBox(object):
                 self.log.logger.error("stock: %s error: %s" % (stock_code, err.message))
             continue
 
-    def _stock_60m_k_type_filter(self, market_name="", stock_code="300729", days=0):
+    def _stock_60m_k_type_filter(self, market_name="", market_desc="", stock_code="300729", days=0):
         try:
             market_code = common.MARKET_CODE_MAPPING[market_name]
         except KeyError:
-            return False, "stock: %s market code mapping error" % stock_code
+            return False, u"获得股票: %s 市场映射关系数据不存在." % stock_code
 
         history_data_frame, err_info = adapter.get_history_data_frame(self.connect_instance, market=market_code,
                                                                       code=stock_code, ktype=common.CONST_K_60M,
                                                                       kcount=common.CONST_K_LENGTH)
         if err_info is not None:
-            self.log.logger.error("get stock: %s history data error %s" % (stock_code, err_info))
+            self.log.logger.error(u"获得市场: %s 股票: %s 历史数据错误: %s" % (market_desc, stock_code, err_info))
             return False, err_info
 
         # 翻转这个dataframe
@@ -171,8 +171,8 @@ class GenerateBox(object):
             bool_up_cross_kdj = False
             bool_down_cross_kdj = False
         self.log.logger.info(
-            "stage2 -> stock: %s, kdj_value>=100: %s, down_cross_kdj: %s, miss_buy_point(>1day): %s, rise>=%.2f%%: %s" % (
-                stock_code, str(bool_max_j_value), str(bool_down_cross_kdj),
+            "[stage2 过滤] -> 市场: %s, 股票: %s, KDJ_J值>=100: %s, KDJ死叉: %s, KDJ金叉(错过买点1天): %s, 涨幅操过%.2f%%: %s" % (
+                market_desc, stock_code, str(bool_max_j_value), str(bool_down_cross_kdj),
                 str(bool_up_cross_kdj), MIN_60M_PRICE_RISE, str(bool_more_than_spec_raise)))
         # KDJ的j值大于100，KDJ死叉，出现过金叉，但是某天涨幅超过5%
         if bool_max_j_value or bool_up_cross_kdj or bool_down_cross_kdj or bool_more_than_spec_raise:
@@ -232,12 +232,12 @@ class GenerateBox(object):
                     # stock_name = stock_meta_data['name']
                     interval_days = stock_meta_data['days']
                     market_name = stock_meta_data['marketName']
-                    # market_desc = stock_meta_data['marketDesc']
+                    market_desc = stock_meta_data['marketDesc']
 
                     bool_filter_result, err_info = self._stock_60m_k_type_filter(market_name=market_name,
                                                                                  stock_code=stock_code,
                                                                                  # stock_name=stock_name,
-                                                                                 # market_desc=market_desc,
+                                                                                 market_desc=market_desc,
                                                                                  days=interval_days)
                     if err_info is not None:
                         self.log.logger.error("%s", err_info)
@@ -303,7 +303,7 @@ class GenerateBox(object):
                             continue
 
                 except Exception as err:
-                    self.log.logger.error(u"[第2阶段] 股票代码: %s 分类错误: %s", (stock_code, err.message))
+                    self.log.logger.error(u"[第2阶段] 股票: %s 分类错误: %s", (stock_code, err.message))
                     continue
 
         return valid_stock_data_set
