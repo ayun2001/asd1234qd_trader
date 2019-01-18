@@ -46,7 +46,7 @@ def create_connect_instance():
 def get_finance_info(instance, market, code):
     err_info, content = instance.GetFinanceInfo(market, code)
     if err_info != "":
-        return None, u"获得股票: %s 财务信息错误: %s" % (code, err_info)
+        return None, u"获得股票: %s 财务信息错误: %s" % (code, err_info.decode('gbk'))  # 这里一定要decode(gbk), 要不然后面报错
     else:
         return content, None
 
@@ -54,7 +54,7 @@ def get_finance_info(instance, market, code):
 def get_stock_bars(instance, category, market, code, start, count):
     err_info, number, content = instance.GetSecurityBars(category, market, code, start, count)
     if err_info != "":
-        return None, 0, u"股票: %s K线数据错误: %s" % (code, err_info)
+        return None, 0, u"股票: %s K线数据错误: %s" % (code, err_info.decode('gbk'))  # 这里一定要decode(gbk), 要不然后面报错
     else:
         return content, number, None
 
@@ -83,17 +83,17 @@ def get_stock_codes(instance):
 
     err_info, sh_stock_count = instance.GetSecurityCount(sh_market)
     if err_info != "":
-        return None, u"获得上海市场股票总数错误: %s" % err_info
+        return None, u"获得上海市场股票总数错误: %s" % err_info.decode('gbk')
 
     err_info, sz_stock_count = instance.GetSecurityCount(sz_market)
     if err_info != "":
-        return None, u"获得深圳市场股票总数错误: %s" % err_info
+        return None, u"获得深圳市场股票总数错误: %s" % err_info.decode('gbk')
 
     # 拉取整个上海股票列表
     index = 0
     err_info, sh_step, stock_code_content = instance.GetSecurityList(sh_market, 0)
     if err_info != "":
-        return None, u"获得上海市场股票清单错误: [%d] %s" % (index, err_info)
+        return None, u"获得上海市场股票清单错误: [%d] %s" % (index, err_info.decode('gbk'))
     else:
         for line in stock_code_content.split('\n')[1:]:  # 循环中去掉第一行标题
             fields = line.split('\t')
@@ -107,7 +107,7 @@ def get_stock_codes(instance):
         index += 1
         err_info, sh_step, stock_code_content = instance.GetSecurityList(sh_market, start)
         if err_info != "":
-            return None, u"获得上海市场股票清单错误: [%d] %s" % (index, err_info)
+            return None, u"获得上海市场股票清单错误: [%d] %s" % (index, err_info.decode('gbk'))
         else:
             for line in stock_code_content.split('\n')[1:]:  # 循环中去掉第一行标题
                 fields = line.split('\t')
@@ -120,7 +120,7 @@ def get_stock_codes(instance):
     index = 0
     err_info, sz_step, stock_code_content = instance.GetSecurityList(sz_market, 0)
     if err_info != "":
-        return None, u"获得深圳市场股票清单错误: [%d] %s" % (index, err_info)
+        return None, u"获得深圳市场股票清单错误: [%d] %s" % (index, err_info.decode('gbk'))
     else:
         for line in stock_code_content.split('\n')[1:]:  # 循环中去掉第一行标题
             fields = line.split('\t')
@@ -141,7 +141,7 @@ def get_stock_codes(instance):
         index += 1
         err_info, sz_step, stock_code_content = instance.GetSecurityList(sz_market, start)
         if err_info != "":
-            return None, u"获得深圳市场股票清单错误: [%d] %s" % (index, err_info)
+            return None, u"获得深圳市场股票清单错误: [%d] %s" % (index, err_info.decode('gbk'))
         else:
             for line in stock_code_content.split('\n')[1:]:
                 fields = line.split('\t')
