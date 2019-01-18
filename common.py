@@ -15,7 +15,7 @@ from Crypto.Cipher import AES
 # 全局常量
 
 # 这里密钥key 长度必须为16（AES-128）、24（AES-192）、或32（AES-256）Bytes 长度.目前AES-128足够用
-CONST_AES_CBC_KEY = "ZMdzdhYeVTaAAe5OAWjAkUHs"
+CONST_AES_CBC_KEY = "9adunmMw6km6lriO"
 CONST_AES_CBC_KEY_LENGTH = len(CONST_AES_CBC_KEY)
 
 CONST_DIR_LOG = "./log"
@@ -116,13 +116,13 @@ def get_current_timestamp():
 
 
 def dict_to_file(data, filename):
-    with codecs.open(filename, 'wb', 'utf-8') as _f:
-        pickle.dump(data, _f)
+    with codecs.open(filename, 'wb', 'utf-8') as _file:
+        pickle.dump(data, _file)
 
 
 def file_to_dict(filename):
-    with codecs.open(filename, 'r', 'utf-8') as _f:
-        return pickle.load(_f)
+    with codecs.open(filename, 'r', 'utf-8') as _file:
+        return pickle.load(_file)
 
 
 def change_seconds_to_time(total_time):
@@ -164,7 +164,7 @@ def check_today_is_holiday_time():
 
 
 def get_encrypted_string(plain_text):
-    aes_crypto = AES.new(CONST_AES_CBC_KEY, AES.MODE_CBC, CONST_AES_CBC_KEY)
+    aes_crypto = AES.new(CONST_AES_CBC_KEY, AES.MODE_CBC, "0123456789ABCDEF")
     count = len(plain_text)
     if count % CONST_AES_CBC_KEY_LENGTH != 0:
         add = CONST_AES_CBC_KEY_LENGTH - (count % CONST_AES_CBC_KEY_LENGTH)
@@ -175,6 +175,6 @@ def get_encrypted_string(plain_text):
 
 
 def get_decrypted_string(secret_text):
-    aes_crypto = AES.new(CONST_AES_CBC_KEY, AES.MODE_CBC, CONST_AES_CBC_KEY)
+    aes_crypto = AES.new(CONST_AES_CBC_KEY, AES.MODE_CBC, "0123456789ABCDEF")
     plain_text = aes_crypto.decrypt(a2b_hex(secret_text))
     return plain_text.rstrip('\0')

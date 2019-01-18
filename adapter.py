@@ -54,7 +54,7 @@ def get_finance_info(instance, market, code):
 def get_stock_bars(instance, category, market, code, start, count):
     err_info, number, content = instance.GetSecurityBars(category, market, code, start, count)
     if err_info != "":
-        return None, 0, u"获得市场: %s 股票: %s K线数据错误: %s" % (market, code, err_info)
+        return None, 0, u"股票: %s K线数据错误: %s" % (code, err_info)
     else:
         return content, number, None
 

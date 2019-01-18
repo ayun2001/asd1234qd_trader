@@ -39,14 +39,19 @@ def send_mail(title, msg):
         log.logger.error(u"邮件发送客户端配置文件加载错误: %s", err)
         return
 
+    print config
+
     host = config.get("host", "localhost")
     port = config.get("port", 25)
     user = config.get("user", "root")
     pwd = common.get_decrypted_string(config.get("pwd", ""))
+    # pwd = config.get("pwd", "")
     sender = config.get("sender", "localhost")
     receivers = config.get("receivers", [])
     message = MIMEText(msg, 'plain', 'utf-8')
     message['Subject'] = Header(title, 'utf-8')
+    message['From'] = Header(sender, 'utf-8')  # 发送者
+    message['To'] = Header(';'.join(receivers), 'utf-8')  # 接收者
 
     try:
         smtp_instance = smtplib.SMTP()
@@ -54,5 +59,9 @@ def send_mail(title, msg):
         smtp_instance.login(user, pwd)
         smtp_instance.sendmail(sender, receivers, message.as_string())
         log.logger.info(u"主题: [%s] 的邮件已经被发送." % title)
-    except smtplib.SMTPException as err:
-        log.logger.error(u"主题: [%s] 的邮件发送失败, 错误: %s" % (title, err.message))
+    except Exception as err:
+        log.logger.error(u"主题: [%s] 的邮件发送失败, 错误: %s" % (title, str(err)))
+
+
+if __name__ == '__main__':
+    send_mail("test", "test")

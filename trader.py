@@ -91,10 +91,10 @@ class Trader(object):
 
     # 记录交易记录
     def _save_trader_records(self, dataset):
-        with codecs.open(trader_db_records_filename, 'a', 'utf-8') as _f:
+        with codecs.open(trader_db_records_filename, 'a', 'utf-8') as _file:
             for record in dataset:
                 try:
-                    _f.write(json.dumps(record))
+                    json.dump(record, _file)
                 except Exception as err:
                     self.log.logger.error("save record data error: %s" % err.message)
                     continue
