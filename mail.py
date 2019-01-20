@@ -10,8 +10,8 @@ from email.mime.text import MIMEText
 import common
 from log import Logger
 
-mail_log_filename = "%s/%s_%s" % (
-    common.CONST_DIR_LOG, time.strftime('%Y%m%d', time.localtime(time.time())), common.CONST_LOG_MAIL_FILENAME)
+mail_log_filename = "%s/%s_%s" % (common.CONST_DIR_LOG, time.strftime('%Y%m%d', time.localtime(time.time())),
+                                  common.CONST_LOG_MAIL_FILENAME)
 mail_config_filename = "%s/%s" % (common.CONST_DIR_CONF, common.CONST_CONFIG_MAIL_FILENAME)
 
 

@@ -112,6 +112,15 @@ def delete_file(filename):
             return False
 
 
+def list_dir_files(path, list_name):  # 传入存储的list
+    for _file in os.listdir(path):
+        file_path = os.path.join(path, _file)
+        if os.path.isdir(file_path):
+            list_dir_files(file_path, list_name)
+        else:
+            list_name.append(file_path)
+
+
 def get_current_timestamp():
     return int(time.time())
 

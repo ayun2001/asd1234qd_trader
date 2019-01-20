@@ -3,13 +3,15 @@
 import codecs
 import datetime
 import json
+import time
 
 import box
 import common
 from log import Logger
 
 _current_datetime = datetime.datetime.now()
-trader_log_filename = "%s/%s" % (common.CONST_DIR_LOG, common.CONST_LOG_TRADER_FILENAME)
+trader_log_filename = "%s/%s_%s" % (common.CONST_DIR_LOG, time.strftime('%Y%m%d', time.localtime(time.time())),
+                                    common.CONST_LOG_TRADER_FILENAME)
 trader_config_filename = "%s/%s" % (common.CONST_DIR_CONF, common.CONST_CONFIG_TRADER_FILENAME)
 trader_db_records_filename = "%s/%s_%s_%s" % (common.CONST_DIR_DATABASE, _current_datetime.year,
                                               _current_datetime.month, common.CONST_DB_RECORDS_FILENAME)
