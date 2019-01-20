@@ -56,7 +56,7 @@ class Trader(object):
     def _load_position_db_file():
         if not common.file_exist(trader_db_position_filename):
             return None, u"股票持仓数据文件: %s 不存在." % trader_db_position_filename
-        
+
         try:
             position_data_set = common.file_to_dict(trader_db_position_filename)
             return position_data_set, None
@@ -92,12 +92,10 @@ class Trader(object):
     # 记录交易记录
     def _save_trader_records(self, dataset):
         with codecs.open(trader_db_records_filename, 'a', 'utf-8') as _file:
-            for record in dataset:
-                try:
-                    json.dump(record, _file)
-                except Exception as err:
-                    self.log.logger.error(u"保存交易记录数据出错: %s" % err.message)
-                    continue
+            try:
+                _file.writelines(map(lambda x: json.dumps(x) + '\n', dataset))  # 在写入参数str后加“\n”则会在每次完成写入后，自动换行到下一行
+            except Exception as err:
+                self.log.logger.error(u"保存交易记录数据出错: %s" % err.message)
 
     # 对加载得BOX进行初始筛选和排序，选择最合适得前几个（默认type1>type2>type3>type4）
     def _box_prepare_filter(self, top=5):
