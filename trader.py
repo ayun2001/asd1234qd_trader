@@ -8,11 +8,12 @@ import box
 import common
 from log import Logger
 
-current_year = datetime.datetime.now().year
+_current_datetime = datetime.datetime.now()
 trader_log_filename = "%s/%s" % (common.CONST_DIR_LOG, common.CONST_LOG_TRADER_FILENAME)
 trader_config_filename = "%s/%s" % (common.CONST_DIR_CONF, common.CONST_CONFIG_TRADER_FILENAME)
-trader_db_records_filename = "%s/%s_%s" % (common.CONST_DIR_DATABASE, current_year, common.CONST_DB_RECORDS_FILENAME)
-trader_db_position_filename = "%s/%s_%s" % (common.CONST_DIR_DATABASE, current_year, common.CONST_DB_POSITION_FILENAME)
+trader_db_records_filename = "%s/%s_%s_%s" % (common.CONST_DIR_DATABASE, _current_datetime.year,
+                                              _current_datetime.month, common.CONST_DB_RECORDS_FILENAME)
+trader_db_position_filename = "%s/%s" % (common.CONST_DIR_DATABASE, common.CONST_DB_POSITION_FILENAME)
 trader_db_box_filename = box.box_db_filename
 
 MAX_VALID_BOX_INTERVAL_HOURS = 4  # 票箱会在每天的早上8：30，和中午12：00 左右开始选取，所以不会有操过4个小时
@@ -86,6 +87,23 @@ class Trader(object):
             return None, err.message
 
     # 记录交易记录
+    # 交易记录的格式
+    '''
+    {
+        "timestamp": 0,  #时间戳
+        "account_id": 0,   #账户id，以后用来聚合用
+        "order_type": "buy",  # 这里交易方向，buy/sell
+        "order_type_id": 0,   # 这里交易方向，buy:0 , sell:1
+        "stock_id": "",    # 股票代码
+        "stock_name": "",  # 股票名称
+        "unit_price": 0,   # 股票单价
+        "count": 0,       # 成交多少股
+        "total": 0,        # 成交总金额 （没有算交易税）
+        "change": 0.0,      # 交易后比之前投入增加多少百分比，正为赚，负为亏
+        "revenue": 0.0     # 易后比之前投入增加多少营收，正为赚，负为亏
+    }
+    '''
+
     def _save_trader_records(self, dataset):
         with codecs.open(trader_db_records_filename, 'a', 'utf-8') as _file:
             try:
