@@ -329,6 +329,11 @@ class GenerateBox(object):
 
 if __name__ == '__main__':
     gen_box = GenerateBox()
+
+    if common.check_today_is_holiday_time():
+        gen_box.log.logger.warning(u"节假日休假, 股票市场不交易, 跳过...")
+        exit(0)
+
     gen_box.log.logger.info(u"============== [开始计算票箱] ==============")
     start_timestamp = time.time()
     valid_stock_box = gen_box.generate()

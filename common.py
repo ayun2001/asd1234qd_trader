@@ -1,6 +1,7 @@
 # coding=utf-8
 
 import codecs
+import datetime
 import json
 import math
 import os
@@ -158,8 +159,10 @@ def check_today_is_holiday_time():
     if holidays is None:
         return False
 
-    current_datetime = time.strftime('%Y%m%d', time.localtime(time.time()))
-    if isinstance(current_datetime, types.ListType) and (current_datetime in holidays):
+    current_datetime = datetime.date.today()
+    weekday_id = current_datetime.isoweekday()
+    if isinstance(holidays, types.ListType) and (current_datetime.isoformat() in holidays) and \
+            (weekday_id not in [6, 7]):  # 排除周末和国家放假的日期
         return True
     else:
         return False
