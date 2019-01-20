@@ -64,12 +64,12 @@ class Trader(object):
             return None, err.message
 
     @staticmethod
-    def _save_position_db_file(data):
+    def _save_position_db_file(db_dataset):
         if common.file_exist(trader_db_position_filename):
             common.delete_file(trader_db_position_filename)
 
         try:
-            common.dict_to_file(data, trader_db_position_filename)
+            common.dict_to_file(db_dataset, trader_db_position_filename)
         except Exception as err:
             return err.message
 
@@ -85,10 +85,6 @@ class Trader(object):
         except Exception as err:
             return None, err.message
 
-    # # 发送交易信息
-    # def _send_trader_records_mail(self, data):
-    #     pass
-
     # 记录交易记录
     def _save_trader_records(self, dataset):
         with codecs.open(trader_db_records_filename, 'a', 'utf-8') as _file:
@@ -98,18 +94,24 @@ class Trader(object):
                 self.log.logger.error(u"保存交易记录数据出错: %s" % err.message)
 
     # 对加载得BOX进行初始筛选和排序，选择最合适得前几个（默认type1>type2>type3>type4）
-    def _box_prepare_filter(self, top=5):
-        pass
+    # 检查当前的股票箱内的股票是否倒了可以出发买点
+    @staticmethod
+    def _box_scanner(box_dataset):
+        classify_dataset = {common.CONST_STOCK_TYPE_1: [], common.CONST_STOCK_TYPE_2: [],
+                            common.CONST_STOCK_TYPE_3: [], common.CONST_STOCK_TYPE_4: []}
 
-    # 计算当前持仓的状态，判定持仓的股票不能超过最大的值
-    def _position_compute(self):
-        pass
+        for market_name, market_values in box_dataset.items():
+            for stock_class_type, class_type_values in market_values.items():
+                classify_dataset[stock_class_type].append(class_type_values.keys())
 
-    # 扫描当前持仓的股票，如果满足调教就触发交易，并记录交易记录
+        return classify_dataset
+
+    # 计算当前持仓的状态，判定是否有股票出发可以卖点
     def _position_scanner(self):
         pass
 
     def run(self):
+        # 先卖出，再买入
         pass
 
 
