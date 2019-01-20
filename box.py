@@ -327,7 +327,7 @@ class GenerateBox(object):
         return self.stage2_filter_data(valid_stock_pool)
 
 
-if __name__ == '__main__':
+def gen_box_main():
     gen_box = GenerateBox()
 
     if common.check_today_is_holiday_time():
@@ -355,3 +355,8 @@ if __name__ == '__main__':
     _storage_box_data(data={"timestamp": common.get_current_timestamp(), "value": valid_stock_box})
     # 发送已经选的股票
     mail.send_mail(title=u"日期:%s, 选中的股票箱" % current_datetime, msg=sendmail_message)
+
+
+if __name__ == '__main__':
+    # 运行主程序
+    gen_box_main()

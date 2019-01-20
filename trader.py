@@ -135,5 +135,10 @@ class Trader(object):
         pass
 
 
-if __name__ == '__main__':
+def run_trader_main():
     pass
+
+
+if __name__ == '__main__':
+    # 运行主程序
+    run_trader_main()
