@@ -130,6 +130,10 @@ def get_current_timestamp():
     return int(time.time())
 
 
+def get_current_datetime():
+    return time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
+
+
 def dict_to_file(data, filename):
     with codecs.open(filename, 'wb', 'utf-8') as _file:
         # pickle.dump(data, _file)

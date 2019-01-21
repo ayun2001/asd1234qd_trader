@@ -8,6 +8,8 @@ import time
 import Box
 import Common
 import HQAdapter
+import Mail
+import OrderAdapter
 from Log import Logger
 
 _current_datetime = datetime.datetime.now()
@@ -23,6 +25,7 @@ MIN_HOURS = 4
 MIN_STOP_LOSS_RATIO = -3.0  # 负数，下跌3%
 MIN_SELL_RAISE_RATIO = 3.0  # 涨幅3%
 MAX_VALID_BOX_INTERVAL_HOURS = 4  # 票箱会在每天的早上8：30，和中午12：00 左右开始选取，所以不会有操过4个小时
+OFFSET_PRICE = 0.01
 
 
 # ============================================
@@ -55,7 +58,8 @@ def _load_position_db_file():
       "market_desc": "",
       "stock_name": "",
       "price": 0.0,
-      "count": 0
+      "count": 0，
+      "account_id": 0,   #账户id，以后用来聚合用
     }}
     """
     if not Common.file_exist(trader_db_position_filename):
@@ -148,26 +152,28 @@ class Trader(object):
             Common.create_directory(Common.CONST_DIR_DATABASE)
 
         self.log = Logger(trader_log_filename, level='debug')
+        self.config = None
+        self.records_set = []
 
     # 记录交易记录
     # 交易记录的格式
-    '''
-    {
-        "timestamp": 0,  #时间戳
-        "account_id": 0,   #账户id，以后用来聚合用
-        "order_type": "buy",  # 这里交易方向，buy/sell
-        "order_type_id": 0,   # 这里交易方向，buy:0 , sell:1
-        "stock_id": "",    # 股票代码
-        "stock_name": "",  # 股票名称
-        "unit_price": 0,   # 股票单价
-        "count": 0,       # 成交多少股
-        "total": 0,        # 成交总金额 （没有算交易税）
-        "change": 0.0,      # 交易后比之前投入增加多少百分比，正为赚，负为亏
-        "revenue": 0.0     # 易后比之前投入增加多少营收，正为赚，负为亏
-    }
-    '''
-
     def _save_trader_records(self, dataset):
+        """
+        {
+            "timestamp": 0,  #时间戳
+            "datetime": 2018-01-01 xx:xx:xx,当前日期，用来可读的
+            "account_id": 0,   #账户id，以后用来聚合用
+            "order_type": "buy",  # 这里交易方向，buy/sell
+            "order_type_id": 0,   # 这里交易方向，buy:0 , sell:1
+            "stock_id": "",    # 股票代码
+            "stock_name": "",  # 股票名称
+            "price": 0.0,   # 股票单价
+            "count": 0,       # 成交多少股
+            "total": 0.0,        # 成交总金额 （没有算交易税）
+            "revenue_change": 0.0,      # 交易后比之前投入增加多少百分比，正为赚，负为亏
+            "revenue_value": 0.0     # 易后比之前投入增加多少营收，正为赚，负为亏
+        }
+        """
         with codecs.open(trader_db_records_filename, 'a', 'utf-8') as _file:
             try:
                 _file.writelines(map(lambda x: json.dumps(x) + '\n', dataset))  # 在写入参数str后加“\n”则会在每次完成写入后，自动换行到下一行
@@ -211,26 +217,106 @@ class Trader(object):
 
                     # 执行买股票的动作
                     # 获得5档价格数据
-                    level5_quotes_dataset, err_info = HQAdapter.get_stock_quotes([(market_code, stock_code)])
+                    level5_quotes_dataset, err_info = HQAdapter.get_stock_quotes(instance, [(market_code, stock_code)])
                     if err_info is None:
                         self.log.logger.error(u"获得 市场: %s, 股票: %s, 名称：%s, 5档行情数据错误: %s" % (
                             market_desc, stock_code, stock_name, err_info))
                         continue
 
                     level5_quote_value = level5_quotes_dataset[stock_code]
+                    position_own_value = position_data[stock_code]
+                    current_sell_count = position_own_value["count"]
+                    current_account_id = position_own_value["account_id"]
 
+                    # 判断获得能够使用卖出得价格
+                    if current_sell_count <= level5_quote_value["buy1_count"]:
+                        current_sell_price = level5_quote_value["buy1_value"] - OFFSET_PRICE
+                    elif current_sell_count <= level5_quote_value["buy2_count"]:
+                        current_sell_price = level5_quote_value["buy2_value"] - OFFSET_PRICE
+                    elif current_sell_count <= level5_quote_value["buy3_count"]:
+                        current_sell_price = level5_quote_value["buy3_value"] - OFFSET_PRICE
+                    elif current_sell_count <= level5_quote_value["buy4_count"]:
+                        current_sell_price = level5_quote_value["buy4_value"] - OFFSET_PRICE
+                    else:
+                        current_sell_price = level5_quote_value["buy5_value"] - OFFSET_PRICE
 
+                    # 执行卖出动作的
+                    err_info = OrderAdapter.send_stock_order(instance, stock_code, current_account_id,
+                                                             Common.CONST_STOCK_SELL, current_sell_price,
+                                                             current_sell_count)
+                    # 记录交易数据
+                    if err_info is None:
+                        sell_total_value = current_sell_price * current_sell_count
+                        revenue_value = (current_sell_price - position_own_value["price"]) * current_sell_count
+                        revenue_change = revenue_value / (position_own_value["price"] * current_sell_count)
+                        trader_record = {
+                            "timestamp": Common.get_current_timestamp(),
+                            "datetime": Common.get_current_datetime(),
+                            "account_id": current_account_id,
+                            "order_type": Common.CONST_STOCK_SELL_DESC,
+                            "order_type_id": Common.CONST_STOCK_SELL,
+                            "stock_code": stock_code,
+                            "stock_name": stock_name,
+                            "price": current_sell_price,
+                            "count": current_sell_count,
+                            "total": sell_total_value,
+                            "revenue_change": revenue_change,
+                            "revenue_value": revenue_value
+                        }
+                        self.records_set.append(trader_record)
+                        self.log.logger.info(
+                            u"执行动作 市场: %s, 股票: %s, 名称：%s, 信号: %s, 价格: %.2f, 数量: %d, 总价: %.2f, 营收(元): %.2f, 营收率(%%): %.2f" % (
+                                market_desc, stock_code, stock_name, Common.CONST_STOCK_SELL_DESC, current_sell_price,
+                                current_sell_count, sell_total_value, revenue_value, revenue_change))
+                    else:
+                        self.log.logger.warn(u"没有执行动作 市场: %s, 股票: %s, 名称：%s, 信号: %s, 价格: %.2f, 数量: %d" % (
+                            market_desc, stock_code, stock_name, Common.CONST_STOCK_SELL_DESC, current_sell_price,
+                            current_sell_count))
                 except Exception as err:
                     self.log.logger.error(u"执行持仓股票扫描出现出错: %s" % err.message)
                     continue
+            if len(self.records_set) > 0:
+                self._save_trader_records(self.records_set)
+                self.records_set = []
 
     def run(self):
-        # 先卖出，再买入
+        instance, err_info = OrderAdapter.create_connect_instance()
+        if err_info is not None:
+            self.log.logger.error(u"创建交易服务器连接实例失败: %s" % err_info)
+            return
+
+        # 加载交易器的配置文件
+        self.config, err_info = _load_trader_config()
+        if err_info is not None:
+            self.log.logger.error(u"加载交易器配置文件错误: %s", err_info)
+            return
+
+        # 先卖出
+        self._position_scanner(instance)
+        # 再买入
         pass
 
 
 def run_trader_main():
-    pass
+    make_trader = Trader()
+
+    if Common.check_today_is_holiday_time():
+        make_trader.log.logger.warning(u"节假日休假, 股票市场不交易, 跳过...")
+        exit(0)
+
+    make_trader.log.logger.info(u"============== [开始自动交易] ==============")
+    start_timestamp = time.time()
+    make_trader.run()
+    end_timestamp = time.time()
+    make_trader.log.logger.info(u"============== [结束自动交易] ==============")
+
+    current_datetime = Common.get_current_datetime()
+    total_compute_time = Common.change_seconds_to_time(int(end_timestamp - start_timestamp))
+    make_trader.log.logger.info(u"计算总费时: %s" % total_compute_time)
+    sendmail_message = u""
+
+    # 发送已经选的股票
+    Mail.send_mail(title=u"日期:%s, 选中的股票箱" % current_datetime, msg=sendmail_message)
 
 
 if __name__ == '__main__':

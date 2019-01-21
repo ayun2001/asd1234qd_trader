@@ -3,11 +3,12 @@
 # ============================================
 # 下单接口函数
 
-def get_5level_quotes(instance, stock_meta):
-    pass
+
+def create_connect_instance():
+    return None, ""
 
 
-def send_stock_order(instance, code, action_id, uprice, count):
+def send_stock_order(instance, code, account_id, action_id, uprice, count):
     pass
 
 

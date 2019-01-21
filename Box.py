@@ -340,7 +340,7 @@ def gen_box_main():
     end_timestamp = time.time()
     gen_box.log.logger.info(u"============== [结束计算票箱] ==============")
 
-    current_datetime = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
+    current_datetime = Common.get_current_datetime()
 
     if valid_stock_box is None:
         gen_box.log.logger.error(u"生成的表股票箱为空")
