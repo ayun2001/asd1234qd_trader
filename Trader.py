@@ -48,19 +48,16 @@ def _load_box_db_file():
     return box_value, None
 
 
-'''
-
-{"stock_code":{
-  "market_code": 0,
-  "market_desc": "",
-  "stock_name": "",
-  "price": 0.0,
-  "count": 0
-}}
-'''
-
-
 def _load_position_db_file():
+    """
+    {"stock_code":{
+      "market_code": 0,
+      "market_desc": "",
+      "stock_name": "",
+      "price": 0.0,
+      "count": 0
+    }}
+    """
     if not Common.file_exist(trader_db_position_filename):
         return None, u"股票持仓数据文件: %s 不存在." % trader_db_position_filename
 
