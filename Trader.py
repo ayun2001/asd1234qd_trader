@@ -5,19 +5,20 @@ import datetime
 import json
 import time
 
-import adapter
-import box
-import common
-from log import Logger
+import Box
+import Common
+import HQAdapter
+import OrderAdapter
+from Log import Logger
 
 _current_datetime = datetime.datetime.now()
-trader_log_filename = "%s/%s_%s" % (common.CONST_DIR_LOG, time.strftime('%Y%m%d', time.localtime(time.time())),
-                                    common.CONST_LOG_TRADER_FILENAME)
-trader_config_filename = "%s/%s" % (common.CONST_DIR_CONF, common.CONST_CONFIG_TRADER_FILENAME)
-trader_db_records_filename = "%s/%s_%s_%s" % (common.CONST_DIR_DATABASE, _current_datetime.year,
-                                              _current_datetime.month, common.CONST_DB_RECORDS_FILENAME)
-trader_db_position_filename = "%s/%s" % (common.CONST_DIR_DATABASE, common.CONST_DB_POSITION_FILENAME)
-trader_db_box_filename = box.box_db_filename
+trader_log_filename = "%s/%s_%s" % (Common.CONST_DIR_LOG, time.strftime('%Y%m%d', time.localtime(time.time())),
+                                    Common.CONST_LOG_TRADER_FILENAME)
+trader_config_filename = "%s/%s" % (Common.CONST_DIR_CONF, Common.CONST_CONFIG_TRADER_FILENAME)
+trader_db_records_filename = "%s/%s_%s_%s" % (Common.CONST_DIR_DATABASE, _current_datetime.year,
+                                              _current_datetime.month, Common.CONST_DB_RECORDS_FILENAME)
+trader_db_position_filename = "%s/%s" % (Common.CONST_DIR_DATABASE, Common.CONST_DB_POSITION_FILENAME)
+trader_db_box_filename = Box.box_db_filename
 
 MIN_HOURS = 4
 MIN_STOP_LOSS_RATIO = -3.0  # 负数，下跌3%
@@ -28,11 +29,11 @@ MAX_VALID_BOX_INTERVAL_HOURS = 4  # 票箱会在每天的早上8：30，和中�
 # ============================================
 # 函数定义
 def _load_box_db_file():
-    if not common.file_exist(trader_db_box_filename):
+    if not Common.file_exist(trader_db_box_filename):
         return None, u"股票箱文件: %s 不存在." % trader_db_box_filename
 
     try:
-        box_data_set = common.file_to_dict(trader_db_box_filename)
+        box_data_set = Common.file_to_dict(trader_db_box_filename)
     except Exception as err:
         return None, err.message
 
@@ -41,7 +42,7 @@ def _load_box_db_file():
     if box_timestamp is None or box_value is None:
         return None, u"股票箱数据为空."
 
-    current_timestamp = common.get_current_timestamp()
+    current_timestamp = Common.get_current_timestamp()
     if current_timestamp - box_timestamp > MAX_VALID_BOX_INTERVAL_HOURS:
         return None, u"股票箱数据文件太旧, 时间超过：%d 小时" % MAX_VALID_BOX_INTERVAL_HOURS
 
@@ -49,22 +50,22 @@ def _load_box_db_file():
 
 
 def _load_position_db_file():
-    if not common.file_exist(trader_db_position_filename):
+    if not Common.file_exist(trader_db_position_filename):
         return None, u"股票持仓数据文件: %s 不存在." % trader_db_position_filename
 
     try:
-        position_data_set = common.file_to_dict(trader_db_position_filename)
+        position_data_set = Common.file_to_dict(trader_db_position_filename)
         return position_data_set, None
     except Exception as err:
         return None, err.message
 
 
 def _save_position_db_file(db_dataset):
-    if common.file_exist(trader_db_position_filename):
-        common.delete_file(trader_db_position_filename)
+    if Common.file_exist(trader_db_position_filename):
+        Common.delete_file(trader_db_position_filename)
 
     try:
-        common.dict_to_file(db_dataset, trader_db_position_filename)
+        Common.dict_to_file(db_dataset, trader_db_position_filename)
     except Exception as err:
         return err.message
 
@@ -72,7 +73,7 @@ def _save_position_db_file(db_dataset):
 
 
 def _load_trader_config():
-    if not common.file_exist(trader_config_filename):
+    if not Common.file_exist(trader_config_filename):
         return None, u"交易模块配置文件: %s 不存在." % trader_config_filename
     try:
         with codecs.open(trader_config_filename, 'r', 'utf-8') as _file:
@@ -82,10 +83,10 @@ def _load_trader_config():
 
 
 def _check_stock_sell_point(instance, market_code, market_desc, stock_code, stock_name):
-    history_data_frame, err_info = adapter.get_history_data_frame(instance, market=market_code, code=stock_code,
-                                                                  market_desc=market_desc, name=stock_name,
-                                                                  ktype=common.CONST_K_60M,
-                                                                  kcount=common.CONST_K_LENGTH)
+    history_data_frame, err_info = HQAdapterHQAdapter.get_history_data_frame(instance, market=market_code, code=stock_code,
+                                                                    market_desc=market_desc, name=stock_name,
+                                                                    ktype=Common.CONST_K_60M,
+                                                                    kcount=Common.CONST_K_LENGTH)
     if err_info is not None:
         return False, u"获得市场: %s, 股票: %s, 名称：%s, 历史K线数据错误: %s" % (market_desc, stock_code, stock_name, err_info)
 
@@ -119,25 +120,25 @@ def _check_stock_sell_point(instance, market_code, market_desc, stock_code, stoc
     # 触发止损条件 (3%)
     if pct_change_list[0] < MIN_STOP_LOSS_RATIO:  # 已经倒序，第一个就是当前这个小时
         # 卖出股票
-        adapter.send_stock_order(instance, stock_code, common.CONST_STOCK_SELL, 0, 0)
-        return True, u""
+        OrderAdapter.send_stock_order(instance, stock_code, Common.CONST_STOCK_SELL, 0, 0)
+        return True, u"触发止损条件 市场: %s, 股票: %s, 名称：%s, 发生卖出" % (market_desc, stock_code, stock_name)
 
     # 触发卖出条件 (上涨超过3%，KDJ_J> 100, KDJ死叉了)
     if bool_more_than_spec_raise and (bool_max_j_value or bool_down_cross_kdj):
-        adapter.send_stock_order(instance, stock_code, common.CONST_STOCK_SELL, 0, 0)
-        return True, u""
+        OrderAdapter.send_stock_order(instance, stock_code, Common.CONST_STOCK_SELL, 0, 0)
+        return True, u"触发卖出条件 市场: %s, 股票: %s, 名称：%s, 发生卖出" % (market_desc, stock_code, stock_name)
 
 
 class Trader(object):
     def __init__(self):
-        if not common.file_exist(common.CONST_DIR_LOG):
-            common.create_directory(common.CONST_DIR_LOG)
+        if not Common.file_exist(Common.CONST_DIR_LOG):
+            Common.create_directory(Common.CONST_DIR_LOG)
 
-        if not common.file_exist(common.CONST_DIR_CONF):
-            common.create_directory(common.CONST_DIR_CONF)
+        if not Common.file_exist(Common.CONST_DIR_CONF):
+            Common.create_directory(Common.CONST_DIR_CONF)
 
-        if not common.file_exist(common.CONST_DIR_DATABASE):
-            common.create_directory(common.CONST_DIR_DATABASE)
+        if not Common.file_exist(Common.CONST_DIR_DATABASE):
+            Common.create_directory(Common.CONST_DIR_DATABASE)
 
         self.log = Logger(trader_log_filename, level='debug')
 
@@ -170,8 +171,8 @@ class Trader(object):
     # 检查当前的股票箱内的股票是否倒了可以出发买点
     @staticmethod
     def _box_scanner(box_dataset):
-        classify_dataset = {common.CONST_STOCK_TYPE_1: [], common.CONST_STOCK_TYPE_2: [],
-                            common.CONST_STOCK_TYPE_3: [], common.CONST_STOCK_TYPE_4: []}
+        classify_dataset = {Common.CONST_STOCK_TYPE_1: [], Common.CONST_STOCK_TYPE_2: [],
+                            Common.CONST_STOCK_TYPE_3: [], Common.CONST_STOCK_TYPE_4: []}
 
         for market_name, market_values in box_dataset.items():
             for stock_class_type, class_type_values in market_values.items():

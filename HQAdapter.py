@@ -6,8 +6,8 @@ import re
 import TradeX2
 import pandas as pd
 
-import common
-from ta import TA
+import Common
+from Algorithm import TA
 
 
 # ============================================
@@ -30,7 +30,7 @@ def check_stop_trade_stock(dataset):
 
 def create_connect_instance():
     try:
-        host, port = random.choice(common.TDX_HQ_SERVER_LIST).split(':')
+        host, port = random.choice(Common.TDX_HQ_SERVER_LIST).split(':')
         port = int(port)
     except Exception:
         host = "101.227.73.20"
@@ -64,13 +64,13 @@ def get_stock_codes(instance):
     sh_market = 1
 
     stock_codes = {
-        common.CONST_SZ_MARKET: {'count': 0, 'desc': common.MARKET_NAME_MAPPING[common.CONST_SZ_MARKET],
+        Common.CONST_SZ_MARKET: {'count': 0, 'desc': Common.MARKET_NAME_MAPPING[Common.CONST_SZ_MARKET],
                                  'values': []},
-        common.CONST_SH_MARKET: {'count': 0, 'desc': common.MARKET_NAME_MAPPING[common.CONST_SH_MARKET],
+        Common.CONST_SH_MARKET: {'count': 0, 'desc': Common.MARKET_NAME_MAPPING[Common.CONST_SH_MARKET],
                                  'values': []},
-        common.CONST_ZX_MARKET: {'count': 0, 'desc': common.MARKET_NAME_MAPPING[common.CONST_ZX_MARKET],
+        Common.CONST_ZX_MARKET: {'count': 0, 'desc': Common.MARKET_NAME_MAPPING[Common.CONST_ZX_MARKET],
                                  'values': []},
-        common.CONST_CY_MARKET: {'count': 0, 'desc': common.MARKET_NAME_MAPPING[common.CONST_CY_MARKET],
+        Common.CONST_CY_MARKET: {'count': 0, 'desc': Common.MARKET_NAME_MAPPING[Common.CONST_CY_MARKET],
                                  'values': []},
     }
 
@@ -99,7 +99,7 @@ def get_stock_codes(instance):
             fields = line.split('\t')
             if len(fields) >= min_field_count and sh_market_stock_expr.match(
                     fields[0]) is not None and st_stock_filter_expr.match(fields[2]) is None:
-                stock_codes[common.CONST_SH_MARKET]['values'].append(
+                stock_codes[Common.CONST_SH_MARKET]['values'].append(
                     {'code': fields[0], 'name': fields[2].decode('gbk')})  # 这里一定要decode(gbk), 要不然后面报错
 
     # 不用再拉第一份数据了, 已经有了
@@ -113,7 +113,7 @@ def get_stock_codes(instance):
                 fields = line.split('\t')
                 if len(fields) >= min_field_count and sh_market_stock_expr.match(
                         fields[0]) is not None and st_stock_filter_expr.match(fields[2]) is None:
-                    stock_codes[common.CONST_SH_MARKET]['values'].append(
+                    stock_codes[Common.CONST_SH_MARKET]['values'].append(
                         {'code': fields[0], 'name': fields[2].decode('gbk')})
 
     # 拉取整个深圳股票列表
@@ -127,13 +127,13 @@ def get_stock_codes(instance):
             if len(fields) >= min_field_count and sz_market_stock_expr.match(
                     fields[0]) is not None and st_stock_filter_expr.match(fields[2]) is None:
                 if zx_market_stock_expr.match(fields[0]) is not None:
-                    stock_codes[common.CONST_ZX_MARKET]['values'].append(
+                    stock_codes[Common.CONST_ZX_MARKET]['values'].append(
                         {'code': fields[0], 'name': fields[2].decode('gbk')})
                 elif cy_market_stock_expr.match(fields[0]) is not None:
-                    stock_codes[common.CONST_CY_MARKET]['values'].append(
+                    stock_codes[Common.CONST_CY_MARKET]['values'].append(
                         {'code': fields[0], 'name': fields[2].decode('gbk')})
                 else:
-                    stock_codes[common.CONST_SZ_MARKET]['values'].append(
+                    stock_codes[Common.CONST_SZ_MARKET]['values'].append(
                         {'code': fields[0], 'name': fields[2].decode('gbk')})
 
     # 不用再拉第一份数据了, 已经有了
@@ -148,27 +148,27 @@ def get_stock_codes(instance):
                 if len(fields) >= min_field_count and sz_market_stock_expr.match(
                         fields[0]) is not None and st_stock_filter_expr.match(fields[2]) is None:
                     if zx_market_stock_expr.match(fields[0]) is not None:
-                        stock_codes[common.CONST_ZX_MARKET]['values'].append(
+                        stock_codes[Common.CONST_ZX_MARKET]['values'].append(
                             {'code': fields[0], 'name': fields[2].decode('gbk')})
                     elif cy_market_stock_expr.match(fields[0]) is not None:
-                        stock_codes[common.CONST_CY_MARKET]['values'].append(
+                        stock_codes[Common.CONST_CY_MARKET]['values'].append(
                             {'code': fields[0], 'name': fields[2].decode('gbk')})
                     else:
-                        stock_codes[common.CONST_SZ_MARKET]['values'].append(
+                        stock_codes[Common.CONST_SZ_MARKET]['values'].append(
                             {'code': fields[0], 'name': fields[2].decode('gbk')})
 
     # 各板块股票数量统计
-    stock_codes[common.CONST_SH_MARKET]['count'] = len(stock_codes[common.CONST_SH_MARKET]['values'])
-    stock_codes[common.CONST_SZ_MARKET]['count'] = len(stock_codes[common.CONST_SZ_MARKET]['values'])
-    stock_codes[common.CONST_ZX_MARKET]['count'] = len(stock_codes[common.CONST_ZX_MARKET]['values'])
-    stock_codes[common.CONST_CY_MARKET]['count'] = len(stock_codes[common.CONST_CY_MARKET]['values'])
+    stock_codes[Common.CONST_SH_MARKET]['count'] = len(stock_codes[Common.CONST_SH_MARKET]['values'])
+    stock_codes[Common.CONST_SZ_MARKET]['count'] = len(stock_codes[Common.CONST_SZ_MARKET]['values'])
+    stock_codes[Common.CONST_ZX_MARKET]['count'] = len(stock_codes[Common.CONST_ZX_MARKET]['values'])
+    stock_codes[Common.CONST_CY_MARKET]['count'] = len(stock_codes[Common.CONST_CY_MARKET]['values'])
 
     # 返回数据
     return stock_codes, None
 
 
-def get_history_data_frame(instance, market, market_desc, code, name, ktype=common.CONST_K_DAY,
-                           kcount=common.CONST_K_LENGTH):
+def get_history_data_frame(instance, market, market_desc, code, name, ktype=Common.CONST_K_DAY,
+                           kcount=Common.CONST_K_LENGTH):
     min_k_type_field_count = 7
     # 获得公司流通总股本, 用来算换手率（注意是单位： 万股）
     finance_content, err_info = get_finance_info(instance, market, code)
@@ -244,12 +244,3 @@ def get_history_data_frame(instance, market, market_desc, code, name, ktype=comm
         return history_data_frame, None
 
 
-# ============================================
-# 下单接口函数
-
-def send_stock_order(instance, code, action_id, uprice, count):
-    pass
-
-
-def cancel_stock_order():
-    pass

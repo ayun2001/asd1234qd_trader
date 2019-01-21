@@ -2,7 +2,7 @@
 
 from optparse import OptionParser
 
-import common
+import Common
 
 parser = OptionParser()
 parser.add_option("-k", "--key", dest="key",
@@ -13,4 +13,4 @@ options, args = parser.parse_args()
 if options.key is None:
     print "please try do: python %s -h" % __file__
 else:
-    print common.get_encrypted_string(options.key)
+    print Common.get_encrypted_string(options.key)

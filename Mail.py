@@ -7,16 +7,16 @@ import time
 from email.header import Header
 from email.mime.text import MIMEText
 
-import common
-from log import Logger
+import Common
+from Log import Logger
 
-mail_log_filename = "%s/%s_%s" % (common.CONST_DIR_LOG, time.strftime('%Y%m%d', time.localtime(time.time())),
-                                  common.CONST_LOG_MAIL_FILENAME)
-mail_config_filename = "%s/%s" % (common.CONST_DIR_CONF, common.CONST_CONFIG_MAIL_FILENAME)
+mail_log_filename = "%s/%s_%s" % (Common.CONST_DIR_LOG, time.strftime('%Y%m%d', time.localtime(time.time())),
+                                  Common.CONST_LOG_MAIL_FILENAME)
+mail_config_filename = "%s/%s" % (Common.CONST_DIR_CONF, Common.CONST_CONFIG_MAIL_FILENAME)
 
 
 def _load_config():
-    if not common.file_exist(mail_config_filename):
+    if not Common.file_exist(mail_config_filename):
         return None, u"配置文件: %s 不存在."
     try:
         with codecs.open(mail_config_filename, 'r', 'utf-8') as _file:
@@ -26,11 +26,11 @@ def _load_config():
 
 
 def send_mail(title, msg):
-    if not common.file_exist(common.CONST_DIR_LOG):
-        common.create_directory(common.CONST_DIR_LOG)
+    if not Common.file_exist(Common.CONST_DIR_LOG):
+        Common.create_directory(Common.CONST_DIR_LOG)
 
-    if not common.file_exist(common.CONST_DIR_CONF):
-        common.create_directory(common.CONST_DIR_CONF)
+    if not Common.file_exist(Common.CONST_DIR_CONF):
+        Common.create_directory(Common.CONST_DIR_CONF)
 
     log = Logger(mail_log_filename, level='debug')
 
@@ -42,7 +42,7 @@ def send_mail(title, msg):
     host = config.get("host", "localhost")
     port = config.get("port", 25)
     user = config.get("user", "root")
-    pwd = common.get_decrypted_string(config.get("pwd", ""))
+    pwd = Common.get_decrypted_string(config.get("pwd", ""))
     # pwd = config.get("pwd", "")
     sender = config.get("sender", "localhost")
     receivers = config.get("receivers", [])

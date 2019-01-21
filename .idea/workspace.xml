@@ -2,11 +2,18 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="ea61e7c0-b131-4b2b-a7b1-9c6b290db9da" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/adapter.py" beforeDir="false" afterPath="$PROJECT_DIR$/adapter.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/box.py" beforeDir="false" afterPath="$PROJECT_DIR$/box.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/common.py" beforeDir="false" afterPath="$PROJECT_DIR$/common.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/install_guide.txt" beforeDir="false" afterPath="$PROJECT_DIR$/install_guide.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/trader.py" beforeDir="false" afterPath="$PROJECT_DIR$/trader.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/OrderAdapter.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/adapter.py" beforeDir="false" afterPath="$PROJECT_DIR$/HQAdapter.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/box.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/common.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/genSecKey.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/log.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/mail.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/reporter.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/runner.py" beforeDir="false" afterPath="$PROJECT_DIR$/runner.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ta.py" beforeDir="false" afterPath="$PROJECT_DIR$/Algorithm.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/trader.py" beforeDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -19,10 +26,13 @@
       <split-first>
         <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
           <file pinned="false" current-in-tab="true">
-            <entry file="file://$PROJECT_DIR$/trader.py">
+            <entry file="file://$PROJECT_DIR$/Trader.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="818">
-                  <caret line="127" column="24" selection-start-line="127" selection-start-column="24" selection-end-line="127" selection-end-column="24" />
+                <state relative-caret-position="-670">
+                  <caret line="85" column="53" selection-start-line="85" selection-start-column="44" selection-end-line="85" selection-end-column="53" />
+                  <folding>
+                    <element signature="e#16#29#0" expanded="true" />
+                  </folding>
                 </state>
               </provider>
             </entry>
@@ -32,10 +42,10 @@
       <split-second>
         <leaf>
           <file pinned="false" current-in-tab="false">
-            <entry file="file://$PROJECT_DIR$/adapter.py">
+            <entry file="file://$PROJECT_DIR$/HQAdapter.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="1834">
-                  <caret line="249" column="30" selection-start-line="249" selection-start-column="30" selection-end-line="249" selection-end-column="30" />
+                <state relative-caret-position="582">
+                  <caret line="246" selection-start-line="246" selection-end-line="246" />
                   <folding>
                     <element signature="e#16#29#0" expanded="true" />
                   </folding>
@@ -43,11 +53,32 @@
               </provider>
             </entry>
           </file>
+          <file pinned="false" current-in-tab="true">
+            <entry file="file://$PROJECT_DIR$/OrderAdapter.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="16">
+                  <caret line="1" column="1" selection-start-line="1" selection-start-column="1" selection-end-line="1" selection-end-column="1" />
+                </state>
+              </provider>
+            </entry>
+          </file>
           <file pinned="false" current-in-tab="false">
-            <entry file="file://$PROJECT_DIR$/ta.py">
+            <entry file="file://$PROJECT_DIR$/runner.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state>
+                  <caret selection-end-column="14" />
+                  <folding>
+                    <element signature="e#16#27#0" expanded="true" />
+                  </folding>
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/Algorithm.py">
               <provider selected="true" editor-type-id="text-editor">
                 <state relative-caret-position="1113">
-                  <caret line="85" lean-forward="true" selection-start-line="85" selection-end-line="85" />
+                  <caret line="85" selection-start-line="85" selection-end-line="85" />
                   <folding>
                     <element signature="e#16#28#0" expanded="true" />
                   </folding>
@@ -56,22 +87,22 @@
             </entry>
           </file>
           <file pinned="false" current-in-tab="false">
-            <entry file="file://$PROJECT_DIR$/common.py">
+            <entry file="file://$PROJECT_DIR$/Common.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="-802">
-                  <caret line="56" column="28" lean-forward="true" selection-start-line="56" selection-start-column="28" selection-end-line="56" selection-end-column="28" />
+                <state relative-caret-position="-1706">
+                  <caret line="56" column="28" selection-start-line="56" selection-start-column="28" selection-end-line="56" selection-end-column="28" />
+                  <folding>
+                    <element signature="e#16#29#0" expanded="true" />
+                  </folding>
                 </state>
               </provider>
             </entry>
           </file>
-          <file pinned="false" current-in-tab="true">
-            <entry file="file://$PROJECT_DIR$/box.py">
+          <file pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/Box.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="336">
-                  <caret line="148" column="23" lean-forward="true" selection-start-line="148" selection-start-column="23" selection-end-line="148" selection-end-column="23" />
-                  <folding>
-                    <element signature="e#16#27#0" expanded="true" />
-                  </folding>
+                <state relative-caret-position="-485">
+                  <caret line="133" column="12" selection-start-line="133" selection-start-column="12" selection-end-line="133" selection-end-column="12" />
                 </state>
               </provider>
             </entry>
@@ -98,6 +129,8 @@
       <find>_stock_60m_k_type_filter</find>
       <find>pcha</find>
       <find>pct_change</find>
+      <find>sz_stock_count</find>
+      <find>HQAdapter</find>
     </findStrings>
     <replaceStrings>
       <replace>self.log.logger.error</replace>
@@ -124,12 +157,15 @@
         <option value="$PROJECT_DIR$/common.py" />
         <option value="$PROJECT_DIR$/adapter.py" />
         <option value="$PROJECT_DIR$/trader.py" />
+        <option value="$PROJECT_DIR$/Trader.py" />
+        <option value="$PROJECT_DIR$/HQAdapter.py" />
+        <option value="$PROJECT_DIR$/OrderAdapter.py" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="90" />
-    <option name="y" value="58" />
+    <option name="x" value="-134" />
+    <option name="y" value="113" />
     <option name="width" value="2421" />
     <option name="height" value="1173" />
   </component>
@@ -208,12 +244,12 @@
       <workItem from="1547801753413" duration="1102000" />
       <workItem from="1547818916195" duration="470000" />
       <workItem from="1547819501036" duration="65000" />
-      <workItem from="1548042561931" duration="3261000" />
+      <workItem from="1548042561931" duration="5794000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="33613000" />
+    <option name="totallyTimeSpent" value="36146000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -225,11 +261,11 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="90" y="58" width="2421" height="1173" extended-state="0" />
+    <frame x="-134" y="113" width="2421" height="1173" extended-state="0" />
     <editor active="true" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.4893617" visible="true" weight="0.13408995" />
-      <window_info id="Structure" order="1" sideWeight="0.5106383" side_tool="true" visible="true" weight="0.13408995" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.48827586" visible="true" weight="0.13408995" />
+      <window_info id="Structure" order="1" sideWeight="0.5117241" side_tool="true" visible="true" weight="0.13408995" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" weight="0.3293247" />
@@ -243,7 +279,7 @@
       <window_info anchor="bottom" id="Database Changes" order="9" />
       <window_info anchor="bottom" id="Event Log" order="10" side_tool="true" />
       <window_info anchor="bottom" id="Terminal" order="11" />
-      <window_info anchor="bottom" id="Python Console" order="12" />
+      <window_info anchor="bottom" id="Python Console" order="12" visible="true" weight="0.3293247" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
@@ -302,7 +338,7 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/reporter.py">
+    <entry file="file://$PROJECT_DIR$/Reporter.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="16">
           <caret line="1" lean-forward="true" selection-start-line="1" selection-end-line="1" />
@@ -316,7 +352,7 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/mail.py">
+    <entry file="file://$PROJECT_DIR$/Mail.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="576">
           <caret line="41" column="42" selection-start-line="41" selection-start-column="42" selection-end-line="41" selection-end-column="42" />
@@ -326,20 +362,13 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/log.py">
+    <entry file="file://$PROJECT_DIR$/Log.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="432">
           <caret line="27" column="13" selection-start-line="27" selection-start-column="13" selection-end-line="27" selection-end-column="13" />
           <folding>
             <element signature="e#16#30#0" expanded="true" />
           </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/runner.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="64">
-          <caret line="4" column="7" selection-start-line="4" selection-start-column="7" selection-end-line="4" selection-end-column="15" />
         </state>
       </provider>
     </entry>
@@ -350,47 +379,67 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/ta.py">
+    <entry file="file://$PROJECT_DIR$/Algorithm.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1113">
-          <caret line="85" lean-forward="true" selection-start-line="85" selection-end-line="85" />
+          <caret line="85" selection-start-line="85" selection-end-line="85" />
           <folding>
             <element signature="e#16#28#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/common.py">
+    <entry file="file://$PROJECT_DIR$/Box.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-802">
-          <caret line="56" column="28" lean-forward="true" selection-start-line="56" selection-start-column="28" selection-end-line="56" selection-end-column="28" />
+        <state relative-caret-position="-485">
+          <caret line="133" column="12" selection-start-line="133" selection-start-column="12" selection-end-line="133" selection-end-column="12" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/adapter.py">
+    <entry file="file://$PROJECT_DIR$/Common.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1834">
-          <caret line="249" column="30" selection-start-line="249" selection-start-column="30" selection-end-line="249" selection-end-column="30" />
+        <state relative-caret-position="-1706">
+          <caret line="56" column="28" selection-start-line="56" selection-start-column="28" selection-end-line="56" selection-end-column="28" />
           <folding>
             <element signature="e#16#29#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/box.py">
+    <entry file="file://$PROJECT_DIR$/Trader.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="336">
-          <caret line="148" column="23" lean-forward="true" selection-start-line="148" selection-start-column="23" selection-end-line="148" selection-end-column="23" />
+        <state relative-caret-position="-670">
+          <caret line="85" column="53" selection-start-line="85" selection-start-column="44" selection-end-line="85" selection-end-column="53" />
+          <folding>
+            <element signature="e#16#29#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/HQAdapter.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="582">
+          <caret line="246" selection-start-line="246" selection-end-line="246" />
+          <folding>
+            <element signature="e#16#29#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/runner.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state>
+          <caret selection-end-column="14" />
           <folding>
             <element signature="e#16#27#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/trader.py">
+    <entry file="file://$PROJECT_DIR$/OrderAdapter.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="818">
-          <caret line="127" column="24" selection-start-line="127" selection-start-column="24" selection-end-line="127" selection-end-column="24" />
+        <state relative-caret-position="16">
+          <caret line="1" column="1" selection-start-line="1" selection-start-column="1" selection-end-line="1" selection-end-column="1" />
         </state>
       </provider>
     </entry>

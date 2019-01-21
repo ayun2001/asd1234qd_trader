@@ -2,13 +2,13 @@
 
 import talib
 
-import common
+import Common
 
 
 class TA(object):
     def __init__(self):
-        if not common.file_exist(common.CONST_DIR_LOG):
-            common.create_directory(common.CONST_DIR_LOG)
+        if not Common.file_exist(Common.CONST_DIR_LOG):
+            Common.create_directory(Common.CONST_DIR_LOG)
 
     @staticmethod
     def make_macd_data(dataset, s=12, l=26, m=9):  # MACD数据一定要长时间的数据 30个数据点不够, 至少需要90, 这样数据才准

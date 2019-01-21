@@ -4,13 +4,13 @@ import time
 
 import schedule
 
-import common
-from log import Logger
+import Common
+from Log import Logger
 
 CONST_PENDING_IDLE_TIME = 3
 CONST_LOG_SCHEDULE_FILENAME = "schedule.log"
 
-schedule_log_filename = "%s/%s" % (common.CONST_DIR_LOG, CONST_LOG_SCHEDULE_FILENAME)
+schedule_log_filename = "%s/%s" % (Common.CONST_DIR_LOG, CONST_LOG_SCHEDULE_FILENAME)
 
 _log = Logger(schedule_log_filename, level='debug')
 

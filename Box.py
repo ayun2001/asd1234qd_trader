@@ -4,14 +4,14 @@ import time
 
 from prettytable import PrettyTable
 
-import adapter
-import common
-import mail
-from log import Logger
+import Common
+import HQAdapter
+import Mail
+from Log import Logger
 
-box_log_filename = "%s/%s_%s" % (common.CONST_DIR_LOG, time.strftime('%Y%m%d', time.localtime(time.time())),
-                                 common.CONST_LOG_BOX_FILENAME)
-box_db_filename = "%s/%s" % (common.CONST_DIR_DATABASE, common.CONST_DB_BOX_FILENAME)
+box_log_filename = "%s/%s_%s" % (Common.CONST_DIR_LOG, time.strftime('%Y%m%d', time.localtime(time.time())),
+                                 Common.CONST_LOG_BOX_FILENAME)
+box_db_filename = "%s/%s" % (Common.CONST_DIR_DATABASE, Common.CONST_DB_BOX_FILENAME)
 
 MIN_HOURS = 4
 MIN_60M_TIMEDELTA = MIN_HOURS * 4
@@ -20,10 +20,10 @@ MIN_60M_PRICE_RISE = 5.0
 
 # 保存股票盒到硬盘
 def _storage_box_data(data):
-    if not common.file_exist(common.CONST_DIR_DATABASE):
-        common.create_directory(common.CONST_DIR_DATABASE)
+    if not Common.file_exist(Common.CONST_DIR_DATABASE):
+        Common.create_directory(Common.CONST_DIR_DATABASE)
 
-    common.dict_to_file(data, box_db_filename)
+    Common.dict_to_file(data, box_db_filename)
 
 
 # 发送股票盒邮件
@@ -39,15 +39,15 @@ def _generate_box_mail_message(data):
         for stock_class_type, class_type_values in market_values.items():
             count = len(class_type_values.keys())
             total_number += count
-            if market_name == common.CONST_SZ_MARKET:
+            if market_name == Common.CONST_SZ_MARKET:
                 sz_number += count
-            if market_name == common.CONST_SH_MARKET:
+            if market_name == Common.CONST_SH_MARKET:
                 sh_number += count
-            if market_name == common.CONST_ZX_MARKET:
+            if market_name == Common.CONST_ZX_MARKET:
                 zx_number += count
-            if market_name == common.CONST_CY_MARKET:
+            if market_name == Common.CONST_CY_MARKET:
                 cy_number += count
-            table.add_row([common.MARKET_NAME_MAPPING[market_name], common.STOCK_TYPE_NAME_MAPPING[stock_class_type],
+            table.add_row([Common.MARKET_NAME_MAPPING[market_name], Common.STOCK_TYPE_NAME_MAPPING[stock_class_type],
                            count, ','.join(class_type_values.keys()) if count > 0 else '无'])
 
     return table.get_html_string() + u"<p>总共选取股票数量: %d --> 上海: %d, 深圳: %d, 中小: %d, 创业: %d </p>" % (
@@ -57,8 +57,8 @@ def _generate_box_mail_message(data):
 # 生成股票盒
 class GenerateBox(object):
     def __init__(self):
-        if not common.file_exist(common.CONST_DIR_LOG):
-            common.create_directory(common.CONST_DIR_LOG)
+        if not Common.file_exist(Common.CONST_DIR_LOG):
+            Common.create_directory(Common.CONST_DIR_LOG)
 
         self.log = Logger(box_log_filename, level='debug')
         self.connect_instance = None
@@ -74,7 +74,7 @@ class GenerateBox(object):
                 stock_t_list.extend([(key, data['desc'], v['code'], v['name']) for v in data['values']])
             except KeyError:
                 continue
-        if len(stock_t_list) == common.CONST_STOCK_LIST_IS_NULL:
+        if len(stock_t_list) == Common.CONST_STOCK_LIST_IS_NULL:
             self.log.logger.error(u"转换后的股票清单为空, 检查源数据 ...")
             return None
         else:
@@ -88,15 +88,15 @@ class GenerateBox(object):
         market_name, market_desc, stock_code, stock_name = input_data
         self.log.logger.info(u"[第1阶段] 正在获得并处理 市场: %s, 股票: %s, 名称：%s 的数据 ..." % (market_desc, stock_code, stock_name))
         try:
-            market_code = common.MARKET_CODE_MAPPING[market_name]
+            market_code = Common.MARKET_CODE_MAPPING[market_name]
         except KeyError:
             self.log.logger.error(u"获得股票: %s, 名称：%s, 市场映射关系数据不存在." % (stock_code, stock_name))
             return
 
-        history_data_frame, err_info = adapter.get_history_data_frame(instance, market=market_code, code=stock_code,
-                                                                      market_desc=market_desc, name=stock_name,
-                                                                      ktype=common.CONST_K_DAY,
-                                                                      kcount=common.CONST_K_LENGTH)
+        history_data_frame, err_info = HQAdapter.get_history_data_frame(instance, market=market_code, code=stock_code,
+                                                                        market_desc=market_desc, name=stock_name,
+                                                                        ktype=Common.CONST_K_DAY,
+                                                                        kcount=Common.CONST_K_LENGTH)
         if err_info is not None:
             self.log.logger.warn(
                 u"获得市场: %s, 股票: %s, 名称：%s, 历史K线数据错误: %s" % (market_desc, stock_code, stock_name, err_info))
@@ -105,7 +105,7 @@ class GenerateBox(object):
         history_data_frame_index_list = history_data_frame.index
         history_data_count = len(history_data_frame_index_list)
         # 这里需要高度关注下，因为默认可能只有14天
-        if history_data_count < (common.CONST_K_LENGTH / 2 if common.CONST_K_LENGTH < 3 else 14):
+        if history_data_count < (Common.CONST_K_LENGTH / 2 if Common.CONST_K_LENGTH < 3 else 14):
             self.log.logger.error(u"参与计算得市场: %s, 股票: %s, 名称：%s, K数据: %d (不够>=14)." % (
                 market_desc, stock_code, stock_name, history_data_count))
             return
@@ -132,14 +132,14 @@ class GenerateBox(object):
 
     def _stock_60m_k_type_filter(self, market_name="", market_desc="", stock_name="", stock_code="300729", days=0):
         try:
-            market_code = common.MARKET_CODE_MAPPING[market_name]
+            market_code = Common.MARKET_CODE_MAPPING[market_name]
         except KeyError:
             return False, u"获得股票: %s, 名称：%s 市场映射关系数据不存在." % (stock_code, stock_name)
 
-        history_data_frame, err_info = adapter.get_history_data_frame(self.connect_instance, market=market_code,
-                                                                      code=stock_code, market_desc=market_desc,
-                                                                      name=stock_name, ktype=common.CONST_K_DAY,
-                                                                      kcount=common.CONST_K_LENGTH)
+        history_data_frame, err_info = HQAdapter.get_history_data_frame(self.connect_instance, market=market_code,
+                                                                        code=stock_code, market_desc=market_desc,
+                                                                        name=stock_name, ktype=Common.CONST_K_DAY,
+                                                                        kcount=Common.CONST_K_LENGTH)
 
         if err_info is not None:
             self.log.logger.error(
@@ -187,10 +187,10 @@ class GenerateBox(object):
             return False, None
 
     def stage1_compute_data(self):
-        valid_stock_data_set = {common.CONST_SH_MARKET: {}, common.CONST_SZ_MARKET: {}, common.CONST_ZX_MARKET: {},
-                                common.CONST_CY_MARKET: {}}
+        valid_stock_data_set = {Common.CONST_SH_MARKET: {}, Common.CONST_SZ_MARKET: {}, Common.CONST_ZX_MARKET: {},
+                                Common.CONST_CY_MARKET: {}}
 
-        stock_codes, err_info = adapter.get_stock_codes(self.connect_instance)
+        stock_codes, err_info = HQAdapter.get_stock_codes(self.connect_instance)
         if stock_codes is None:
             self.log.logger.error(u"[第1阶段] 获得股票代码池错误: %s", err_info)
             return None
@@ -205,7 +205,7 @@ class GenerateBox(object):
         for stock_item in valid_stock_info_list:
             self._compute_task_handler(self.connect_instance, stock_item, valid_stock_data_set)
             # 延迟休息，防止被封
-            time.sleep(common.CONST_TASK_WAITING_MS / 1000.0)
+            time.sleep(Common.CONST_TASK_WAITING_MS / 1000.0)
 
         return valid_stock_data_set
 
@@ -214,14 +214,14 @@ class GenerateBox(object):
             return None
 
         valid_stock_data_set = {
-            common.CONST_SH_MARKET: {common.CONST_STOCK_TYPE_1: {}, common.CONST_STOCK_TYPE_2: {},
-                                     common.CONST_STOCK_TYPE_3: {}, common.CONST_STOCK_TYPE_4: {}},
-            common.CONST_SZ_MARKET: {common.CONST_STOCK_TYPE_1: {}, common.CONST_STOCK_TYPE_2: {},
-                                     common.CONST_STOCK_TYPE_3: {}, common.CONST_STOCK_TYPE_4: {}},
-            common.CONST_ZX_MARKET: {common.CONST_STOCK_TYPE_1: {}, common.CONST_STOCK_TYPE_2: {},
-                                     common.CONST_STOCK_TYPE_3: {}, common.CONST_STOCK_TYPE_4: {}},
-            common.CONST_CY_MARKET: {common.CONST_STOCK_TYPE_1: {}, common.CONST_STOCK_TYPE_2: {},
-                                     common.CONST_STOCK_TYPE_3: {}, common.CONST_STOCK_TYPE_4: {}},
+            Common.CONST_SH_MARKET: {Common.CONST_STOCK_TYPE_1: {}, Common.CONST_STOCK_TYPE_2: {},
+                                     Common.CONST_STOCK_TYPE_3: {}, Common.CONST_STOCK_TYPE_4: {}},
+            Common.CONST_SZ_MARKET: {Common.CONST_STOCK_TYPE_1: {}, Common.CONST_STOCK_TYPE_2: {},
+                                     Common.CONST_STOCK_TYPE_3: {}, Common.CONST_STOCK_TYPE_4: {}},
+            Common.CONST_ZX_MARKET: {Common.CONST_STOCK_TYPE_1: {}, Common.CONST_STOCK_TYPE_2: {},
+                                     Common.CONST_STOCK_TYPE_3: {}, Common.CONST_STOCK_TYPE_4: {}},
+            Common.CONST_CY_MARKET: {Common.CONST_STOCK_TYPE_1: {}, Common.CONST_STOCK_TYPE_2: {},
+                                     Common.CONST_STOCK_TYPE_3: {}, Common.CONST_STOCK_TYPE_4: {}},
         }
 
         for market_code, market_values in stock_pool.items():
@@ -250,62 +250,62 @@ class GenerateBox(object):
                         continue
 
                     # 延迟休息，防止被封
-                    time.sleep(common.CONST_TASK_WAITING_MS / 1000.0)
+                    time.sleep(Common.CONST_TASK_WAITING_MS / 1000.0)
 
                     if min_close_price >= meta_close_price:
                         # Type1
-                        if market_name == common.CONST_SH_MARKET and max_turn_over <= 12 and not bool_filter_result:
-                            valid_stock_data_set[market_name][common.CONST_STOCK_TYPE_1][stock_code] = stock_meta_data
+                        if market_name == Common.CONST_SH_MARKET and max_turn_over <= 12 and not bool_filter_result:
+                            valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_1][stock_code] = stock_meta_data
                             continue
-                        if market_name == common.CONST_SZ_MARKET and max_turn_over <= 12 and not bool_filter_result:
-                            valid_stock_data_set[market_name][common.CONST_STOCK_TYPE_1][stock_code] = stock_meta_data
+                        if market_name == Common.CONST_SZ_MARKET and max_turn_over <= 12 and not bool_filter_result:
+                            valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_1][stock_code] = stock_meta_data
                             continue
-                        if market_name == common.CONST_ZX_MARKET and max_turn_over <= 15 and not bool_filter_result:
-                            valid_stock_data_set[market_name][common.CONST_STOCK_TYPE_1][stock_code] = stock_meta_data
+                        if market_name == Common.CONST_ZX_MARKET and max_turn_over <= 15 and not bool_filter_result:
+                            valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_1][stock_code] = stock_meta_data
                             continue
-                        if market_name == common.CONST_CY_MARKET and max_turn_over <= 18 and not bool_filter_result:
-                            valid_stock_data_set[market_name][common.CONST_STOCK_TYPE_1][stock_code] = stock_meta_data
+                        if market_name == Common.CONST_CY_MARKET and max_turn_over <= 18 and not bool_filter_result:
+                            valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_1][stock_code] = stock_meta_data
                             continue
                         # Type2
-                        if market_name == common.CONST_SH_MARKET and max_turn_over > 12 and not bool_filter_result:
-                            valid_stock_data_set[market_name][common.CONST_STOCK_TYPE_2][stock_code] = stock_meta_data
+                        if market_name == Common.CONST_SH_MARKET and max_turn_over > 12 and not bool_filter_result:
+                            valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_2][stock_code] = stock_meta_data
                             continue
-                        if market_name == common.CONST_SZ_MARKET and max_turn_over > 12 and not bool_filter_result:
-                            valid_stock_data_set[market_name][common.CONST_STOCK_TYPE_2][stock_code] = stock_meta_data
+                        if market_name == Common.CONST_SZ_MARKET and max_turn_over > 12 and not bool_filter_result:
+                            valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_2][stock_code] = stock_meta_data
                             continue
-                        if market_name == common.CONST_ZX_MARKET and max_turn_over > 15 and not bool_filter_result:
-                            valid_stock_data_set[market_name][common.CONST_STOCK_TYPE_2][stock_code] = stock_meta_data
+                        if market_name == Common.CONST_ZX_MARKET and max_turn_over > 15 and not bool_filter_result:
+                            valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_2][stock_code] = stock_meta_data
                             continue
-                        if market_name == common.CONST_CY_MARKET and max_turn_over > 18 and not bool_filter_result:
-                            valid_stock_data_set[market_name][common.CONST_STOCK_TYPE_2][stock_code] = stock_meta_data
+                        if market_name == Common.CONST_CY_MARKET and max_turn_over > 18 and not bool_filter_result:
+                            valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_2][stock_code] = stock_meta_data
                             continue
 
                     if meta_close_price > min_close_price >= meta_low_price:
                         # Type3
-                        if market_name == common.CONST_SH_MARKET and max_turn_over <= 12 and not bool_filter_result:
-                            valid_stock_data_set[market_name][common.CONST_STOCK_TYPE_3][stock_code] = stock_meta_data
+                        if market_name == Common.CONST_SH_MARKET and max_turn_over <= 12 and not bool_filter_result:
+                            valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_3][stock_code] = stock_meta_data
                             continue
-                        if market_name == common.CONST_SZ_MARKET and max_turn_over <= 12 and not bool_filter_result:
-                            valid_stock_data_set[market_name][common.CONST_STOCK_TYPE_3][stock_code] = stock_meta_data
+                        if market_name == Common.CONST_SZ_MARKET and max_turn_over <= 12 and not bool_filter_result:
+                            valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_3][stock_code] = stock_meta_data
                             continue
-                        if market_name == common.CONST_ZX_MARKET and max_turn_over <= 15 and not bool_filter_result:
-                            valid_stock_data_set[market_name][common.CONST_STOCK_TYPE_3][stock_code] = stock_meta_data
+                        if market_name == Common.CONST_ZX_MARKET and max_turn_over <= 15 and not bool_filter_result:
+                            valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_3][stock_code] = stock_meta_data
                             continue
-                        if market_name == common.CONST_CY_MARKET and max_turn_over <= 18 and not bool_filter_result:
-                            valid_stock_data_set[market_name][common.CONST_STOCK_TYPE_3][stock_code] = stock_meta_data
+                        if market_name == Common.CONST_CY_MARKET and max_turn_over <= 18 and not bool_filter_result:
+                            valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_3][stock_code] = stock_meta_data
                             continue
                         # Type4
-                        if market_name == common.CONST_SH_MARKET and max_turn_over > 12 and not bool_filter_result:
-                            valid_stock_data_set[market_name][common.CONST_STOCK_TYPE_4][stock_code] = stock_meta_data
+                        if market_name == Common.CONST_SH_MARKET and max_turn_over > 12 and not bool_filter_result:
+                            valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_4][stock_code] = stock_meta_data
                             continue
-                        if market_name == common.CONST_SZ_MARKET and max_turn_over > 12 and not bool_filter_result:
-                            valid_stock_data_set[market_name][common.CONST_STOCK_TYPE_4][stock_code] = stock_meta_data
+                        if market_name == Common.CONST_SZ_MARKET and max_turn_over > 12 and not bool_filter_result:
+                            valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_4][stock_code] = stock_meta_data
                             continue
-                        if market_name == common.CONST_ZX_MARKET and max_turn_over > 15 and not bool_filter_result:
-                            valid_stock_data_set[market_name][common.CONST_STOCK_TYPE_4][stock_code] = stock_meta_data
+                        if market_name == Common.CONST_ZX_MARKET and max_turn_over > 15 and not bool_filter_result:
+                            valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_4][stock_code] = stock_meta_data
                             continue
-                        if market_name == common.CONST_CY_MARKET and max_turn_over > 18 and not bool_filter_result:
-                            valid_stock_data_set[market_name][common.CONST_STOCK_TYPE_4][stock_code] = stock_meta_data
+                        if market_name == Common.CONST_CY_MARKET and max_turn_over > 18 and not bool_filter_result:
+                            valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_4][stock_code] = stock_meta_data
                             continue
 
                 except Exception as err:
@@ -315,7 +315,7 @@ class GenerateBox(object):
         return valid_stock_data_set
 
     def generate(self):
-        self.connect_instance, err_info = adapter.create_connect_instance()
+        self.connect_instance, err_info = HQAdapter.create_connect_instance()
         if self.connect_instance is None:
             self.log.logger.error(u"创建行情服务器连接实例失败: %s" % err_info)
             return
@@ -330,7 +330,7 @@ class GenerateBox(object):
 def gen_box_main():
     gen_box = GenerateBox()
 
-    if common.check_today_is_holiday_time():
+    if Common.check_today_is_holiday_time():
         gen_box.log.logger.warning(u"节假日休假, 股票市场不交易, 跳过...")
         exit(0)
 
@@ -344,17 +344,17 @@ def gen_box_main():
 
     if valid_stock_box is None:
         gen_box.log.logger.error(u"生成的表股票箱为空")
-        mail.send_mail(title=u"[%s] 股票箱计算错误" % current_datetime, msg="[ERROR]")
+        Mail.send_mail(title=u"[%s] 股票箱计算错误" % current_datetime, msg="[ERROR]")
         exit(0)
 
-    total_compute_time = common.change_seconds_to_time(int(end_timestamp - start_timestamp))
+    total_compute_time = Common.change_seconds_to_time(int(end_timestamp - start_timestamp))
     gen_box.log.logger.info(u"计算总费时: %s" % total_compute_time)
     sendmail_message = _generate_box_mail_message(valid_stock_box) + u"<p>计算总费时: %s</p>" % total_compute_time
 
     # 保存股票盒
-    _storage_box_data(data={"timestamp": common.get_current_timestamp(), "value": valid_stock_box})
+    _storage_box_data(data={"timestamp": Common.get_current_timestamp(), "value": valid_stock_box})
     # 发送已经选的股票
-    mail.send_mail(title=u"日期:%s, 选中的股票箱" % current_datetime, msg=sendmail_message)
+    Mail.send_mail(title=u"日期:%s, 选中的股票箱" % current_datetime, msg=sendmail_message)
 
 
 if __name__ == '__main__':
