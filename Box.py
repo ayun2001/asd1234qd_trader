@@ -19,7 +19,7 @@ box_config_filename = "%s/%s" % (Common.CONST_DIR_CONF, Common.CONST_CONFIG_BOX_
 MIN_HOURS = 4
 MIN_60M_TIMEDELTA = MIN_HOURS * 4
 MIN_60M_PRICE_RISE = 5.0
-RETRY_CONNECT_INTERVAL_IDLE = 15
+RETRY_CONNECT_INTERVAL_IDLE = 15.0
 
 
 def _load_box_config():
