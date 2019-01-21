@@ -243,5 +243,13 @@ def get_history_data_frame(instance, market, market_desc, code, name, ktype=comm
         # 返回结果
         return history_data_frame, None
 
+
 # ============================================
 # 下单接口函数
+
+def send_stock_order(instance, code, action_id, uprice, count):
+    pass
+
+
+def cancel_stock_order():
+    pass
