@@ -8,7 +8,6 @@ import time
 import Box
 import Common
 import HQAdapter
-import OrderAdapter
 from Log import Logger
 
 _current_datetime = datetime.datetime.now()
@@ -47,6 +46,18 @@ def _load_box_db_file():
         return None, u"股票箱数据文件太旧, 时间超过：%d 小时" % MAX_VALID_BOX_INTERVAL_HOURS
 
     return box_value, None
+
+
+'''
+
+{"stock_code":{
+  "market_code": 0,
+  "market_desc": "",
+  "stock_name": "",
+  "price": 0.0,
+  "count": 0
+}}
+'''
 
 
 def _load_position_db_file():
@@ -119,14 +130,13 @@ def _check_stock_sell_point(instance, market_code, market_desc, stock_code, stoc
 
     # 触发止损条件 (3%)
     if pct_change_list[0] < MIN_STOP_LOSS_RATIO:  # 已经倒序，第一个就是当前这个小时
-        # 卖出股票
-        OrderAdapter.send_stock_order(instance, stock_code, Common.CONST_STOCK_SELL, 0, 0)
         return True, u"触发止损条件 市场: %s, 股票: %s, 名称：%s, 发生卖出" % (market_desc, stock_code, stock_name)
 
     # 触发卖出条件 (上涨超过3%，KDJ_J> 100, KDJ死叉了)
     if bool_more_than_spec_raise and (bool_max_j_value or bool_down_cross_kdj):
-        OrderAdapter.send_stock_order(instance, stock_code, Common.CONST_STOCK_SELL, 0, 0)
         return True, u"触发卖出条件 市场: %s, 股票: %s, 名称：%s, 发生卖出" % (market_desc, stock_code, stock_name)
+
+    return False, u"执行 市场: %s, 股票: %s, 名称：%s, 继续持仓..." % (market_desc, stock_code, stock_name)
 
 
 class Trader(object):
@@ -181,8 +191,41 @@ class Trader(object):
         return classify_dataset
 
     # 计算当前持仓的状态，判定是否有股票出发可以卖点
-    def _position_scanner(self):
-        pass
+    def _position_scanner(self, instance):
+        position_data, err_info = _load_position_db_file()
+
+        if err_info is not None:
+            self.log.logger.error(u"读取持仓股票数据文件错误: %s" % err_info)
+            return
+        else:
+            for stock_code, stock_values in position_data.items():
+                try:
+                    market_code = stock_values["market_code"]
+                    market_desc = stock_values["market_desc"]
+                    stock_name = stock_values["stock_name"]
+                    bool_sell, err_info = _check_stock_sell_point(instance, stock_code, market_code, market_desc,
+                                                                  stock_name)
+                    self.log.logger.error(u"执行持仓 市场: %s, 股票: %s, 名称：%s, 卖点扫描, 结果: %s" % (
+                        market_desc, stock_code, stock_name, err_info))
+
+                    # 如果没有卖出信号，跳过后端的代码
+                    if not bool_sell:
+                        continue
+
+                    # 执行买股票的动作
+                    # 获得5档价格数据
+                    level5_quotes_dataset, err_info = HQAdapter.get_stock_quotes([(market_code, stock_code)])
+                    if err_info is None:
+                        self.log.logger.error(u"获得 市场: %s, 股票: %s, 名称：%s, 5档行情数据错误: %s" % (
+                            market_desc, stock_code, stock_name, err_info))
+                        continue
+
+                    level5_quote_value = level5_quotes_dataset[stock_code]
+
+
+                except Exception as err:
+                    self.log.logger.error(u"执行持仓股票扫描出现出错: %s" % err.message)
+                    continue
 
     def run(self):
         # 先卖出，再买入
