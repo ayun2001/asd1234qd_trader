@@ -1,5 +1,7 @@
 # coding=utf-8
 
+import codecs
+import json
 import time
 
 from prettytable import PrettyTable
@@ -12,10 +14,21 @@ from Log import Logger
 box_log_filename = "%s/%s_%s" % (Common.CONST_DIR_LOG, time.strftime('%Y%m%d', time.localtime(time.time())),
                                  Common.CONST_LOG_BOX_FILENAME)
 box_db_filename = "%s/%s" % (Common.CONST_DIR_DATABASE, Common.CONST_DB_BOX_FILENAME)
+box_config_filename = "%s/%s" % (Common.CONST_DIR_CONF, Common.CONST_CONFIG_TRADER_FILENAME)
 
 MIN_HOURS = 4
 MIN_60M_TIMEDELTA = MIN_HOURS * 4
 MIN_60M_PRICE_RISE = 5.0
+
+
+def _load_box_config():
+    if not Common.file_exist(box_config_filename):
+        return None, u"交易模块配置文件: %s 不存在." % box_config_filename
+    try:
+        with codecs.open(box_config_filename, 'r', 'utf-8') as _file:
+            return json.load(_file), None
+    except Exception as err:
+        return None, err.message
 
 
 # 保存股票盒到硬盘
@@ -59,6 +72,9 @@ class GenerateBox(object):
     def __init__(self):
         if not Common.file_exist(Common.CONST_DIR_LOG):
             Common.create_directory(Common.CONST_DIR_LOG)
+
+        if not Common.file_exist(Common.CONST_DIR_CONF):
+            Common.create_directory(Common.CONST_DIR_CONF)
 
         self.log = Logger(box_log_filename, level='debug')
         self.connect_instance = None
@@ -315,7 +331,13 @@ class GenerateBox(object):
         return valid_stock_data_set
 
     def generate(self):
-        self.connect_instance, err_info = HQAdapter.create_connect_instance()
+        # 加载股票箱的配置文件
+        config, err_info = _load_box_config()
+        if err_info is not None:
+            self.log.logger.error(u"加载股票箱配置文件错误: %s", err_info)
+            return
+
+        self.connect_instance, err_info = HQAdapter.create_connect_instance(config)
         if self.connect_instance is None:
             self.log.logger.error(u"创建行情服务器连接实例失败: %s" % err_info)
             return

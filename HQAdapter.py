@@ -28,13 +28,12 @@ def check_stop_trade_stock(dataset):
         return False
 
 
-def create_connect_instance():
+def create_connect_instance(config):
     try:
-        host, port = random.choice(Common.TDX_HQ_SERVER_LIST).split(':')
+        host, port = random.choice(config["servers"]).split(':')
         port = int(port)
-    except Exception:
-        host = "101.227.73.20"
-        port = 7709
+    except Exception as err:
+        return None, u"行情配置信息关联错误: %s" % err.message
 
     try:
         instance = TradeX2.TdxHq_Connect(host, port)

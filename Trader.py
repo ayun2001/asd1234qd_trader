@@ -59,7 +59,7 @@ def _load_position_db_file():
       "stock_name": "",
       "price": 0.0,
       "count": 0，
-      "account_id": 0,   #账户id，以后用来聚合用
+      "trade_account_id": 0,   #账户id，以后用来聚合用
     }}
     """
     if not Common.file_exist(trader_db_position_filename):
@@ -153,6 +153,7 @@ class Trader(object):
 
         self.log = Logger(trader_log_filename, level='debug')
         self.config = None
+        self.connect_instance = None
         self.records_set = []
 
     # 记录交易记录
@@ -162,7 +163,7 @@ class Trader(object):
         {
             "timestamp": 0,  #时间戳
             "datetime": 2018-01-01 xx:xx:xx,当前日期，用来可读的
-            "account_id": 0,   #账户id，以后用来聚合用
+            "trade_account_id": 0,   #账户id，以后用来聚合用
             "order_type": "buy",  # 这里交易方向，buy/sell
             "order_type_id": 0,   # 这里交易方向，buy:0 , sell:1
             "stock_id": "",    # 股票代码
@@ -182,19 +183,19 @@ class Trader(object):
 
     # 对加载得BOX进行初始筛选和排序，选择最合适得前几个（默认type1>type2>type3>type4）
     # 检查当前的股票箱内的股票是否倒了可以出发买点
-    @staticmethod
-    def _box_scanner(box_dataset):
-        classify_dataset = {Common.CONST_STOCK_TYPE_1: [], Common.CONST_STOCK_TYPE_2: [],
-                            Common.CONST_STOCK_TYPE_3: [], Common.CONST_STOCK_TYPE_4: []}
-
-        for market_name, market_values in box_dataset.items():
-            for stock_class_type, class_type_values in market_values.items():
-                classify_dataset[stock_class_type].append(class_type_values.keys())
-
-        return classify_dataset
+    def _box_scanner(self):
+        # classify_dataset = {Common.CONST_STOCK_TYPE_1: [], Common.CONST_STOCK_TYPE_2: [],
+        #                     Common.CONST_STOCK_TYPE_3: [], Common.CONST_STOCK_TYPE_4: []}
+        #
+        # for market_name, market_values in box_dataset.items():
+        #     for stock_class_type, class_type_values in market_values.items():
+        #         classify_dataset[stock_class_type].append(class_type_values.keys())
+        #
+        # return classify_dataset
+        pass
 
     # 计算当前持仓的状态，判定是否有股票出发可以卖点
-    def _position_scanner(self, instance):
+    def _position_scanner(self):
         position_data, err_info = _load_position_db_file()
 
         if err_info is not None:
@@ -206,8 +207,8 @@ class Trader(object):
                     market_code = stock_values["market_code"]
                     market_desc = stock_values["market_desc"]
                     stock_name = stock_values["stock_name"]
-                    bool_sell, err_info = _check_stock_sell_point(instance, stock_code, market_code, market_desc,
-                                                                  stock_name)
+                    bool_sell, err_info = _check_stock_sell_point(self.connect_instance, stock_code, market_code,
+                                                                  market_desc, stock_name)
                     self.log.logger.error(u"执行持仓 市场: %s, 股票: %s, 名称：%s, 卖点扫描, 结果: %s" % (
                         market_desc, stock_code, stock_name, err_info))
 
@@ -215,9 +216,9 @@ class Trader(object):
                     if not bool_sell:
                         continue
 
-                    # 执行买股票的动作
                     # 获得5档价格数据
-                    level5_quotes_dataset, err_info = HQAdapter.get_stock_quotes(instance, [(market_code, stock_code)])
+                    level5_quotes_dataset, err_info = HQAdapter.get_stock_quotes(self.connect_instance,
+                                                                                 [(market_code, stock_code)])
                     if err_info is None:
                         self.log.logger.error(u"获得 市场: %s, 股票: %s, 名称：%s, 5档行情数据错误: %s" % (
                             market_desc, stock_code, stock_name, err_info))
@@ -226,7 +227,7 @@ class Trader(object):
                     level5_quote_value = level5_quotes_dataset[stock_code]
                     position_own_value = position_data[stock_code]
                     current_sell_count = position_own_value["count"]
-                    current_account_id = position_own_value["account_id"]
+                    current_trade_account_id = position_own_value["trade_account_id"]
 
                     # 判断获得能够使用卖出得价格
                     if current_sell_count <= level5_quote_value["buy1_count"]:
@@ -241,9 +242,9 @@ class Trader(object):
                         current_sell_price = level5_quote_value["buy5_value"] - OFFSET_PRICE
 
                     # 执行卖出动作的
-                    err_info = OrderAdapter.send_stock_order(instance, stock_code, current_account_id,
-                                                             Common.CONST_STOCK_SELL, current_sell_price,
-                                                             current_sell_count)
+                    err_info = OrderAdapter.send_stock_order(self.connect_instance, stock_code,
+                                                             current_trade_account_id, Common.CONST_STOCK_SELL,
+                                                             current_sell_price, current_sell_count)
                     # 记录交易数据
                     if err_info is None:
                         sell_total_value = current_sell_price * current_sell_count
@@ -252,7 +253,7 @@ class Trader(object):
                         trader_record = {
                             "timestamp": Common.get_current_timestamp(),
                             "datetime": Common.get_current_datetime(),
-                            "account_id": current_account_id,
+                            "trade_account_id": current_trade_account_id,
                             "order_type": Common.CONST_STOCK_SELL_DESC,
                             "order_type_id": Common.CONST_STOCK_SELL,
                             "stock_code": stock_code,
@@ -280,21 +281,21 @@ class Trader(object):
                 self.records_set = []
 
     def run(self):
-        instance, err_info = OrderAdapter.create_connect_instance()
-        if err_info is not None:
-            self.log.logger.error(u"创建交易服务器连接实例失败: %s" % err_info)
-            return
-
         # 加载交易器的配置文件
         self.config, err_info = _load_trader_config()
         if err_info is not None:
             self.log.logger.error(u"加载交易器配置文件错误: %s", err_info)
             return
 
+        self.connect_instance, err_info = OrderAdapter.create_connect_instance(config=self.config)
+        if err_info is not None:
+            self.log.logger.error(u"创建交易服务器连接实例失败: %s" % err_info)
+            return
+
         # 先卖出
-        self._position_scanner(instance)
+        self._position_scanner()
         # 再买入
-        pass
+        self._box_scanner()
 
 
 def run_trader_main():

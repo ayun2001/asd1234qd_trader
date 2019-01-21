@@ -1,4 +1,10 @@
 {
   "max_stock_number": 5,
-  "max_capital_value": 50000
+  "max_capital_value": 50000,
+  "servers": [],
+  "version": "",
+  "branch_id": "",
+  "account_id": "",
+  "trade_id": "",
+  "password": ""
 }
