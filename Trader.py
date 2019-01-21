@@ -83,7 +83,7 @@ def _load_trader_config():
 
 
 def _check_stock_sell_point(instance, market_code, market_desc, stock_code, stock_name):
-    history_data_frame, err_info = HQAdapterHQAdapter.get_history_data_frame(instance, market=market_code, code=stock_code,
+    history_data_frame, err_info = HQAdapter.get_history_data_frame(instance, market=market_code, code=stock_code,
                                                                     market_desc=market_desc, name=stock_name,
                                                                     ktype=Common.CONST_K_60M,
                                                                     kcount=Common.CONST_K_LENGTH)
