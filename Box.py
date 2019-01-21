@@ -154,7 +154,7 @@ class GenerateBox(object):
 
         history_data_frame, err_info = HQAdapter.get_history_data_frame(self.connect_instance, market=market_code,
                                                                         code=stock_code, market_desc=market_desc,
-                                                                        name=stock_name, ktype=Common.CONST_K_DAY,
+                                                                        name=stock_name, ktype=Common.CONST_K_60M,
                                                                         kcount=Common.CONST_K_LENGTH)
 
         if err_info is not None:
@@ -212,7 +212,9 @@ class GenerateBox(object):
             return None
 
         # debug
-        # stock_codes = {CONST_SZ_MARKET: {'count': 1, 'desc': "xx主板", 'values': [{'code': '300745', 'name': "xxxx"}]}}
+        # stock_codes = {
+        #     Common.CONST_CY_MARKET: {'count': 1, 'desc': u"xx主板", 'values': [{'code': '300578', 'name': u"xxxx"}]},
+        # }
 
         valid_stock_info_list = self._get_stock_temp_list(stock_codes)
         if valid_stock_info_list is None:
