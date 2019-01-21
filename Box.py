@@ -14,7 +14,7 @@ from Log import Logger
 box_log_filename = "%s/%s_%s" % (Common.CONST_DIR_LOG, time.strftime('%Y%m%d', time.localtime(time.time())),
                                  Common.CONST_LOG_BOX_FILENAME)
 box_db_filename = "%s/%s" % (Common.CONST_DIR_DATABASE, Common.CONST_DB_BOX_FILENAME)
-box_config_filename = "%s/%s" % (Common.CONST_DIR_CONF, Common.CONST_CONFIG_TRADER_FILENAME)
+box_config_filename = "%s/%s" % (Common.CONST_DIR_CONF, Common.CONST_CONFIG_BOX_FILENAME)
 
 MIN_HOURS = 4
 MIN_60M_TIMEDELTA = MIN_HOURS * 4
