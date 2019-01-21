@@ -19,6 +19,7 @@ box_config_filename = "%s/%s" % (Common.CONST_DIR_CONF, Common.CONST_CONFIG_BOX_
 MIN_HOURS = 4
 MIN_60M_TIMEDELTA = MIN_HOURS * 4
 MIN_60M_PRICE_RISE = 5.0
+RETRY_CONNECT_INTERVAL_IDLE = 15
 
 
 def _load_box_config():
@@ -78,6 +79,7 @@ class GenerateBox(object):
 
         self.log = Logger(box_log_filename, level='debug')
         self.connect_instance = None
+        self.config = None
 
     # 扩展股票数据
     def _get_stock_temp_list(self, stock_list=None):
@@ -97,7 +99,7 @@ class GenerateBox(object):
             return stock_t_list
 
     # 跳出涨停盘的股票
-    def _compute_task_handler(self, instance, input_data=None, output_dataset=None):
+    def _compute_task_handler(self, input_data=None, output_dataset=None):
         if input_data is None:
             self.log.logger.error(u"股票数据为空, 检查源数据 ...")
             return
@@ -109,14 +111,29 @@ class GenerateBox(object):
             self.log.logger.error(u"获得股票: %s, 名称：%s, 市场映射关系数据不存在." % (stock_code, stock_name))
             return
 
-        history_data_frame, err_info = HQAdapter.get_history_data_frame(instance, market=market_code, code=stock_code,
-                                                                        market_desc=market_desc, name=stock_name,
-                                                                        ktype=Common.CONST_K_DAY,
-                                                                        kcount=Common.CONST_K_LENGTH)
-        if err_info is not None:
-            self.log.logger.warn(
-                u"获得市场: %s, 股票: %s, 名称：%s, 历史K线数据错误: %s" % (market_desc, stock_code, stock_name, err_info))
-            return
+        while True:
+            # 保险步骤，正常情况下不会运行
+            if self.connect_instance is None:
+                time.sleep(RETRY_CONNECT_INTERVAL_IDLE)  # 休息指定的事件，重新创建连接对象
+                self.connect_instance = HQAdapter.create_connect_instance(self.config)
+                continue
+
+            # 获得股票的K线信息
+            history_data_frame, err_info = HQAdapter.get_history_data_frame(self.connect_instance, market=market_code,
+                                                                            code=stock_code, market_desc=market_desc,
+                                                                            name=stock_name, ktype=Common.CONST_K_DAY,
+                                                                            kcount=Common.CONST_K_LENGTH)
+            if err_info is not None:
+                self.log.logger.warn(
+                    u"获得市场: %s, 股票: %s, 名称：%s, 历史K线数据错误: %s" % (market_desc, stock_code, stock_name, err_info))
+                # 发现连接错误 10038 需要重连
+                if err_info.find("errCode=10038") > -1:
+                    time.sleep(RETRY_CONNECT_INTERVAL_IDLE)  # 休息指定的事件，重新创建连接对象
+                    self.connect_instance = HQAdapter.create_connect_instance(self.config)
+                else:  # 如果是执行错误，就直接跳出函数，直接结束
+                    return
+            else:  # 正常就直接跳出循环
+                break
 
         history_data_frame_index_list = history_data_frame.index
         history_data_count = len(history_data_frame_index_list)
@@ -152,15 +169,30 @@ class GenerateBox(object):
         except KeyError:
             return False, u"获得股票: %s, 名称：%s 市场映射关系数据不存在." % (stock_code, stock_name)
 
-        history_data_frame, err_info = HQAdapter.get_history_data_frame(self.connect_instance, market=market_code,
-                                                                        code=stock_code, market_desc=market_desc,
-                                                                        name=stock_name, ktype=Common.CONST_K_60M,
-                                                                        kcount=Common.CONST_K_LENGTH)
+        while True:
+            # 保险步骤，正常情况下不会运行
+            if self.connect_instance is None:
+                time.sleep(RETRY_CONNECT_INTERVAL_IDLE)  # 休息指定的事件，重新创建连接对象
+                self.connect_instance = HQAdapter.create_connect_instance(self.config)
+                continue
 
-        if err_info is not None:
-            self.log.logger.error(
-                u"获得市场: %s, 股票: %s, 名称：%s, 历史数据错误: %s" % (market_desc, stock_code, stock_name, err_info))
-            return False, err_info
+            # 获得股票的K线信息
+            history_data_frame, err_info = HQAdapter.get_history_data_frame(self.connect_instance, market=market_code,
+                                                                            code=stock_code, market_desc=market_desc,
+                                                                            name=stock_name, ktype=Common.CONST_K_60M,
+                                                                            kcount=Common.CONST_K_LENGTH)
+            if err_info is not None:
+                self.log.logger.error(
+                    u"获得市场: %s, 股票: %s, 名称：%s, 历史数据错误: %s" % (market_desc, stock_code, stock_name, err_info))
+
+                # 发现连接错误 10038 需要重连
+                if err_info.find("errCode=10038") > -1:
+                    time.sleep(RETRY_CONNECT_INTERVAL_IDLE)  # 休息指定的事件，重新创建连接对象
+                    self.connect_instance = HQAdapter.create_connect_instance(self.config)
+                else:  # 如果是执行错误，就直接跳出函数，直接结束
+                    return False, err_info
+            else:  # 正常就直接跳出循环
+                break
 
         # 翻转这个dataframe
         history_data_frame.sort_index(ascending=False, inplace=True)
@@ -221,7 +253,7 @@ class GenerateBox(object):
             return None
 
         for stock_item in valid_stock_info_list:
-            self._compute_task_handler(self.connect_instance, stock_item, valid_stock_data_set)
+            self._compute_task_handler(stock_item, valid_stock_data_set)
             # 延迟休息，防止被封
             time.sleep(Common.CONST_TASK_WAITING_MS / 1000.0)
 
@@ -334,15 +366,19 @@ class GenerateBox(object):
 
     def generate(self):
         # 加载股票箱的配置文件
-        config, err_info = _load_box_config()
+        self.config, err_info = _load_box_config()
         if err_info is not None:
             self.log.logger.error(u"加载股票箱配置文件错误: %s", err_info)
             return
 
-        self.connect_instance, err_info = HQAdapter.create_connect_instance(config)
-        if self.connect_instance is None:
-            self.log.logger.error(u"创建行情服务器连接实例失败: %s" % err_info)
-            return
+        while True:
+            self.connect_instance, err_info = HQAdapter.create_connect_instance(self.config)
+            if err_info is not None:
+                self.log.logger.error(u"创建行情服务器连接实例失败: %s" % err_info)
+                time.sleep(RETRY_CONNECT_INTERVAL_IDLE)  # 休息指定的事件，重新创建连接对象
+                continue
+            else:
+                break
 
         valid_stock_pool = self.stage1_compute_data()
         if valid_stock_pool is None:
