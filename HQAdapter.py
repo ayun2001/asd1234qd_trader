@@ -2,6 +2,7 @@
 
 import random
 import re
+import time
 
 import TradeX2
 import pandas as pd
@@ -29,8 +30,17 @@ def check_stop_trade_stock(dataset):
 
 
 def create_connect_instance(config):
+    _temp_last_selected_server_key = "ZKesa1cEoD"
     try:
-        host, port = random.choice(config["servers"]).split(':')
+        while True:  # 需要利用config配置项目保存一个临时数据，这个数据只在运行过程中有效
+            current_selected_server = random.choice(config["servers"])
+            if current_selected_server == config.get(_temp_last_selected_server_key) and len(config["servers"]) > 1:
+                time.sleep(1)
+                continue
+            else:
+                config[_temp_last_selected_server_key] = current_selected_server
+                break
+        host, port = current_selected_server.split(':')
         port = int(port)
     except Exception as err:
         return None, u"行情配置信息关联错误: %s" % err.message.decode('gbk')
