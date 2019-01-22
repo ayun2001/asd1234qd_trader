@@ -320,57 +320,57 @@ class GenerateBox(object):
 
                     if min_close_price >= meta_close_price:
                         # Type1
-                        if market_name == Common.CONST_SH_MARKET and max_turn_over <= 12 and not bool_filter_result:
+                        if market_name == Common.CONST_SH_MARKET and max_turn_over <= Common.CONST_SH_STOCK_TURNOVER and not bool_filter_result:
                             valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_1][stock_code] = stock_meta_data
                             continue
-                        if market_name == Common.CONST_SZ_MARKET and max_turn_over <= 12 and not bool_filter_result:
+                        if market_name == Common.CONST_SZ_MARKET and max_turn_over <= Common.CONST_SZ_STOCK_TURNOVER and not bool_filter_result:
                             valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_1][stock_code] = stock_meta_data
                             continue
-                        if market_name == Common.CONST_ZX_MARKET and max_turn_over <= 15 and not bool_filter_result:
+                        if market_name == Common.CONST_ZX_MARKET and max_turn_over <= Common.CONST_ZX_STOCK_TURNOVER and not bool_filter_result:
                             valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_1][stock_code] = stock_meta_data
                             continue
                         if market_name == Common.CONST_CY_MARKET and max_turn_over <= 18 and not bool_filter_result:
                             valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_1][stock_code] = stock_meta_data
                             continue
                         # Type2
-                        if market_name == Common.CONST_SH_MARKET and max_turn_over > 12 and not bool_filter_result:
+                        if market_name == Common.CONST_SH_MARKET and max_turn_over > Common.CONST_SH_STOCK_TURNOVER and not bool_filter_result:
                             valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_2][stock_code] = stock_meta_data
                             continue
-                        if market_name == Common.CONST_SZ_MARKET and max_turn_over > 12 and not bool_filter_result:
+                        if market_name == Common.CONST_SZ_MARKET and max_turn_over > Common.CONST_SZ_STOCK_TURNOVER and not bool_filter_result:
                             valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_2][stock_code] = stock_meta_data
                             continue
-                        if market_name == Common.CONST_ZX_MARKET and max_turn_over > 15 and not bool_filter_result:
+                        if market_name == Common.CONST_ZX_MARKET and max_turn_over > Common.CONST_ZX_STOCK_TURNOVER and not bool_filter_result:
                             valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_2][stock_code] = stock_meta_data
                             continue
-                        if market_name == Common.CONST_CY_MARKET and max_turn_over > 18 and not bool_filter_result:
+                        if market_name == Common.CONST_CY_MARKET and max_turn_over > Common.CONST_CY_STOCK_TURNOVER and not bool_filter_result:
                             valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_2][stock_code] = stock_meta_data
                             continue
 
                     if meta_close_price > min_close_price >= meta_low_price:
                         # Type3
-                        if market_name == Common.CONST_SH_MARKET and max_turn_over <= 12 and not bool_filter_result:
+                        if market_name == Common.CONST_SH_MARKET and max_turn_over <= Common.CONST_SH_STOCK_TURNOVER and not bool_filter_result:
                             valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_3][stock_code] = stock_meta_data
                             continue
-                        if market_name == Common.CONST_SZ_MARKET and max_turn_over <= 12 and not bool_filter_result:
+                        if market_name == Common.CONST_SZ_MARKET and max_turn_over <= Common.CONST_SZ_STOCK_TURNOVER and not bool_filter_result:
                             valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_3][stock_code] = stock_meta_data
                             continue
-                        if market_name == Common.CONST_ZX_MARKET and max_turn_over <= 15 and not bool_filter_result:
+                        if market_name == Common.CONST_ZX_MARKET and max_turn_over <= Common.CONST_ZX_STOCK_TURNOVER and not bool_filter_result:
                             valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_3][stock_code] = stock_meta_data
                             continue
-                        if market_name == Common.CONST_CY_MARKET and max_turn_over <= 18 and not bool_filter_result:
+                        if market_name == Common.CONST_CY_MARKET and max_turn_over <= Common.CONST_CY_STOCK_TURNOVER and not bool_filter_result:
                             valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_3][stock_code] = stock_meta_data
                             continue
                         # Type4
-                        if market_name == Common.CONST_SH_MARKET and max_turn_over > 12 and not bool_filter_result:
+                        if market_name == Common.CONST_SH_MARKET and max_turn_over > Common.CONST_SH_STOCK_TURNOVER and not bool_filter_result:
                             valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_4][stock_code] = stock_meta_data
                             continue
-                        if market_name == Common.CONST_SZ_MARKET and max_turn_over > 12 and not bool_filter_result:
+                        if market_name == Common.CONST_SZ_MARKET and max_turn_over > Common.CONST_SZ_STOCK_TURNOVER and not bool_filter_result:
                             valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_4][stock_code] = stock_meta_data
                             continue
-                        if market_name == Common.CONST_ZX_MARKET and max_turn_over > 15 and not bool_filter_result:
+                        if market_name == Common.CONST_ZX_MARKET and max_turn_over > Common.CONST_ZX_STOCK_TURNOVER and not bool_filter_result:
                             valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_4][stock_code] = stock_meta_data
                             continue
-                        if market_name == Common.CONST_CY_MARKET and max_turn_over > 18 and not bool_filter_result:
+                        if market_name == Common.CONST_CY_MARKET and max_turn_over > Common.CONST_CY_STOCK_TURNOVER and not bool_filter_result:
                             valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_4][stock_code] = stock_meta_data
                             continue
 
