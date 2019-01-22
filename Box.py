@@ -20,6 +20,7 @@ MIN_HOURS = 4
 MIN_60M_TIMEDELTA = MIN_HOURS * 4
 MIN_60M_PRICE_RISE = 5.0
 RETRY_CONNECT_INTERVAL_IDLE = 15.0
+TCP_CONNECT_TIMEOUT = 2500
 
 
 def _load_box_config():
@@ -112,26 +113,34 @@ class GenerateBox(object):
             return
 
         while True:
-            # 保险步骤，正常情况下不会运行
-            if self.connect_instance is None:
-                time.sleep(RETRY_CONNECT_INTERVAL_IDLE)  # 休息指定的事件，重新创建连接对象
-                self.connect_instance = HQAdapter.create_connect_instance(self.config)
-                continue
+            if self.connect_instance is not None:
+                # 获得股票的K线信息
+                history_data_frame, err_info = HQAdapter.get_history_data_frame(self.connect_instance,
+                                                                                market=market_code,
+                                                                                code=stock_code,
+                                                                                market_desc=market_desc,
+                                                                                name=stock_name,
+                                                                                ktype=Common.CONST_K_DAY,
+                                                                                kcount=Common.CONST_K_LENGTH)
+            else:
+                history_data_frame = None
+                err_info = u"行情服务器连接实例为空, [errCode=10038], 等待重新创建..."
 
-            # 获得股票的K线信息
-            history_data_frame, err_info = HQAdapter.get_history_data_frame(self.connect_instance, market=market_code,
-                                                                            code=stock_code, market_desc=market_desc,
-                                                                            name=stock_name, ktype=Common.CONST_K_DAY,
-                                                                            kcount=Common.CONST_K_LENGTH)
+            # 对执行错误执行处理
             if err_info is not None:
-                self.log.logger.warn(
-                    u"获得市场: %s, 股票: %s, 名称：%s, 历史K线数据错误: %s" % (market_desc, stock_code, stock_name, err_info))
+                self.log.logger.error(
+                    u"获得市场: %s, 股票: %s, 名称：%s, 历史数据错误: %s" % (market_desc, stock_code, stock_name, err_info))
                 # 发现连接错误 10038 需要重连
                 if err_info.find("errCode=10038") > -1:
                     time.sleep(RETRY_CONNECT_INTERVAL_IDLE)  # 休息指定的事件，重新创建连接对象
-                    self.connect_instance = HQAdapter.create_connect_instance(self.config)
+                    self.connect_instance, err_info = HQAdapter.create_connect_instance(self.config)
+                    if err_info is not None:
+                        self.log.logger.error(u"重新创建行情服务器连接实例失败: %s" % err_info)
+                    else:
+                        self.connect_instance.SetTimeout(TCP_CONNECT_TIMEOUT, TCP_CONNECT_TIMEOUT)
+                        self.log.logger.info(u"重新创建行情服务器连接实例成功...")
                 else:  # 如果是执行错误，就直接跳出函数，直接结束
-                    return
+                    return False, err_info
             else:  # 正常就直接跳出循环
                 break
 
@@ -170,25 +179,32 @@ class GenerateBox(object):
             return False, u"获得股票: %s, 名称：%s 市场映射关系数据不存在." % (stock_code, stock_name)
 
         while True:
-            # 保险步骤，正常情况下不会运行
-            if self.connect_instance is None:
-                time.sleep(RETRY_CONNECT_INTERVAL_IDLE)  # 休息指定的事件，重新创建连接对象
-                self.connect_instance = HQAdapter.create_connect_instance(self.config)
-                continue
+            if self.connect_instance is not None:
+                # 获得股票的K线信息
+                history_data_frame, err_info = HQAdapter.get_history_data_frame(self.connect_instance,
+                                                                                market=market_code,
+                                                                                code=stock_code,
+                                                                                market_desc=market_desc,
+                                                                                name=stock_name,
+                                                                                ktype=Common.CONST_K_60M,
+                                                                                kcount=Common.CONST_K_LENGTH)
+            else:
+                history_data_frame = None
+                err_info = u"行情服务器连接实例为空, [errCode=10038], 等待重新创建..."
 
-            # 获得股票的K线信息
-            history_data_frame, err_info = HQAdapter.get_history_data_frame(self.connect_instance, market=market_code,
-                                                                            code=stock_code, market_desc=market_desc,
-                                                                            name=stock_name, ktype=Common.CONST_K_60M,
-                                                                            kcount=Common.CONST_K_LENGTH)
+            # 对执行错误执行处理
             if err_info is not None:
                 self.log.logger.error(
                     u"获得市场: %s, 股票: %s, 名称：%s, 历史数据错误: %s" % (market_desc, stock_code, stock_name, err_info))
-
                 # 发现连接错误 10038 需要重连
                 if err_info.find("errCode=10038") > -1:
                     time.sleep(RETRY_CONNECT_INTERVAL_IDLE)  # 休息指定的事件，重新创建连接对象
-                    self.connect_instance = HQAdapter.create_connect_instance(self.config)
+                    self.connect_instance, err_info = HQAdapter.create_connect_instance(self.config)
+                    if err_info is not None:
+                        self.log.logger.error(u"重新创建行情服务器连接实例失败: %s" % err_info)
+                    else:
+                        self.connect_instance.SetTimeout(TCP_CONNECT_TIMEOUT, TCP_CONNECT_TIMEOUT)
+                        self.log.logger.info(u"重新创建行情服务器连接实例成功...")
                 else:  # 如果是执行错误，就直接跳出函数，直接结束
                     return False, err_info
             else:  # 正常就直接跳出循环
@@ -378,6 +394,7 @@ class GenerateBox(object):
                 time.sleep(RETRY_CONNECT_INTERVAL_IDLE)  # 休息指定的事件，重新创建连接对象
                 continue
             else:
+                self.connect_instance.SetTimeout(TCP_CONNECT_TIMEOUT, TCP_CONNECT_TIMEOUT)
                 break
 
         valid_stock_pool = self.stage1_compute_data()

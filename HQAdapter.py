@@ -33,13 +33,13 @@ def create_connect_instance(config):
         host, port = random.choice(config["servers"]).split(':')
         port = int(port)
     except Exception as err:
-        return None, u"行情配置信息关联错误: %s" % err.message
+        return None, u"行情配置信息关联错误: %s" % err.message.decode('gbk')
 
     try:
         instance = TradeX2.TdxHq_Connect(host, port)
         return instance, None
     except TradeX2.TdxHq_error as err:
-        return None, err.message
+        return None, err.message.decode('gbk')
 
 
 def get_finance_info(instance, market, code):
