@@ -155,7 +155,6 @@ class Trader(object):
         self.log = Logger(trader_log_filename, level='debug')
         self.config = None
         self.connect_instance = None
-        self.records_set = []
 
     # 记录交易记录
     # 交易记录的格式
@@ -203,6 +202,7 @@ class Trader(object):
             self.log.logger.error(u"读取持仓股票数据文件错误: %s" % err_info)
             return
         else:
+            records_set = []
             for stock_code, stock_values in position_data.items():
                 try:
                     market_code = stock_values["market_code"]
@@ -243,7 +243,7 @@ class Trader(object):
                         max_can_sell_count = int(
                             (level5_quote_value["buy5_step_count"] / 100) * MAX_TRADE_SELL_TOTAL_RATIO) * 100
 
-                        # 执行下订单动作, 4 市价委托(上海五档即成剩撤/ 深圳五档即成剩撤)
+                        # 执行下订单动作, 4 市价委托(上海五档即成剩撤/ 深圳五档即成剩撤) -- 此时价格没有用处，用 0 传入即可
                         err_info = OrderAdapter.send_stock_order(self.connect_instance, stock_code,
                                                                  current_trade_account_id, Common.CONST_STOCK_SELL,
                                                                  0, max_can_sell_count)
@@ -266,12 +266,11 @@ class Trader(object):
                                 "revenue_change": revenue_change,
                                 "revenue_value": revenue_value
                             }
-                            self.records_set.append(trader_record)
+                            records_set.append(trader_record)
                             self.log.logger.info(
                                 u"执行动作 市场: %s, 股票: %s, 名称：%s, 信号: %s, 价格: %.2f, 数量: %d, 总价: %.2f, 营收(元): %.2f, 营收率(%%): %.2f" % (
-                                    market_desc, stock_code, stock_name, Common.CONST_STOCK_SELL_DESC,
-                                    avg_level5_price, max_can_sell_count, sell_total_value, revenue_value,
-                                    revenue_change))
+                                    market_desc, stock_code, stock_name, Common.CONST_STOCK_SELL_DESC, avg_level5_price,
+                                    max_can_sell_count, sell_total_value, revenue_value, revenue_change))
                         else:
                             self.log.logger.warn(u"没有执行动作 市场: %s, 股票: %s, 名称：%s, 信号: %s, 价格: %.2f, 数量: %d" % (
                                 market_desc, stock_code, stock_name, Common.CONST_STOCK_SELL_DESC, avg_level5_price,
@@ -283,9 +282,8 @@ class Trader(object):
                 except Exception as err:
                     self.log.logger.error(u"执行持仓股票扫描出现出错: %s" % err.message)
                     continue
-            if len(self.records_set) > 0:
-                self._save_trader_records(self.records_set)
-                self.records_set = []
+            if len(records_set) > 0:
+                self._save_trader_records(records_set)
 
     def run(self):
         # 加载交易器的配置文件
