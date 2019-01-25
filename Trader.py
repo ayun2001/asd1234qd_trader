@@ -398,7 +398,7 @@ class TradeExecutor(object):
         return self.trade_records_data_set
 
 
-def run_trader_main():
+def trade_exec_main():
     trade_exec = TradeExecutor()
 
     if Common.check_today_is_holiday_time():
@@ -429,4 +429,4 @@ def run_trader_main():
 
 if __name__ == '__main__':
     # 运行主程序
-    run_trader_main()
+    trade_exec_main()
