@@ -16,9 +16,9 @@ from Crypto.Cipher import AES
 # 全局常量
 
 # 这里密钥key 长度必须为16（AES-128）、24（AES-192）、或32（AES-256）Bytes 长度.目前AES-128足够用
-CONST_AES_CBC_KEY = "9adunmMw6km6lriO"
-CONST_AES_CBC_KEY_LENGTH = len(CONST_AES_CBC_KEY)
-CONST_CRYPTO_ASE_INIT_VECTOR = "0123456789ABCDEF"
+CONST_CRYPTO_AES_CBC_KEY = "9adunmMw6km6lriO"
+CONST_CRYPTO_AES_CBC_KEY_LENGTH = len(CONST_CRYPTO_AES_CBC_KEY)
+CONST_CRYPTO_AES_INIT_VECTOR = "0123456789ABCDEF"
 
 CONST_DIR_LOG = "./log"
 CONST_DIR_CONF = "./conf"
@@ -52,10 +52,10 @@ CONST_K_LENGTH = 30
 CONST_TASK_WAITING_TIME = 300
 CONST_STOCK_LIST_IS_NULL = 0
 
-CONST_STOCK_TYPE_1 = 'type1'
-CONST_STOCK_TYPE_2 = 'type2'
-CONST_STOCK_TYPE_3 = 'type3'
-CONST_STOCK_TYPE_4 = 'type4'
+CONST_STOCK_TYPE_1 = "type1"
+CONST_STOCK_TYPE_2 = "type2"
+CONST_STOCK_TYPE_3 = "type3"
+CONST_STOCK_TYPE_4 = "type4"
 
 CONST_SH_STOCK_TURNOVER = 12
 CONST_SZ_STOCK_TURNOVER = 12
@@ -184,10 +184,10 @@ def check_today_is_holiday_time():
 
 
 def get_encrypted_string(plain_text):
-    aes_crypto = AES.new(CONST_AES_CBC_KEY, AES.MODE_CBC, CONST_CRYPTO_ASE_INIT_VECTOR)
+    aes_crypto = AES.new(CONST_CRYPTO_AES_CBC_KEY, AES.MODE_CBC, CONST_CRYPTO_AES_INIT_VECTOR)
     count = len(plain_text)
-    if count % CONST_AES_CBC_KEY_LENGTH != 0:
-        add = CONST_AES_CBC_KEY_LENGTH - (count % CONST_AES_CBC_KEY_LENGTH)
+    if count % CONST_CRYPTO_AES_CBC_KEY_LENGTH != 0:
+        add = CONST_CRYPTO_AES_CBC_KEY_LENGTH - (count % CONST_CRYPTO_AES_CBC_KEY_LENGTH)
     else:
         add = 0
     plain_text += ('\0' * add)
@@ -195,6 +195,6 @@ def get_encrypted_string(plain_text):
 
 
 def get_decrypted_string(secret_text):
-    aes_crypto = AES.new(CONST_AES_CBC_KEY, AES.MODE_CBC, CONST_CRYPTO_ASE_INIT_VECTOR)
+    aes_crypto = AES.new(CONST_CRYPTO_AES_CBC_KEY, AES.MODE_CBC, CONST_CRYPTO_AES_INIT_VECTOR)
     plain_text = aes_crypto.decrypt(a2b_hex(secret_text))
     return plain_text.rstrip('\0')

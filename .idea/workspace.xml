@@ -2,10 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="ea61e7c0-b131-4b2b-a7b1-9c6b290db9da" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/Box.py" beforeDir="false" afterPath="$PROJECT_DIR$/Box.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Common.py" beforeDir="false" afterPath="$PROJECT_DIR$/Common.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Trader.py" beforeDir="false" afterPath="$PROJECT_DIR$/Trader.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/conf/trader.json" beforeDir="false" afterPath="$PROJECT_DIR$/conf/trader.json" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -20,8 +18,8 @@
           <file pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/Trader.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="641">
-                  <caret line="311" column="40" lean-forward="true" selection-start-line="311" selection-start-column="40" selection-end-line="311" selection-end-column="40" />
+                <state relative-caret-position="776">
+                  <caret line="393" column="18" lean-forward="true" selection-start-line="393" selection-start-column="18" selection-end-line="393" selection-end-column="18" />
                   <folding>
                     <element signature="e#16#29#0" expanded="true" />
                   </folding>
@@ -33,7 +31,7 @@
             <entry file="file://$PROJECT_DIR$/conf/trader.json">
               <provider selected="true" editor-type-id="text-editor">
                 <state relative-caret-position="144">
-                  <caret line="9" column="1" lean-forward="true" selection-start-line="9" selection-start-column="1" selection-end-line="9" selection-end-column="1" />
+                  <caret line="9" column="1" selection-start-line="9" selection-start-column="1" selection-end-line="9" selection-end-column="1" />
                 </state>
               </provider>
             </entry>
@@ -45,8 +43,8 @@
           <file pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/OrderAdapter.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="698">
-                  <caret line="48" lean-forward="true" selection-start-line="48" selection-end-line="48" />
+                <state relative-caret-position="688">
+                  <caret line="48" selection-start-line="48" selection-end-line="48" />
                   <folding>
                     <element signature="e#16#29#0" expanded="true" />
                   </folding>
@@ -57,8 +55,8 @@
           <file pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/HQAdapter.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="568">
-                  <caret line="180" column="30" lean-forward="true" selection-start-line="180" selection-start-column="30" selection-end-line="180" selection-end-column="30" />
+                <state relative-caret-position="2752">
+                  <caret line="180" column="30" selection-start-line="180" selection-start-column="30" selection-end-line="180" selection-end-column="30" />
                   <folding>
                     <element signature="e#16#29#0" expanded="true" />
                   </folding>
@@ -69,8 +67,8 @@
           <file pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/Box.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="471">
-                  <caret line="36" column="58" lean-forward="true" selection-start-line="36" selection-start-column="58" selection-end-line="36" selection-end-column="58" />
+                <state relative-caret-position="432">
+                  <caret line="36" column="58" selection-start-line="36" selection-start-column="58" selection-end-line="36" selection-end-column="58" />
                   <folding>
                     <element signature="e#16#29#0" expanded="true" />
                   </folding>
@@ -81,8 +79,8 @@
           <file pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/Common.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="688">
-                  <caret line="187" column="27" lean-forward="true" selection-start-line="187" selection-start-column="27" selection-end-line="187" selection-end-column="27" />
+                <state relative-caret-position="213">
+                  <caret line="57" column="28" selection-start-line="57" selection-start-column="28" selection-end-line="57" selection-end-column="28" />
                 </state>
               </provider>
             </entry>
@@ -123,8 +121,8 @@
       <find>_generate_box_mail_message</find>
       <find>&quot;name&quot;</find>
       <find>_get_stock_temp_list</find>
-      <find>CONST_SH_MARKET</find>
       <find>&quot;code&quot;</find>
+      <find>CONST_SH_MARKET</find>
     </findStrings>
     <replaceStrings>
       <replace>self.log.logger.error</replace>
@@ -253,12 +251,13 @@
       <workItem from="1548079572653" duration="37000" />
       <workItem from="1548384503230" duration="4217000" />
       <workItem from="1548389549922" duration="8791000" />
-      <workItem from="1548404119842" duration="8086000" />
+      <workItem from="1548404119842" duration="8549000" />
+      <workItem from="1548414951969" duration="105000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="59301000" />
+    <option name="totallyTimeSpent" value="59869000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -270,11 +269,11 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="235" y="34" width="2301" height="1189" extended-state="0" />
+    <frame x="219" y="23" width="2301" height="1189" extended-state="0" />
     <editor active="true" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.48222426" visible="true" weight="0.15050907" />
-      <window_info id="Structure" order="1" sideWeight="0.5177758" side_tool="true" visible="true" weight="0.15050907" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.48131266" visible="true" weight="0.1518371" />
+      <window_info id="Structure" order="1" sideWeight="0.5186873" side_tool="true" visible="true" weight="0.1518371" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" weight="0.3290793" />
@@ -383,10 +382,17 @@
     <entry file="file://$PROJECT_DIR$/test.py">
       <provider selected="true" editor-type-id="text-editor" />
     </entry>
+    <entry file="file://$PROJECT_DIR$/conf/trader.json">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="144">
+          <caret line="9" column="1" selection-start-line="9" selection-start-column="1" selection-end-line="9" selection-end-column="1" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/OrderAdapter.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="698">
-          <caret line="48" lean-forward="true" selection-start-line="48" selection-end-line="48" />
+        <state relative-caret-position="688">
+          <caret line="48" selection-start-line="48" selection-end-line="48" />
           <folding>
             <element signature="e#16#29#0" expanded="true" />
           </folding>
@@ -395,8 +401,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/HQAdapter.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="568">
-          <caret line="180" column="30" lean-forward="true" selection-start-line="180" selection-start-column="30" selection-end-line="180" selection-end-column="30" />
+        <state relative-caret-position="2752">
+          <caret line="180" column="30" selection-start-line="180" selection-start-column="30" selection-end-line="180" selection-end-column="30" />
           <folding>
             <element signature="e#16#29#0" expanded="true" />
           </folding>
@@ -405,35 +411,28 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/Box.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="471">
-          <caret line="36" column="58" lean-forward="true" selection-start-line="36" selection-start-column="58" selection-end-line="36" selection-end-column="58" />
+        <state relative-caret-position="432">
+          <caret line="36" column="58" selection-start-line="36" selection-start-column="58" selection-end-line="36" selection-end-column="58" />
           <folding>
             <element signature="e#16#29#0" expanded="true" />
           </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/conf/trader.json">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="144">
-          <caret line="9" column="1" lean-forward="true" selection-start-line="9" selection-start-column="1" selection-end-line="9" selection-end-column="1" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/Common.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="688">
-          <caret line="187" column="27" lean-forward="true" selection-start-line="187" selection-start-column="27" selection-end-line="187" selection-end-column="27" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/Trader.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="641">
-          <caret line="311" column="40" lean-forward="true" selection-start-line="311" selection-start-column="40" selection-end-line="311" selection-end-column="40" />
+        <state relative-caret-position="776">
+          <caret line="393" column="18" lean-forward="true" selection-start-line="393" selection-start-column="18" selection-end-line="393" selection-end-column="18" />
           <folding>
             <element signature="e#16#29#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Common.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="213">
+          <caret line="57" column="28" selection-start-line="57" selection-start-column="28" selection-end-line="57" selection-end-column="28" />
         </state>
       </provider>
     </entry>
