@@ -26,7 +26,7 @@ MIN_STOP_LOSS_RATIO = -3.0  # 负数，下跌3%
 MIN_SELL_RAISE_RATIO = 3.0  # 涨幅3%
 MAX_VALID_BOX_INTERVAL_HOURS = 4  # 票箱会在每天的早上8：30，和中午12：00 左右开始选取，所以不会有操过4个小时
 MAX_SELL_TOTAL_RATIO = 0.6
-MIN_TASK_WAITING_TIME = 10  # 单位：秒
+MIN_TASK_WAITING_TIME = 20  # 单位：秒
 
 
 # ============================================
