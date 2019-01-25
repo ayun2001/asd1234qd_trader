@@ -2,7 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="ea61e7c0-b131-4b2b-a7b1-9c6b290db9da" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/Box.py" beforeDir="false" afterPath="$PROJECT_DIR$/Box.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Trader.py" beforeDir="false" afterPath="$PROJECT_DIR$/Trader.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -17,8 +18,8 @@
           <file pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/Trader.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="-3316">
-                  <caret line="166" column="61" selection-start-line="166" selection-start-column="59" selection-end-line="166" selection-end-column="61" />
+                <state relative-caret-position="901">
+                  <caret line="157" column="93" selection-start-line="157" selection-start-column="93" selection-end-line="157" selection-end-column="93" />
                 </state>
               </provider>
             </entry>
@@ -51,8 +52,11 @@
           <file pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/Box.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="591">
-                  <caret line="362" column="33" selection-start-line="362" selection-start-column="33" selection-end-line="362" selection-end-column="33" />
+                <state relative-caret-position="4586">
+                  <caret line="315" column="57" selection-start-line="315" selection-start-column="57" selection-end-line="315" selection-end-column="57" />
+                  <folding>
+                    <element signature="e#16#29#0" expanded="true" />
+                  </folding>
                 </state>
               </provider>
             </entry>
@@ -134,8 +138,9 @@
         <option value="$PROJECT_DIR$/Common.py" />
         <option value="$PROJECT_DIR$/HQAdapter.py" />
         <option value="$PROJECT_DIR$/OrderAdapter.py" />
-        <option value="$PROJECT_DIR$/Trader.py" />
         <option value="$PROJECT_DIR$/Box.py" />
+        <option value="$PROJECT_DIR$/ExecuteTrader.py" />
+        <option value="$PROJECT_DIR$/Trader.py" />
       </list>
     </option>
   </component>
@@ -228,12 +233,12 @@
       <workItem from="1548079572653" duration="37000" />
       <workItem from="1548384503230" duration="4217000" />
       <workItem from="1548389549922" duration="8791000" />
-      <workItem from="1548404119842" duration="1451000" />
+      <workItem from="1548404119842" duration="1937000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="52666000" />
+    <option name="totallyTimeSpent" value="53152000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -248,11 +253,11 @@
     <frame x="0" y="47" width="2301" height="1189" extended-state="0" />
     <editor active="true" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.48222426" visible="true" weight="0.15050907" />
+      <window_info content_ui="combo" id="Project" order="0" sideWeight="0.48222426" visible="true" weight="0.15050907" />
       <window_info id="Structure" order="1" sideWeight="0.5177758" side_tool="true" visible="true" weight="0.15050907" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
-      <window_info anchor="bottom" id="Find" order="1" weight="0.32908365" />
+      <window_info anchor="bottom" id="Find" order="1" weight="0.3290793" />
       <window_info anchor="bottom" id="Run" order="2" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
@@ -392,17 +397,20 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Trader.py">
+    <entry file="file://$PROJECT_DIR$/Box.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-3316">
-          <caret line="166" column="61" selection-start-line="166" selection-start-column="59" selection-end-line="166" selection-end-column="61" />
+        <state relative-caret-position="4586">
+          <caret line="315" column="57" selection-start-line="315" selection-start-column="57" selection-end-line="315" selection-end-column="57" />
+          <folding>
+            <element signature="e#16#29#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Box.py">
+    <entry file="file://$PROJECT_DIR$/Trader.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="591">
-          <caret line="362" column="33" selection-start-line="362" selection-start-column="33" selection-end-line="362" selection-end-column="33" />
+        <state relative-caret-position="901">
+          <caret line="157" column="93" selection-start-line="157" selection-start-column="93" selection-end-line="157" selection-end-column="93" />
         </state>
       </provider>
     </entry>

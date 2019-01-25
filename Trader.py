@@ -198,7 +198,7 @@ def _check_stock_sell_point(instance, market_code, market_desc, stock_code, stoc
     return False, u"执行 市场: %s, 股票: %s, 名称：%s, 继续持仓..." % (market_desc, stock_code, stock_name)
 
 
-class Trader(object):
+class TradeExecutor(object):
     def __init__(self):
         if not Common.file_exist(Common.CONST_DIR_LOG):
             Common.create_directory(Common.CONST_DIR_LOG)
@@ -370,7 +370,7 @@ class Trader(object):
         # 保存持仓文件
         _save_position_db_file(position_data)
 
-    def run(self):
+    def execute(self):
         # 加载交易器的配置文件
         self.config, err_info = _load_trader_config()
         if err_info is not None:
@@ -399,28 +399,28 @@ class Trader(object):
 
 
 def run_trader_main():
-    make_trader = Trader()
+    trade_exec = TradeExecutor()
 
     if Common.check_today_is_holiday_time():
-        make_trader.log.logger.warning(u"节假日休假, 股票市场不交易, 跳过...")
+        trade_exec.log.logger.warning(u"节假日休假, 股票市场不交易, 跳过...")
         exit(0)
 
-    make_trader.log.logger.info(u"============== [开始自动交易] ==============")
+    trade_exec.log.logger.info(u"============== [开始自动交易] ==============")
     start_timestamp = time.time()
-    valid_trade_records = make_trader.run()
+    valid_trade_records = trade_exec.execute()
     end_timestamp = time.time()
-    make_trader.log.logger.info(u"============== [结束自动交易] ==============")
+    trade_exec.log.logger.info(u"============== [结束自动交易] ==============")
 
     current_datetime = Common.get_current_datetime()
 
     if valid_trade_records is None:
-        make_trader.log.logger.error(u"执行交易记录为空")
+        trade_exec.log.logger.error(u"执行交易记录为空")
         Mail.send_mail(title=u"[%s] 交易执行错误" % current_datetime, msg="[ERROR]")
         exit(0)
 
     current_datetime = Common.get_current_datetime()
     total_compute_time = Common.change_seconds_to_time(int(end_timestamp - start_timestamp))
-    make_trader.log.logger.info(u"计算总费时: %s" % total_compute_time)
+    trade_exec.log.logger.info(u"计算总费时: %s" % total_compute_time)
     sendmail_message = _generate_trade_mail_message(valid_trade_records) + u"<p>计算总费时: %s</p>" % total_compute_time
 
     # 发送交易记录结果
