@@ -2,9 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="ea61e7c0-b131-4b2b-a7b1-9c6b290db9da" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Box.py" beforeDir="false" afterPath="$PROJECT_DIR$/Box.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Common.py" beforeDir="false" afterPath="$PROJECT_DIR$/Common.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Trader.py" beforeDir="false" afterPath="$PROJECT_DIR$/Trader.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -16,35 +15,11 @@
     <splitter split-orientation="horizontal" split-proportion="0.5">
       <split-first>
         <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-          <file pinned="false" current-in-tab="false">
-            <entry file="file://$PROJECT_DIR$/OrderAdapter.py">
-              <provider selected="true" editor-type-id="text-editor">
-                <state>
-                  <caret column="14" lean-forward="true" selection-start-column="14" selection-end-column="14" />
-                  <folding>
-                    <element signature="e#16#29#0" expanded="true" />
-                  </folding>
-                </state>
-              </provider>
-            </entry>
-          </file>
           <file pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/Trader.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="448">
-                  <caret line="28" column="25" selection-start-line="28" selection-start-column="25" selection-end-line="28" selection-end-column="25" />
-                </state>
-              </provider>
-            </entry>
-          </file>
-          <file pinned="false" current-in-tab="false">
-            <entry file="file://$PROJECT_DIR$/Common.py">
-              <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="447">
-                  <caret line="50" column="17" lean-forward="true" selection-start-line="50" selection-start-column="17" selection-end-line="50" selection-end-column="17" />
-                  <folding>
-                    <element signature="e#16#29#0" expanded="true" />
-                  </folding>
+                <state relative-caret-position="3919">
+                  <caret line="387" selection-start-line="387" selection-end-line="387" />
                 </state>
               </provider>
             </entry>
@@ -53,14 +28,11 @@
       </split-first>
       <split-second>
         <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-          <file pinned="false" current-in-tab="true">
-            <entry file="file://$PROJECT_DIR$/Box.py">
+          <file pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/OrderAdapter.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="1002">
-                  <caret line="275" lean-forward="true" selection-start-line="275" selection-end-line="275" />
-                  <folding>
-                    <element signature="e#16#29#0" expanded="true" />
-                  </folding>
+                <state relative-caret-position="352">
+                  <caret line="27" column="24" selection-start-line="27" selection-start-column="24" selection-end-line="27" selection-end-column="24" />
                 </state>
               </provider>
             </entry>
@@ -68,8 +40,32 @@
           <file pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/HQAdapter.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="608">
-                  <caret line="38" column="24" selection-start-line="38" selection-start-column="24" selection-end-line="38" selection-end-column="24" />
+                <state relative-caret-position="464">
+                  <caret line="37" column="16" selection-start-line="37" selection-start-column="16" selection-end-line="37" selection-end-column="63" />
+                  <folding>
+                    <element signature="e#16#29#0" expanded="true" />
+                  </folding>
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file pinned="false" current-in-tab="true">
+            <entry file="file://$PROJECT_DIR$/Box.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="606">
+                  <caret line="161" column="82" selection-start-line="161" selection-start-column="82" selection-end-line="161" selection-end-column="82" />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/Common.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="848">
+                  <caret line="63" selection-start-line="63" selection-end-line="63" selection-end-column="28" />
+                  <folding>
+                    <element signature="e#16#29#0" expanded="true" />
+                  </folding>
                 </state>
               </provider>
             </entry>
@@ -101,11 +97,18 @@
       <find>OFFSET_PRICE</find>
       <find>CONST_TASK_WAITING_MS</find>
       <find>CONST_RETRY_INTERVAL</find>
+      <find>_save_position_db_file</find>
+      <find>_load_position_db_file</find>
+      <find>warn</find>
+      <find>']</find>
+      <find>marketDesc</find>
     </findStrings>
     <replaceStrings>
       <replace>self.log.logger.error</replace>
       <replace>市场: %s 股票: %s</replace>
       <replace>&quot;</replace>
+      <replace>&quot;]</replace>
+      <replace>market_desc</replace>
     </replaceStrings>
   </component>
   <component name="Git.Settings">
@@ -128,17 +131,17 @@
         <option value="$PROJECT_DIR$/adapter.py" />
         <option value="$PROJECT_DIR$/trader.py" />
         <option value="$PROJECT_DIR$/Algorithm.py" />
-        <option value="$PROJECT_DIR$/Box.py" />
-        <option value="$PROJECT_DIR$/OrderAdapter.py" />
         <option value="$PROJECT_DIR$/Common.py" />
         <option value="$PROJECT_DIR$/HQAdapter.py" />
+        <option value="$PROJECT_DIR$/OrderAdapter.py" />
         <option value="$PROJECT_DIR$/Trader.py" />
+        <option value="$PROJECT_DIR$/Box.py" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="193" />
-    <option name="y" value="61" />
+    <option name="x" value="-285" />
+    <option name="y" value="50" />
     <option name="width" value="2301" />
     <option name="height" value="1189" />
   </component>
@@ -150,7 +153,6 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -176,6 +178,7 @@
           <select />
         </subPane>
       </pane>
+      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -225,12 +228,13 @@
       <workItem from="1548078106176" duration="137000" />
       <workItem from="1548079572653" duration="37000" />
       <workItem from="1548384503230" duration="4217000" />
-      <workItem from="1548389549922" duration="3577000" />
+      <workItem from="1548389549922" duration="8791000" />
+      <workItem from="1548404119842" duration="347000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="46001000" />
+    <option name="totallyTimeSpent" value="51562000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -242,11 +246,11 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="193" y="61" width="2301" height="1189" extended-state="0" />
+    <frame x="-285" y="50" width="2301" height="1189" extended-state="0" />
     <editor active="true" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.48313582" visible="true" weight="0.14918105" />
-      <window_info id="Structure" order="1" sideWeight="0.5168642" side_tool="true" visible="true" weight="0.14918105" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.48222426" visible="true" weight="0.15050907" />
+      <window_info id="Structure" order="1" sideWeight="0.5177758" side_tool="true" visible="true" weight="0.15050907" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" weight="0.32908365" />
@@ -260,7 +264,7 @@
       <window_info anchor="bottom" id="Database Changes" order="9" />
       <window_info anchor="bottom" id="Event Log" order="10" side_tool="true" />
       <window_info anchor="bottom" id="Terminal" order="11" />
-      <window_info anchor="bottom" id="Python Console" order="12" weight="0.32828686" />
+      <window_info anchor="bottom" id="Python Console" order="12" weight="0.32816774" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
@@ -359,10 +363,20 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/test.py">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
     <entry file="file://$PROJECT_DIR$/OrderAdapter.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state>
-          <caret column="14" lean-forward="true" selection-start-column="14" selection-end-column="14" />
+        <state relative-caret-position="352">
+          <caret line="27" column="24" selection-start-line="27" selection-start-column="24" selection-end-line="27" selection-end-column="24" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/HQAdapter.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="464">
+          <caret line="37" column="16" selection-start-line="37" selection-start-column="16" selection-end-line="37" selection-end-column="63" />
           <folding>
             <element signature="e#16#29#0" expanded="true" />
           </folding>
@@ -371,25 +385,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/Common.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="447">
-          <caret line="50" column="17" lean-forward="true" selection-start-line="50" selection-start-column="17" selection-end-line="50" selection-end-column="17" />
-          <folding>
-            <element signature="e#16#29#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/HQAdapter.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="608">
-          <caret line="38" column="24" selection-start-line="38" selection-start-column="24" selection-end-line="38" selection-end-column="24" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/Box.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1002">
-          <caret line="275" lean-forward="true" selection-start-line="275" selection-end-line="275" />
+        <state relative-caret-position="848">
+          <caret line="63" selection-start-line="63" selection-end-line="63" selection-end-column="28" />
           <folding>
             <element signature="e#16#29#0" expanded="true" />
           </folding>
@@ -398,8 +395,15 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/Trader.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="448">
-          <caret line="28" column="25" selection-start-line="28" selection-start-column="25" selection-end-line="28" selection-end-column="25" />
+        <state relative-caret-position="3919">
+          <caret line="387" selection-start-line="387" selection-end-line="387" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Box.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="606">
+          <caret line="161" column="82" selection-start-line="161" selection-start-column="82" selection-end-line="161" selection-end-column="82" />
         </state>
       </provider>
     </entry>

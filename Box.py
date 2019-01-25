@@ -62,7 +62,7 @@ def _generate_box_mail_message(data):
             if market_name == Common.CONST_CY_MARKET:
                 cy_number += count
             table.add_row([Common.MARKET_NAME_MAPPING[market_name], Common.STOCK_TYPE_NAME_MAPPING[stock_class_type],
-                           count, ','.join(class_type_values.keys()) if count > 0 else '无'])
+                           count, u",".join(class_type_values.keys()) if count > 0 else u"无"])
 
     return table.get_html_string() + u"<p>总共选取股票数量: %d --> 上海: %d, 深圳: %d, 中小: %d, 创业: %d </p>" % (
         total_number, sh_number, sz_number, zx_number, cy_number)
@@ -89,7 +89,7 @@ class GenerateBox(object):
         stock_t_list = []
         for key, data in stock_list.items():
             try:
-                stock_t_list.extend([(key, data['desc'], v['code'], v['name']) for v in data['values']])
+                stock_t_list.extend([(key, data["desc"], v["code"], v["name"]) for v in data["values"]])
             except KeyError:
                 continue
         if len(stock_t_list) == Common.CONST_STOCK_LIST_IS_NULL:
@@ -150,25 +150,25 @@ class GenerateBox(object):
             self.log.logger.error(u"参与计算得市场: %s, 股票: %s, 名称：%s, K数据: %d (不够>=14)." % (
                 market_desc, stock_code, stock_name, history_data_count))
             return
-        express_stock_hist_data_frame = history_data_frame[['close', 'low', 'open', 'pct_change']]
-        for item_data_time in history_data_frame_index_list:
+        express_stock_hist_data_frame = history_data_frame[["close", "low", "open", "pct_change"]]
+        for item_date_time in history_data_frame_index_list:
             try:
                 close_value, low_value, open_value, pct_change_value = express_stock_hist_data_frame.loc[
-                    item_data_time].values
+                    item_date_time].values
                 if pct_change_value > 9.9 and close_value > open_value:  # 只要涨停的,排除1字板, 涨幅必须大于99%的
-                    interval_days = history_data_count - list(history_data_frame_index_list).index(item_data_time)
+                    interval_days = history_data_count - list(history_data_frame_index_list).index(item_date_time)
                     if 4 <= interval_days < history_data_count:  # 这里是老薛的要求，涨停后必须还有3天的数据观察期
                         stock_content_info = {
-                            'metaData': {'days': interval_days, 'date': item_data_time, 'close': close_value,
-                                         'low': low_value, 'code': stock_code, 'name': stock_name,
-                                         'marketName': market_name, 'marketDesc': market_desc},
-                            'dataFrame': history_data_frame}  # 这里是否包去掉以前的历史数据，还要分析下
+                            "meta_data": {"days": interval_days, "date": item_date_time, "close": close_value,
+                                          "low": low_value, "code": stock_code, "name": stock_name,
+                                          "market_name": market_name, "market_desc": market_desc},
+                            "data_frame": history_data_frame}  # 这里是否包去掉以前的历史数据，还要分析下
                         self.log.logger.info(u"[第1阶段] 市场: %s, 股票: %s, 名称: %s, 涨停价(元): %.3f, 涨停时间: %s, 距近时间(天): %d" % (
-                            market_desc, stock_code, stock_name, close_value, item_data_time, interval_days))
+                            market_desc, stock_code, stock_name, close_value, item_date_time, interval_days))
                         output_dataset[market_name][stock_code] = stock_content_info
             except Exception as err:
                 self.log.logger.error(u"市场: %s, 股票: %s, 名称: %s, 数据时间: %s, 错误: %s" % (
-                    market_desc, stock_code, stock_name, item_data_time, err.message))
+                    market_desc, stock_code, stock_name, item_date_time, err.message))
             continue
 
     def _stock_60m_k_type_filter(self, market_name="", market_desc="", stock_name="", stock_code="300729", days=0):
@@ -209,12 +209,12 @@ class GenerateBox(object):
             else:  # 正常就直接跳出循环
                 break
 
-        # 翻转这个dataframe
+        # 翻转这个data_frame
         history_data_frame.sort_index(ascending=False, inplace=True)
         # 获得必须要的数据 [:days * 4] 修正值，关注到涨停的那天, 老薛只关注涨停后的3天的数据作为判断
-        pct_change_list = list(history_data_frame['pct_change'].values[:days * MIN_DATA_CHECK_HOURS])
-        kdj_values_list = list(history_data_frame['kdj_j'].values[:days * MIN_DATA_CHECK_HOURS])
-        kdj_cross_list = list(history_data_frame['kdj_cross'].values[:days * MIN_DATA_CHECK_HOURS])
+        pct_change_list = list(history_data_frame["pct_change"].values[:days * MIN_DATA_CHECK_HOURS])
+        kdj_values_list = list(history_data_frame["kdj_j"].values[:days * MIN_DATA_CHECK_HOURS])
+        kdj_cross_list = list(history_data_frame["kdj_cross"].values[:days * MIN_DATA_CHECK_HOURS])
         kdj_cross_express_list = filter(lambda _item: _item != '', kdj_cross_list)  # 去掉之间没有值的空格
         # 求最大值
         max_j_value = max(kdj_values_list)
@@ -293,18 +293,18 @@ class GenerateBox(object):
         for market_code, market_values in stock_pool.items():
             for stock_code, stock_info_values in market_values.items():
                 try:
-                    stock_data_frame = stock_info_values['dataFrame']
-                    stock_meta_data = stock_info_values['metaData']
-                    stock_close_prices_list = list(stock_data_frame['close'].values)
-                    stock_turn_over_list = list(stock_data_frame['turnover'].values)
+                    stock_data_frame = stock_info_values["data_frame"]
+                    stock_meta_data = stock_info_values["meta_data"]
+                    stock_close_prices_list = list(stock_data_frame["close"].values)
+                    stock_turn_over_list = list(stock_data_frame["turnover"].values)
                     min_close_price = min(stock_close_prices_list)
                     max_turn_over = max(stock_turn_over_list)
-                    meta_close_price = stock_meta_data['close']
-                    meta_low_price = stock_meta_data['low']
-                    stock_name = stock_meta_data['name']
-                    interval_days = stock_meta_data['days']
-                    market_name = stock_meta_data['marketName']
-                    market_desc = stock_meta_data['marketDesc']
+                    meta_close_price = stock_meta_data["close"]
+                    meta_low_price = stock_meta_data["low"]
+                    stock_name = stock_meta_data["name"]
+                    interval_days = stock_meta_data["days"]
+                    market_name = stock_meta_data["market_name"]
+                    market_desc = stock_meta_data["market_desc"]
 
                     bool_filter_result, err_info = self._stock_60m_k_type_filter(market_name=market_name,
                                                                                  stock_code=stock_code,
