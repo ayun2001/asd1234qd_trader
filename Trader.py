@@ -5,6 +5,8 @@ import datetime
 import json
 import time
 
+from prettytable import PrettyTable
+
 import Box
 import Common
 import HQAdapter
@@ -27,6 +29,7 @@ MIN_SELL_RAISE_RATIO = 3.0  # 涨幅3%
 MAX_VALID_BOX_INTERVAL_HOURS = 4  # 票箱会在每天的早上8：30，和中午12：00 左右开始选取，所以不会有操过4个小时
 MAX_SELL_TOTAL_RATIO = 0.6
 MIN_TASK_WAITING_TIME = 20  # 单位：秒
+MIN_TRADE_TIME_INTERVAL = 5 * 60 * 60  # 单位：秒
 
 
 # ============================================
@@ -55,6 +58,7 @@ def _load_box_db_file():
 def _load_position_db_file():
     """
     {"stock_code":{
+      "timestamp": 0,  #时间戳
       "market_code": 0,
       "market_desc": "",
       "stock_name": "",
@@ -93,6 +97,59 @@ def _load_trader_config():
             return json.load(_file), None
     except Exception as err:
         return None, err.message
+
+
+# 发送股票盒邮件
+def _generate_trade_mail_message(data):
+    mail_message = ""
+
+    if len(data) <= 0:
+        return mail_message
+
+    for trade_type_id, trade_record_data in data.items():
+        # 生成买入信息列表
+        if trade_type_id == Common.CONST_STOCK_BUY and len(trade_record_data) > 0:
+            table = PrettyTable([u"股票大盘", u"股票代码", u"股票名称", u"价格(元)", u"数量(股)", u"总价(元)"])
+            table.format = True
+
+            for record_item in trade_record_data:
+                try:
+                    table.add_row([
+                        record_item["market_desc"],
+                        record_item["stock_code"],
+                        record_item["stock_name"],
+                        record_item["price"],
+                        record_item["count"],
+                        record_item["total"],
+                    ])
+                except KeyError:
+                    continue
+
+            mail_message += u"<p>%s:</p>%s<br>" % (Common.CONST_STOCK_BUY_DESC, table.get_html_string())
+
+        # 生成卖出信息列表
+        if trade_type_id == Common.CONST_STOCK_SELL and len(trade_record_data) > 0:
+            table = PrettyTable([u"股票大盘", u"股票代码", u"股票名称", u"价格(元)", u"数量(股)", u"总价(元)", u"营收(元)", u"营收率(百分率)"])
+            table.format = True
+
+            for record_item in trade_record_data:
+                try:
+                    table.add_row([
+                        record_item["market_desc"],
+                        record_item["stock_code"],
+                        record_item["stock_name"],
+                        record_item["price"],
+                        record_item["count"],
+                        record_item["total"],
+                        record_item["revenue_value"],
+                        record_item["revenue_change"]
+                    ])
+                except KeyError:
+                    continue
+
+            mail_message += u"<p>%s:</p>%s<br>" % (Common.CONST_STOCK_SELL_DESC, table.get_html_string())
+
+    return mail_message
 
 
 def _check_stock_sell_point(instance, market_code, market_desc, stock_code, stock_name):
@@ -155,6 +212,7 @@ class Trader(object):
         self.log = Logger(trader_log_filename, level='debug')
         self.config = None
         self.connect_instance = None
+        self.trade_records_data_set = {}
 
     # 记录交易记录
     # 交易记录的格式
@@ -166,6 +224,8 @@ class Trader(object):
             "trade_account_id": 0,   #账户id，以后用来聚合用
             "order_type": "buy",  # 这里交易方向，buy/sell
             "order_type_id": 0,   # 这里交易方向，buy:0 , sell:1
+            "market_code"   # 市场代码
+            "market_desc":  # 市场描述
             "stock_id": "",    # 股票代码
             "stock_name": "",  # 股票名称
             "price": 0.0,   # 股票单价
@@ -196,8 +256,10 @@ class Trader(object):
 
     # 计算当前持仓的状态，判定是否有股票出发可以卖点
     def _position_scanner(self):
+        # 读取持仓数据文件
         position_data, err_info = _load_position_db_file()
 
+        # 执行持仓扫描逻辑
         if err_info is not None:
             self.log.logger.error(u"读取持仓股票数据文件错误: %s" % err_info)
             return
@@ -209,9 +271,19 @@ class Trader(object):
                     market_desc = stock_values["market_desc"]
                     stock_name = stock_values["stock_name"]
                     position_own_value = position_data[stock_code]
+                    last_trade_timestamp = position_own_value["timestamp"]
                     current_own_count = position_own_value["count"]
                     current_trade_account_id = position_own_value["trade_account_id"]
 
+                    # 判断股票是否当天够买的，如果是跳过 (满足最小交易时间)
+                    current_own_time_interval = Common.get_current_timestamp() - last_trade_timestamp
+                    if current_own_time_interval < MIN_TRADE_TIME_INTERVAL:
+                        self.log.logger.info(u"执行动作 市场: %s, 股票: %s, 名称：%s, 信号: %s, 持有时间: %s 不满足最小持仓时间" % (
+                            market_desc, stock_code, stock_name, Common.CONST_STOCK_SELL_DESC,
+                            Common.change_seconds_to_time(current_own_time_interval)))
+                        continue
+
+                    # 检查股票交易卖点
                     bool_sell, err_info = _check_stock_sell_point(self.connect_instance, stock_code, market_code,
                                                                   market_desc, stock_name)
                     self.log.logger.error(u"执行持仓 市场: %s, 股票: %s, 名称：%s, 卖点扫描, 结果: %s" % (
@@ -224,9 +296,11 @@ class Trader(object):
                     # 执行卖出动做
                     while True:
                         if current_own_count <= 0:
+                            # 删除持仓记录
+                            del position_data[stock_code]
+                            # 记录日志
                             self.log.logger.info(u"执行动作 市场: %s, 股票: %s, 名称：%s, 信号: %s 完成!" % (
-                                market_desc, stock_code, stock_name, Common.CONST_STOCK_SELL_DESC
-                            ))
+                                market_desc, stock_code, stock_name, Common.CONST_STOCK_SELL_DESC))
                             break
 
                         # 获得5档价格数据
@@ -258,6 +332,8 @@ class Trader(object):
                                 "trade_account_id": current_trade_account_id,
                                 "order_type": Common.CONST_STOCK_SELL_DESC,
                                 "order_type_id": Common.CONST_STOCK_SELL,
+                                "market_code": market_code,
+                                "market_desc": market_desc,
                                 "stock_code": stock_code,
                                 "stock_name": stock_name,
                                 "price": avg_level5_price,
@@ -286,24 +362,40 @@ class Trader(object):
                     continue
 
             if len(records_set) > 0:
+                # 保存交易数据倒本地z
                 self._save_trader_records(records_set)
+                # 保存数据到全局交易数据集，准备发送邮件
+                self.trade_records_data_set[Common.CONST_STOCK_SELL] = records_set
+
+        # 保存持仓文件
+        _save_position_db_file(position_data)
 
     def run(self):
         # 加载交易器的配置文件
         self.config, err_info = _load_trader_config()
         if err_info is not None:
             self.log.logger.error(u"加载交易器配置文件错误: %s", err_info)
-            return
+            return None
 
-        self.connect_instance, err_info = OrderAdapter.create_connect_instance(config=self.config)
-        if err_info is not None:
-            self.log.logger.error(u"创建交易服务器连接实例失败: %s" % err_info)
-            return
+        while True:
+            self.connect_instance, err_info = OrderAdapter.create_connect_instance(self.config)
+            if err_info is not None:
+                self.log.logger.error(u"创建交易服务器连接实例失败: %s" % err_info)
+                time.sleep(Common.CONST_RETRY_CONNECT_INTERVAL)  # 休息指定的事件，重新创建连接对象
+                continue
+            else:
+                break
+
+        # 清空交易记录
+        self.trade_records_data_set = {}
 
         # 先卖出
         self._position_scanner()
         # 再买入
         self._box_scanner()
+
+        # 返回正确的交易记录数据
+        return self.trade_records_data_set
 
 
 def run_trader_main():
@@ -315,17 +407,24 @@ def run_trader_main():
 
     make_trader.log.logger.info(u"============== [开始自动交易] ==============")
     start_timestamp = time.time()
-    make_trader.run()
+    valid_trade_records = make_trader.run()
     end_timestamp = time.time()
     make_trader.log.logger.info(u"============== [结束自动交易] ==============")
 
     current_datetime = Common.get_current_datetime()
+
+    if valid_trade_records is None:
+        make_trader.log.logger.error(u"执行交易记录为空")
+        Mail.send_mail(title=u"[%s] 交易执行错误" % current_datetime, msg="[ERROR]")
+        exit(0)
+
+    current_datetime = Common.get_current_datetime()
     total_compute_time = Common.change_seconds_to_time(int(end_timestamp - start_timestamp))
     make_trader.log.logger.info(u"计算总费时: %s" % total_compute_time)
-    sendmail_message = u""
+    sendmail_message = _generate_trade_mail_message(valid_trade_records) + u"<p>计算总费时: %s</p>" % total_compute_time
 
-    # 发送已经选的股票
-    Mail.send_mail(title=u"日期:%s, 选中的股票箱" % current_datetime, msg=sendmail_message)
+    # 发送交易记录结果
+    Mail.send_mail(title=u"日期:%s, 执行交易记录" % current_datetime, msg=sendmail_message)
 
 
 if __name__ == '__main__':

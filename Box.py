@@ -19,8 +19,6 @@ box_config_filename = "%s/%s" % (Common.CONST_DIR_CONF, Common.CONST_CONFIG_BOX_
 MIN_DATA_CHECK_HOURS = 4
 MIN_60M_TIMEDELTA = MIN_DATA_CHECK_HOURS * 4
 MIN_60M_PRICE_RISE = 5.0
-RETRY_CONNECT_INTERVAL_IDLE = 15.0
-TCP_CONNECT_TIMEOUT = 2500
 
 
 def _load_box_config():
@@ -49,7 +47,8 @@ def _generate_box_mail_message(data):
     sh_number = 0
     sz_number = 0
 
-    table = PrettyTable([u"股票大盘", u"股票分类", u"数量", u"待选股票"])
+    table = PrettyTable([u"股票大盘", u"股票分类", u"数量(个)", u"待选股票列表"])
+    table.format = True  # 加入边框等CSS的效果
     for market_name, market_values in data.items():
         for stock_class_type, class_type_values in market_values.items():
             count = len(class_type_values.keys())
@@ -132,12 +131,12 @@ class GenerateBox(object):
                     u"获得市场: %s, 股票: %s, 名称：%s, 历史数据错误: %s" % (market_desc, stock_code, stock_name, err_info))
                 # 发现连接错误 10038 需要重连
                 if err_info.find("errCode=10038") > -1:
-                    time.sleep(RETRY_CONNECT_INTERVAL_IDLE)  # 休息指定的事件，重新创建连接对象
+                    time.sleep(Common.CONST_RETRY_CONNECT_INTERVAL)  # 休息指定的事件，重新创建连接对象
                     self.connect_instance, err_info = HQAdapter.create_connect_instance(self.config)
                     if err_info is not None:
                         self.log.logger.error(u"重新创建行情服务器连接实例失败: %s" % err_info)
                     else:
-                        self.connect_instance.SetTimeout(TCP_CONNECT_TIMEOUT, TCP_CONNECT_TIMEOUT)
+                        self.connect_instance.SetTimeout(Common.CONST_CONNECT_TIMEOUT, Common.CONST_CONNECT_TIMEOUT)
                         self.log.logger.info(u"重新创建行情服务器连接实例成功...")
                 else:  # 如果是执行错误，就直接跳出函数，直接结束
                     return False, err_info
@@ -198,12 +197,12 @@ class GenerateBox(object):
                     u"获得市场: %s, 股票: %s, 名称：%s, 历史数据错误: %s" % (market_desc, stock_code, stock_name, err_info))
                 # 发现连接错误 10038 需要重连
                 if err_info.find("errCode=10038") > -1:
-                    time.sleep(RETRY_CONNECT_INTERVAL_IDLE)  # 休息指定的事件，重新创建连接对象
+                    time.sleep(Common.CONST_RETRY_CONNECT_INTERVAL)  # 休息指定的事件，重新创建连接对象
                     self.connect_instance, err_info = HQAdapter.create_connect_instance(self.config)
                     if err_info is not None:
                         self.log.logger.error(u"重新创建行情服务器连接实例失败: %s" % err_info)
                     else:
-                        self.connect_instance.SetTimeout(TCP_CONNECT_TIMEOUT, TCP_CONNECT_TIMEOUT)
+                        self.connect_instance.SetTimeout(Common.CONST_CONNECT_TIMEOUT, Common.CONST_CONNECT_TIMEOUT)
                         self.log.logger.info(u"重新创建行情服务器连接实例成功...")
                 else:  # 如果是执行错误，就直接跳出函数，直接结束
                     return False, err_info
@@ -386,21 +385,21 @@ class GenerateBox(object):
         self.config, err_info = _load_box_config()
         if err_info is not None:
             self.log.logger.error(u"加载股票箱配置文件错误: %s", err_info)
-            return
+            return None
 
         while True:
             self.connect_instance, err_info = HQAdapter.create_connect_instance(self.config)
             if err_info is not None:
                 self.log.logger.error(u"创建行情服务器连接实例失败: %s" % err_info)
-                time.sleep(RETRY_CONNECT_INTERVAL_IDLE)  # 休息指定的事件，重新创建连接对象
+                time.sleep(Common.CONST_RETRY_CONNECT_INTERVAL)  # 休息指定的事件，重新创建连接对象
                 continue
             else:
-                self.connect_instance.SetTimeout(TCP_CONNECT_TIMEOUT, TCP_CONNECT_TIMEOUT)
+                self.connect_instance.SetTimeout(Common.CONST_CONNECT_TIMEOUT, Common.CONST_CONNECT_TIMEOUT)
                 break
 
         valid_stock_pool = self.stage1_compute_data()
         if valid_stock_pool is None:
-            return
+            return None
 
         return self.stage2_filter_data(valid_stock_pool)
 
@@ -431,7 +430,7 @@ def gen_box_main():
 
     # 保存股票盒
     _storage_box_data(data={"timestamp": Common.get_current_timestamp(), "value": valid_stock_box})
-    # 发送已经选的股票
+    # 发送已经选的股票结果
     Mail.send_mail(title=u"日期:%s, 选中的股票箱" % current_datetime, msg=sendmail_message)
 
 
