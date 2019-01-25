@@ -1,6 +1,7 @@
 # coding=utf-8
 
 import random
+import time
 
 import TradeX2
 
@@ -12,8 +13,18 @@ import Common
 
 
 def create_connect_instance(config):
+    _temp_last_selected_server_key = "75fayla1cEoD"
     try:
-        host, port = random.choice(config["servers"]).split(':')
+        while True:  # 需要利用config配置项目保存一个临时数据，这个数据只在运行过程中有效
+            current_selected_server = random.choice(config["servers"])
+            if current_selected_server == config.get(_temp_last_selected_server_key) and len(config["servers"]) > 1:
+                time.sleep(1)
+                continue
+            else:
+                config[_temp_last_selected_server_key] = current_selected_server
+                break
+
+        host, port = current_selected_server.split(':')
         port = int(port)
         client_version = config["version"]
         client_branch_id = config["branch_id"]
@@ -33,8 +44,21 @@ def create_connect_instance(config):
 
 
 def send_stock_order(instance, code, account_id, action_id, uprice, count):
+    # 使用  4 市价委托(上海五档即成剩撤/ 深圳五档即成剩撤) 这样的交易模式
     pass
 
 
 def cancel_stock_order():
+    pass
+
+
+def send_new_ipo_stocks():
+    pass
+
+
+def get_history_trade_data():
+    pass
+
+
+def get_current_orders():
     pass

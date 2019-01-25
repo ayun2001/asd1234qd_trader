@@ -262,28 +262,60 @@ def get_stock_quotes(instance, dataset):
         for line in quotes_content.split('\n')[1:]:  # 循环中去掉第一行标题
             fields = line.split('\t')
             try:
+                # 计算当前level总价值
+                buy1_total = float(fields[17]) * int(fields[19])
+                buy2_total = float(fields[21]) * int(fields[23])
+                buy3_total = float(fields[25]) * int(fields[27])
+                buy4_total = float(fields[29]) * int(fields[31])
+                buy5_total = float(fields[33]) * int(fields[35])
+                sell1_total = float(fields[18]) * int(fields[20])
+                sell2_total = float(fields[22]) * int(fields[24])
+                sell3_total = float(fields[26]) * int(fields[28])
+                sell4_total = float(fields[30]) * int(fields[32])
+                sell5_total = float(fields[34]) * int(fields[36])
+
                 # 计算每一个戳和交易的总数，方便下单判断
-                buy2_count = fields[19] + fields[23]
-                buy3_count = buy2_count + fields[27]
-                buy4_count = buy3_count + fields[31]
-                buy5_count = buy4_count + fields[35]
-                sell2_count = fields[20] + fields[24]
-                sell3_count = sell2_count + fields[28]
-                sell4_count = sell3_count + fields[32]
-                sell5_count = sell4_count + fields[36]
+                buy2_count = float(fields[19]) + int(fields[23])
+                buy3_count = buy2_count + int(fields[27])
+                buy4_count = buy3_count + int(fields[31])
+                buy5_count = buy4_count + int(fields[35])
+                sell2_count = float(fields[20]) + int(fields[24])
+                sell3_count = sell2_count + int(fields[28])
+                sell4_count = sell3_count + int(fields[32])
+                sell5_count = sell4_count + int(fields[36])
+
+                # 计算每一个level总数平均价
+                buy2_avg_price = (buy1_total + buy2_total) / buy2_count
+                buy3_avg_price = (buy1_total + buy2_total + buy3_total) / buy3_count
+                buy4_avg_price = (buy1_total + buy2_total + buy3_total + buy4_total) / buy4_count
+                buy5_avg_price = (buy1_total + buy2_total + buy3_total + buy4_total + buy5_total) / buy5_count
+                sell2_avg_price = (sell1_total + sell2_total) / sell2_count
+                sell3_avg_price = (sell1_total + sell2_total + sell3_total) / sell3_count
+                sell4_avg_price = (sell1_total + sell2_total + sell3_total + sell4_total) / sell4_count
+                sell5_avg_price = (sell1_total + sell2_total + sell3_total + sell4_total + sell5_total) / sell5_count
 
                 # 生成5档数据
                 level5_quotes_data_set[fields[1]] = {
-                    "buy1_price": fields[17], "buy1_value": fields[19], "buy1_count": fields[19],
-                    "sell1_price": fields[18], "sell1_value": fields[20], "sell1_count": fields[20],
-                    "buy2_price": fields[21], "buy2_value": fields[23], "buy2_count": buy2_count,
-                    "sell2_price": fields[22], "sell2_value": fields[24], "sell2_count": sell2_count,
-                    "buy3_price": fields[25], "buy3_value": fields[27], "buy3_count": buy3_count,
-                    "sell3_price": fields[26], "sell3_value": fields[28], "sell3_count": sell3_count,
-                    "buy4_price": fields[29], "buy4_value": fields[31], "buy4_count": buy4_count,
-                    "sell4_price": fields[30], "sell4_value": fields[32], "sell4_count": sell4_count,
-                    "buy5_price": fields[33], "buy5_value": fields[35], "buy5_count": buy5_count,
-                    "sell5_price": fields[34], "sell5_value": fields[36], "sell5_count": sell5_count,
+                    "buy1_price": float(fields[17]), "buy1_value": int(fields[19]),
+                    "buy1_step_count": int(fields[19]), "buy1_avg_price": float(fields[17]),
+                    "sell1_price": float(fields[18]), "sell1_value": int(fields[20]),
+                    "sell1_step_count": int(fields[20]), "sell1_avg_price": float(fields[18]),
+                    "buy2_price": float(fields[21]), "buy2_value": int(fields[23]), "buy2_step_count": buy2_count,
+                    "buy2_avg_price": buy2_avg_price,
+                    "sell2_price": float(fields[22]), "sell2_value": int(fields[24]), "sell2_step_count": sell2_count,
+                    "sell2_avg_price": sell2_avg_price,
+                    "buy3_price": float(fields[25]), "buy3_value": int(fields[27]), "buy3_step_count": buy3_count,
+                    "buy3_avg_price": buy3_avg_price,
+                    "sell3_price": float(fields[26]), "sell3_value": int(fields[28]), "sell3_step_count": sell3_count,
+                    "sell3_avg_price": sell3_avg_price,
+                    "buy4_price": float(fields[29]), "buy4_value": int(fields[31]), "buy4_step_count": buy4_count,
+                    "buy4_avg_price": buy4_avg_price,
+                    "sell4_price": float(fields[30]), "sell4_value": int(fields[32]), "sell4_step_count": sell4_count,
+                    "sell4_avg_price": sell4_avg_price,
+                    "buy5_price": float(fields[33]), "buy5_value": int(fields[35]), "buy5_step_count": buy5_count,
+                    "buy5_avg_price": buy5_avg_price,
+                    "sell5_price": float(fields[34]), "sell5_value": int(fields[36]), "sell5_step_count": sell5_count,
+                    "sell5_avg_price": sell5_avg_price,
                 }
             except Exception:
                 continue

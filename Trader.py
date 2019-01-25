@@ -21,10 +21,11 @@ trader_db_records_filename = "%s/%s_%s_%s" % (Common.CONST_DIR_DATABASE, _curren
 trader_db_position_filename = "%s/%s" % (Common.CONST_DIR_DATABASE, Common.CONST_DB_POSITION_FILENAME)
 trader_db_box_filename = Box.box_db_filename
 
-MIN_HOURS = 4
+MIN_DATA_CHECK_HOURS = 4
 MIN_STOP_LOSS_RATIO = -3.0  # 负数，下跌3%
 MIN_SELL_RAISE_RATIO = 3.0  # 涨幅3%
 MAX_VALID_BOX_INTERVAL_HOURS = 4  # 票箱会在每天的早上8：30，和中午12：00 左右开始选取，所以不会有操过4个小时
+MAX_TRADE_SELL_TOTAL_RATIO = 0.6
 OFFSET_PRICE = 0.01
 
 
@@ -103,9 +104,9 @@ def _check_stock_sell_point(instance, market_code, market_desc, stock_code, stoc
         return False, u"获得市场: %s, 股票: %s, 名称：%s, 历史K线数据错误: %s" % (market_desc, stock_code, stock_name, err_info)
 
     # 计算相关数据
-    pct_change_list = sorted(list(history_data_frame['pct_change'].values[:MIN_HOURS]), reverse=True)
-    kdj_values_list = list(history_data_frame['kdj_j'].values[:MIN_HOURS])
-    kdj_cross_list = list(history_data_frame['kdj_cross'].values[:MIN_HOURS])
+    pct_change_list = sorted(list(history_data_frame['pct_change'].values[:MIN_DATA_CHECK_HOURS]), reverse=True)
+    kdj_values_list = list(history_data_frame['kdj_j'].values[:MIN_DATA_CHECK_HOURS])
+    kdj_cross_list = list(history_data_frame['kdj_cross'].values[:MIN_DATA_CHECK_HOURS])
     kdj_cross_express_list = filter(lambda _item: _item != '', kdj_cross_list)  # 去掉之间没有值的空格
 
     # 求最大值
@@ -207,6 +208,10 @@ class Trader(object):
                     market_code = stock_values["market_code"]
                     market_desc = stock_values["market_desc"]
                     stock_name = stock_values["stock_name"]
+                    position_own_value = position_data[stock_code]
+                    current_own_count = position_own_value["count"]
+                    current_trade_account_id = position_own_value["trade_account_id"]
+
                     bool_sell, err_info = _check_stock_sell_point(self.connect_instance, stock_code, market_code,
                                                                   market_desc, stock_name)
                     self.log.logger.error(u"执行持仓 市场: %s, 股票: %s, 名称：%s, 卖点扫描, 结果: %s" % (
@@ -216,63 +221,65 @@ class Trader(object):
                     if not bool_sell:
                         continue
 
-                    # 获得5档价格数据
-                    level5_quotes_dataset, err_info = HQAdapter.get_stock_quotes(self.connect_instance,
-                                                                                 [(market_code, stock_code)])
-                    if err_info is None:
-                        self.log.logger.error(u"获得 市场: %s, 股票: %s, 名称：%s, 5档行情数据错误: %s" % (
-                            market_desc, stock_code, stock_name, err_info))
-                        continue
+                    # 执行卖出动做
+                    while True:
+                        if current_own_count <= 0:
+                            self.log.logger.info(u"执行动作 市场: %s, 股票: %s, 名称：%s, 信号: %s 完成!" % (
+                                market_desc, stock_code, stock_name, Common.CONST_STOCK_SELL_DESC
+                            ))
+                            break
 
-                    level5_quote_value = level5_quotes_dataset[stock_code]
-                    position_own_value = position_data[stock_code]
-                    current_sell_count = position_own_value["count"]
-                    current_trade_account_id = position_own_value["trade_account_id"]
+                        # 获得5档价格数据
+                        level5_quotes_dataset, err_info = HQAdapter.get_stock_quotes(self.connect_instance,
+                                                                                     [(market_code, stock_code)])
+                        if err_info is None:
+                            self.log.logger.error(u"获得 市场: %s, 股票: %s, 名称：%s, 5档行情数据错误: %s" % (
+                                market_desc, stock_code, stock_name, err_info))
+                            continue
 
-                    # 判断获得能够使用卖出得价格
-                    if current_sell_count <= level5_quote_value["buy1_count"]:
-                        current_sell_price = level5_quote_value["buy1_value"] - OFFSET_PRICE
-                    elif current_sell_count <= level5_quote_value["buy2_count"]:
-                        current_sell_price = level5_quote_value["buy2_value"] - OFFSET_PRICE
-                    elif current_sell_count <= level5_quote_value["buy3_count"]:
-                        current_sell_price = level5_quote_value["buy3_value"] - OFFSET_PRICE
-                    elif current_sell_count <= level5_quote_value["buy4_count"]:
-                        current_sell_price = level5_quote_value["buy4_value"] - OFFSET_PRICE
-                    else:
-                        current_sell_price = level5_quote_value["buy5_value"] - OFFSET_PRICE
+                        level5_quote_value = level5_quotes_dataset[stock_code]
+                        avg_level5_price = level5_quote_value["buy5_avg_price"]
+                        # 按照交易总数固定比例投放交易股票数量
+                        max_can_sell_count = int(
+                            (level5_quote_value["buy5_step_count"] / 100) * MAX_TRADE_SELL_TOTAL_RATIO) * 100
 
-                    # 执行卖出动作的
-                    err_info = OrderAdapter.send_stock_order(self.connect_instance, stock_code,
-                                                             current_trade_account_id, Common.CONST_STOCK_SELL,
-                                                             current_sell_price, current_sell_count)
-                    # 记录交易数据
-                    if err_info is None:
-                        sell_total_value = current_sell_price * current_sell_count
-                        revenue_value = (current_sell_price - position_own_value["price"]) * current_sell_count
-                        revenue_change = revenue_value / (position_own_value["price"] * current_sell_count)
-                        trader_record = {
-                            "timestamp": Common.get_current_timestamp(),
-                            "datetime": Common.get_current_datetime(),
-                            "trade_account_id": current_trade_account_id,
-                            "order_type": Common.CONST_STOCK_SELL_DESC,
-                            "order_type_id": Common.CONST_STOCK_SELL,
-                            "stock_code": stock_code,
-                            "stock_name": stock_name,
-                            "price": current_sell_price,
-                            "count": current_sell_count,
-                            "total": sell_total_value,
-                            "revenue_change": revenue_change,
-                            "revenue_value": revenue_value
-                        }
-                        self.records_set.append(trader_record)
-                        self.log.logger.info(
-                            u"执行动作 市场: %s, 股票: %s, 名称：%s, 信号: %s, 价格: %.2f, 数量: %d, 总价: %.2f, 营收(元): %.2f, 营收率(%%): %.2f" % (
-                                market_desc, stock_code, stock_name, Common.CONST_STOCK_SELL_DESC, current_sell_price,
-                                current_sell_count, sell_total_value, revenue_value, revenue_change))
-                    else:
-                        self.log.logger.warn(u"没有执行动作 市场: %s, 股票: %s, 名称：%s, 信号: %s, 价格: %.2f, 数量: %d" % (
-                            market_desc, stock_code, stock_name, Common.CONST_STOCK_SELL_DESC, current_sell_price,
-                            current_sell_count))
+                        # 执行下订单动作, 4 市价委托(上海五档即成剩撤/ 深圳五档即成剩撤)
+                        err_info = OrderAdapter.send_stock_order(self.connect_instance, stock_code,
+                                                                 current_trade_account_id, Common.CONST_STOCK_SELL,
+                                                                 0, max_can_sell_count)
+                        # 记录交易数据
+                        if err_info is None:
+                            sell_total_value = avg_level5_price * max_can_sell_count
+                            revenue_value = (avg_level5_price - position_own_value["price"]) * max_can_sell_count
+                            revenue_change = revenue_value / (position_own_value["price"] * max_can_sell_count)
+                            trader_record = {
+                                "timestamp": Common.get_current_timestamp(),
+                                "datetime": Common.get_current_datetime(),
+                                "trade_account_id": current_trade_account_id,
+                                "order_type": Common.CONST_STOCK_SELL_DESC,
+                                "order_type_id": Common.CONST_STOCK_SELL,
+                                "stock_code": stock_code,
+                                "stock_name": stock_name,
+                                "price": avg_level5_price,
+                                "count": max_can_sell_count,
+                                "total": sell_total_value,
+                                "revenue_change": revenue_change,
+                                "revenue_value": revenue_value
+                            }
+                            self.records_set.append(trader_record)
+                            self.log.logger.info(
+                                u"执行动作 市场: %s, 股票: %s, 名称：%s, 信号: %s, 价格: %.2f, 数量: %d, 总价: %.2f, 营收(元): %.2f, 营收率(%%): %.2f" % (
+                                    market_desc, stock_code, stock_name, Common.CONST_STOCK_SELL_DESC,
+                                    avg_level5_price, max_can_sell_count, sell_total_value, revenue_value,
+                                    revenue_change))
+                        else:
+                            self.log.logger.warn(u"没有执行动作 市场: %s, 股票: %s, 名称：%s, 信号: %s, 价格: %.2f, 数量: %d" % (
+                                market_desc, stock_code, stock_name, Common.CONST_STOCK_SELL_DESC, avg_level5_price,
+                                max_can_sell_count))
+
+                        # 减去当前的交易的投放量
+                        current_own_count -= max_can_sell_count
+
                 except Exception as err:
                     self.log.logger.error(u"执行持仓股票扫描出现出错: %s" % err.message)
                     continue

@@ -16,8 +16,8 @@ box_log_filename = "%s/%s_%s" % (Common.CONST_DIR_LOG, time.strftime('%Y%m%d', t
 box_db_filename = "%s/%s" % (Common.CONST_DIR_DATABASE, Common.CONST_DB_BOX_FILENAME)
 box_config_filename = "%s/%s" % (Common.CONST_DIR_CONF, Common.CONST_CONFIG_BOX_FILENAME)
 
-MIN_HOURS = 4
-MIN_60M_TIMEDELTA = MIN_HOURS * 4
+MIN_DATA_CHECK_HOURS = 4
+MIN_60M_TIMEDELTA = MIN_DATA_CHECK_HOURS * 4
 MIN_60M_PRICE_RISE = 5.0
 RETRY_CONNECT_INTERVAL_IDLE = 15.0
 TCP_CONNECT_TIMEOUT = 2500
@@ -213,9 +213,9 @@ class GenerateBox(object):
         # 翻转这个dataframe
         history_data_frame.sort_index(ascending=False, inplace=True)
         # 获得必须要的数据 [:days * 4] 修正值，关注到涨停的那天, 老薛只关注涨停后的3天的数据作为判断
-        pct_change_list = list(history_data_frame['pct_change'].values[:days * MIN_HOURS])
-        kdj_values_list = list(history_data_frame['kdj_j'].values[:days * MIN_HOURS])
-        kdj_cross_list = list(history_data_frame['kdj_cross'].values[:days * MIN_HOURS])
+        pct_change_list = list(history_data_frame['pct_change'].values[:days * MIN_DATA_CHECK_HOURS])
+        kdj_values_list = list(history_data_frame['kdj_j'].values[:days * MIN_DATA_CHECK_HOURS])
+        kdj_cross_list = list(history_data_frame['kdj_cross'].values[:days * MIN_DATA_CHECK_HOURS])
         kdj_cross_express_list = filter(lambda _item: _item != '', kdj_cross_list)  # 去掉之间没有值的空格
         # 求最大值
         max_j_value = max(kdj_values_list)
@@ -228,7 +228,8 @@ class GenerateBox(object):
         if len(kdj_cross_express_list) > 0:
             try:
                 up_cross_index_id = kdj_cross_list.index("up_cross")
-                bool_up_cross_kdj = kdj_cross_express_list[0] == "up_cross" and up_cross_index_id >= MIN_HOURS
+                bool_up_cross_kdj = kdj_cross_express_list[0] == "up_cross" and \
+                                    up_cross_index_id >= MIN_DATA_CHECK_HOURS
             except ValueError:
                 bool_up_cross_kdj = False
             try:
