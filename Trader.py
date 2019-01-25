@@ -284,6 +284,7 @@ class Trader(object):
                 except Exception as err:
                     self.log.logger.error(u"执行持仓股票扫描出现出错: %s" % err.message)
                     continue
+
             if len(records_set) > 0:
                 self._save_trader_records(records_set)
 
