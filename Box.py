@@ -175,7 +175,8 @@ class GenerateBox(object):
         try:
             market_code = Common.MARKET_CODE_MAPPING[market_name]
         except KeyError:
-            return False, u"获得股票: %s, 名称：%s 市场映射关系数据不存在." % (stock_code, stock_name)
+            self.log.logger.error(u"获得市场: %s, 股票: %s, 名称：%s 市场映射关系数据不存在." % (market_desc, stock_code, stock_name))
+            return False
 
         while True:
             if self.connect_instance is not None:
@@ -205,7 +206,8 @@ class GenerateBox(object):
                         self.connect_instance.SetTimeout(Common.CONST_CONNECT_TIMEOUT, Common.CONST_CONNECT_TIMEOUT)
                         self.log.logger.info(u"重新创建行情服务器连接实例成功...")
                 else:  # 如果是执行错误，就直接跳出函数，直接结束
-                    return False, err_info
+                    self.log.logger.error(err_info)
+                    return False
             else:  # 正常就直接跳出循环
                 break
 
@@ -246,9 +248,9 @@ class GenerateBox(object):
                 str(bool_up_cross_kdj), MIN_60M_PRICE_RISE, str(bool_more_than_spec_raise)))
         # KDJ的j值大于100，KDJ死叉，出现过金叉，但是某天涨幅超过5%
         if bool_max_j_value or bool_up_cross_kdj or bool_down_cross_kdj or bool_more_than_spec_raise:
-            return True, None
+            return True
         else:
-            return False, None
+            return False
 
     def stage1_compute_data(self):
         valid_stock_data_set = {Common.CONST_SH_MARKET: {}, Common.CONST_SZ_MARKET: {}, Common.CONST_ZX_MARKET: {},
@@ -306,17 +308,11 @@ class GenerateBox(object):
                     market_name = stock_meta_data["market_name"]
                     market_desc = stock_meta_data["market_desc"]
 
-                    bool_filter_result, err_info = self._stock_60m_k_type_filter(market_name=market_name,
-                                                                                 stock_code=stock_code,
-                                                                                 stock_name=stock_name,
-                                                                                 market_desc=market_desc,
-                                                                                 days=interval_days)
-                    if err_info is not None:
-                        self.log.logger.error("%s", err_info)
+                    bool_filter_result = self._stock_60m_k_type_filter(market_name=market_name, stock_code=stock_code,
+                                                                       stock_name=stock_name, market_desc=market_desc,
+                                                                       days=interval_days)
+                    if not bool_filter_result:
                         continue
-
-                    # 延迟休息，防止被封
-                    time.sleep(Common.CONST_TASK_WAITING_TIME / 1000.0)
 
                     if min_close_price >= meta_close_price:
                         # Type1
@@ -377,6 +373,9 @@ class GenerateBox(object):
                 except Exception as err:
                     self.log.logger.error(u"[第2阶段] 股票: %s, 分类错误: %s" % (stock_code, err.message))
                     continue
+                    
+                # 延迟休息，防止被封
+                time.sleep(Common.CONST_TASK_WAITING_TIME / 1000.0)
 
         return valid_stock_data_set
 

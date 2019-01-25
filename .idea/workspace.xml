@@ -2,7 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="ea61e7c0-b131-4b2b-a7b1-9c6b290db9da" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Box.py" beforeDir="false" afterPath="$PROJECT_DIR$/Box.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -18,8 +17,8 @@
           <file pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/Trader.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="3919">
-                  <caret line="387" selection-start-line="387" selection-end-line="387" />
+                <state relative-caret-position="726">
+                  <caret line="166" column="61" selection-start-line="166" selection-start-column="59" selection-end-line="166" selection-end-column="61" />
                 </state>
               </provider>
             </entry>
@@ -52,8 +51,11 @@
           <file pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/Box.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="606">
-                  <caret line="161" column="82" selection-start-line="161" selection-start-column="82" selection-end-line="161" selection-end-column="82" />
+                <state relative-caret-position="210">
+                  <caret line="375" column="20" selection-start-line="375" selection-start-column="20" selection-end-line="375" selection-end-column="20" />
+                  <folding>
+                    <element signature="e#14558#21152#0" />
+                  </folding>
                 </state>
               </provider>
             </entry>
@@ -89,7 +91,6 @@
       <find>股票市场</find>
       <find>get_stock_bars</find>
       <find>get_history_data_frame</find>
-      <find>_stock_60m_k_type_filter</find>
       <find>pcha</find>
       <find>pct_change</find>
       <find>sz_stock_count</find>
@@ -102,6 +103,8 @@
       <find>warn</find>
       <find>']</find>
       <find>marketDesc</find>
+      <find>&quot;date&quot;</find>
+      <find>_stock_60m_k_type_filter</find>
     </findStrings>
     <replaceStrings>
       <replace>self.log.logger.error</replace>
@@ -140,8 +143,7 @@
     </option>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="-285" />
-    <option name="y" value="50" />
+    <option name="y" value="47" />
     <option name="width" value="2301" />
     <option name="height" value="1189" />
   </component>
@@ -229,12 +231,12 @@
       <workItem from="1548079572653" duration="37000" />
       <workItem from="1548384503230" duration="4217000" />
       <workItem from="1548389549922" duration="8791000" />
-      <workItem from="1548404119842" duration="347000" />
+      <workItem from="1548404119842" duration="1098000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="51562000" />
+    <option name="totallyTimeSpent" value="52313000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -246,7 +248,7 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="-285" y="50" width="2301" height="1189" extended-state="0" />
+    <frame x="0" y="47" width="2301" height="1189" extended-state="0" />
     <editor active="true" />
     <layout>
       <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.48222426" visible="true" weight="0.15050907" />
@@ -395,15 +397,18 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/Trader.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="3919">
-          <caret line="387" selection-start-line="387" selection-end-line="387" />
+        <state relative-caret-position="726">
+          <caret line="166" column="61" selection-start-line="166" selection-start-column="59" selection-end-line="166" selection-end-column="61" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/Box.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="606">
-          <caret line="161" column="82" selection-start-line="161" selection-start-column="82" selection-end-line="161" selection-end-column="82" />
+        <state relative-caret-position="210">
+          <caret line="375" column="20" selection-start-line="375" selection-start-column="20" selection-end-line="375" selection-end-column="20" />
+          <folding>
+            <element signature="e#14558#21152#0" />
+          </folding>
         </state>
       </provider>
     </entry>
