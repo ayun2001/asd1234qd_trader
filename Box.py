@@ -159,8 +159,8 @@ class GenerateBox(object):
                     interval_days = history_data_count - list(history_data_frame_index_list).index(item_date_time)
                     if 4 <= interval_days < history_data_count:  # 这里是老薛的要求，涨停后必须还有3天的数据观察期
                         stock_content_info = {
-                            "meta_data": {"days": interval_days, "date": item_date_time, "close": close_value,
-                                          "low": low_value, "code": stock_code, "name": stock_name,
+                            "meta_data": {"days": interval_days, "datetime": item_date_time, "close": close_value,
+                                          "low": low_value, "stock_code": stock_code, "stock_name": stock_name,
                                           "market_name": market_name, "market_desc": market_desc},
                             "data_frame": history_data_frame}  # 这里是否包去掉以前的历史数据，还要分析下
                         self.log.logger.info(u"[第1阶段] 市场: %s, 股票: %s, 名称: %s, 涨停价(元): %.3f, 涨停时间: %s, 距近时间(天): %d" % (
@@ -307,7 +307,7 @@ class GenerateBox(object):
                     max_turn_over = max(stock_turn_over_list)
                     meta_close_price = stock_meta_data["close"]
                     meta_low_price = stock_meta_data["low"]
-                    stock_name = stock_meta_data["name"]
+                    stock_name = stock_meta_data["stock_name"]
                     interval_days = stock_meta_data["days"]
                     market_name = stock_meta_data["market_name"]
                     market_desc = stock_meta_data["market_desc"]

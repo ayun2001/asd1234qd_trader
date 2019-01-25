@@ -68,7 +68,7 @@ def _load_position_db_file():
     }}
     """
     if not Common.file_exist(trader_db_position_filename):
-        return None, u"股票持仓数据文件: %s 不存在." % trader_db_position_filename
+        return {}, u"股票持仓数据文件: %s 不存在." % trader_db_position_filename
 
     try:
         position_data_set = Common.file_to_dict(trader_db_position_filename)
@@ -150,6 +150,15 @@ def _generate_trade_mail_message(data):
             mail_message += u"<p>%s:</p>%s<br>" % (Common.CONST_STOCK_SELL_DESC, table.get_html_string())
 
     return mail_message
+
+
+def _check_stock_buy_point(instance, market_code, market_desc, stock_code, stock_name):
+    history_data_frame, err_info = HQAdapter.get_history_data_frame(instance, market=market_code, code=stock_code,
+                                                                    market_desc=market_desc, name=stock_name,
+                                                                    ktype=Common.CONST_K_60M,
+                                                                    kcount=Common.CONST_K_LENGTH)
+    if err_info is not None:
+        return False, u"获得市场: %s, 股票: %s, 名称：%s, 历史K线数据错误: %s" % (market_desc, stock_code, stock_name, err_info)
 
 
 def _check_stock_sell_point(instance, market_code, market_desc, stock_code, stock_name):
@@ -244,15 +253,138 @@ class TradeExecutor(object):
     # 对加载得BOX进行初始筛选和排序，选择最合适得前几个（默认type1>type2>type3>type4）
     # 检查当前的股票箱内的股票是否倒了可以出发买点
     def _box_scanner(self):
-        # classify_dataset = {Common.CONST_STOCK_TYPE_1: [], Common.CONST_STOCK_TYPE_2: [],
-        #                     Common.CONST_STOCK_TYPE_3: [], Common.CONST_STOCK_TYPE_4: []}
-        #
-        # for market_name, market_values in box_dataset.items():
-        #     for stock_class_type, class_type_values in market_values.items():
-        #         classify_dataset[stock_class_type].append(class_type_values.keys())
-        #
-        # return classify_dataset
-        pass
+        # 读取持仓数据文件
+        position_data, err_info = _load_position_db_file()
+        if err_info is not None:
+            self.log.logger.error(u"读取持仓股票数据文件错误: %s" % err_info)
+            return
+
+        # 读取股票箱文件
+        box_data, err_info = _load_box_db_file()
+        if err_info is not None:
+            self.log.logger.error(u"读取选股数据文件错误: %s" % err_info)
+            return
+
+        # 检查持仓已经够买的数量
+        last_have_bought_count = 0
+        last_have_bought_list = []
+        for stock_code, position_own_value in position_data.items():
+            try:
+                # 判断股票是否当天够买的，如果是跳过 (满足最小交易时间)
+                if Common.get_current_timestamp() - position_own_value["timestamp"] < MIN_TRADE_TIME_INTERVAL:
+                    last_have_bought_count += 1
+                    last_have_bought_list.append(stock_code)
+            except KeyError:
+                continue
+
+        # 设置够买变量参数
+        records_set = []
+        current_have_bought_count = 0
+
+        # 执行股票箱扫描逻辑
+        for market_name, market_values in box_data.items():
+            for stock_class_type in sorted(market_values.keys()):  # 每一个市场处理顺序 type1>type2>type3>type4
+                class_type_values = market_values[stock_class_type]
+                for stock_code, stock_meta_data in class_type_values.items():
+                    try:
+                        if last_have_bought_count + current_have_bought_count > self.config["max_stock_number"]:
+                            self.log.logger.warning(u"当前够买股票数量超过了配置限制的数量: %d" % self.config["max_stock_number"])
+                            break
+
+                        market_code = Common.MARKET_CODE_MAPPING[market_name]
+                        market_desc = stock_meta_data["market_desc"]
+                        stock_name = stock_meta_data["stock_name"]
+
+                        # 0: 深圳账号， 1: 上海账号
+                        current_trade_account_id = Common.get_decrypted_string(self.config["trade_id"][market_code])
+
+                        # 检查股票交易卖点
+                        bool_buy, err_info = _check_stock_buy_point(self.connect_instance, stock_code, market_code,
+                                                                    market_desc, stock_name)
+                        self.log.logger.error(u"执行持仓 市场: %s, 股票: %s, 名称：%s, 卖点扫描, 结果: %s" % (
+                            market_desc, stock_code, stock_name, err_info))
+
+                        # 如果没有买入信号，跳过后端的代码
+                        if not bool_buy:
+                            continue
+
+                        while True:
+                            # 跳出条件，并交易完成
+                            # position_data[stock_code] = {
+                            #     "timestamp": 0,  # 时间戳
+                            #     "market_code": 0,
+                            #     "market_desc": "",
+                            #     "stock_name": "",
+                            #     "price": 0.0,
+                            #     "count": 0,
+                            #     "trade_account_id": 0,  # 账户id，以后用来聚合用
+                            # }
+
+                            # 获得5档价格数据
+                            level5_quotes_dataset, err_info = HQAdapter.get_stock_quotes(self.connect_instance,
+                                                                                         [(market_code, stock_code)])
+                            if err_info is None:
+                                self.log.logger.error(u"获得 市场: %s, 股票: %s, 名称：%s, 5档行情数据错误: %s" % (
+                                    market_desc, stock_code, stock_name, err_info))
+                                continue
+
+                            level5_quote_value = level5_quotes_dataset[stock_code]
+                            avg_level5_price = level5_quote_value["sell5_avg_price"]
+                            # 按照交易总数固定比例投放交易股票数量, 1手 = 100股
+                            max_can_buy_count = int(
+                                (level5_quote_value["buy5_step_count"] / 100) * MAX_SELL_TOTAL_RATIO) * 100
+
+                            # 执行下订单动作, 4 市价委托(上海五档即成剩撤/ 深圳五档即成剩撤) -- 此时价格没有用处，用 0 传入即可
+                            err_info = OrderAdapter.send_stock_order(self.connect_instance, stock_code,
+                                                                     current_trade_account_id, Common.CONST_STOCK_BUY,
+                                                                     0, max_can_buy_count)
+                            # 记录交易数据
+                            if err_info is None:
+                                sell_total_value = avg_level5_price * max_can_buy_count
+                                revenue_value = 0.0  # 买入方向没有，记0
+                                revenue_change = 0.0  # 买入方向没有，记0
+                                trader_record = {
+                                    "timestamp": Common.get_current_timestamp(),
+                                    "datetime": Common.get_current_datetime(),
+                                    "trade_account_id": current_trade_account_id,
+                                    "order_type": Common.CONST_STOCK_BUY_DESC,
+                                    "order_type_id": Common.CONST_STOCK_BUY,
+                                    "market_code": market_code,
+                                    "market_desc": market_desc,
+                                    "stock_code": stock_code,
+                                    "stock_name": stock_name,
+                                    "price": avg_level5_price,
+                                    "count": max_can_buy_count,
+                                    "total": sell_total_value,
+                                    "revenue_change": revenue_change,
+                                    "revenue_value": revenue_value
+                                }
+                                records_set.append(trader_record)
+                                self.log.logger.info(
+                                    u"执行动作 市场: %s, 股票: %s, 名称：%s, 信号: %s, 价格: %.2f, 数量: %d, 总价: %.2f, 营收(元): %.2f, 营收率(%%): %.2f" % (
+                                        market_desc, stock_code, stock_name, Common.CONST_STOCK_SELL_DESC,
+                                        avg_level5_price, max_can_buy_count, sell_total_value, revenue_value,
+                                        revenue_change))
+                            else:
+                                self.log.logger.warn(u"没有执行动作 市场: %s, 股票: %s, 名称：%s, 信号: %s, 价格: %.2f, 数量: %d" % (
+                                    market_desc, stock_code, stock_name, Common.CONST_STOCK_SELL_DESC, avg_level5_price,
+                                    max_can_buy_count))
+
+                            # 等待订单消化时间
+                            time.sleep(MIN_TASK_WAITING_TIME)
+
+                    except Exception as err:
+                        self.log.logger.error(u"对股票箱中股票：%s 扫描出现错误: %s" % (stock_code, err.message))
+                        continue
+
+            if len(records_set) > 0:
+                # 保存交易数据倒本地z
+                self._save_trader_records(records_set)
+                # 保存数据到全局交易数据集，准备发送邮件
+                self.trade_records_data_set[Common.CONST_STOCK_BUY] = records_set
+
+        # 保存持仓文件
+        _save_position_db_file(position_data)
 
     # 计算当前持仓的状态，判定是否有股票出发可以卖点
     def _position_scanner(self):
@@ -358,7 +490,7 @@ class TradeExecutor(object):
                         time.sleep(MIN_TASK_WAITING_TIME)
 
                 except Exception as err:
-                    self.log.logger.error(u"执行持仓股票扫描出现出错: %s" % err.message)
+                    self.log.logger.error(u"执行持仓股票: %s 扫描出现出错: %s" % (stock_code, err.message))
                     continue
 
             if len(records_set) > 0:

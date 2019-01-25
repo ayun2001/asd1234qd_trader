@@ -18,6 +18,7 @@ from Crypto.Cipher import AES
 # 这里密钥key 长度必须为16（AES-128）、24（AES-192）、或32（AES-256）Bytes 长度.目前AES-128足够用
 CONST_AES_CBC_KEY = "9adunmMw6km6lriO"
 CONST_AES_CBC_KEY_LENGTH = len(CONST_AES_CBC_KEY)
+CONST_CRYPTO_ASE_INIT_VECTOR = "0123456789ABCDEF"
 
 CONST_DIR_LOG = "./log"
 CONST_DIR_CONF = "./conf"
@@ -183,7 +184,7 @@ def check_today_is_holiday_time():
 
 
 def get_encrypted_string(plain_text):
-    aes_crypto = AES.new(CONST_AES_CBC_KEY, AES.MODE_CBC, "0123456789ABCDEF")
+    aes_crypto = AES.new(CONST_AES_CBC_KEY, AES.MODE_CBC, CONST_CRYPTO_ASE_INIT_VECTOR)
     count = len(plain_text)
     if count % CONST_AES_CBC_KEY_LENGTH != 0:
         add = CONST_AES_CBC_KEY_LENGTH - (count % CONST_AES_CBC_KEY_LENGTH)
@@ -194,6 +195,6 @@ def get_encrypted_string(plain_text):
 
 
 def get_decrypted_string(secret_text):
-    aes_crypto = AES.new(CONST_AES_CBC_KEY, AES.MODE_CBC, "0123456789ABCDEF")
+    aes_crypto = AES.new(CONST_AES_CBC_KEY, AES.MODE_CBC, CONST_CRYPTO_ASE_INIT_VECTOR)
     plain_text = aes_crypto.decrypt(a2b_hex(secret_text))
     return plain_text.rstrip('\0')
