@@ -294,6 +294,10 @@ class GenerateBox(object):
 
         for market_code, market_values in stock_pool.items():
             for stock_code, stock_info_values in market_values.items():
+                # 延迟休息，防止被封
+                time.sleep(Common.CONST_TASK_WAITING_TIME / 1000.0)
+
+                # 执行数据处理和分类过程
                 try:
                     stock_data_frame = stock_info_values["data_frame"]
                     stock_meta_data = stock_info_values["meta_data"]
@@ -315,7 +319,7 @@ class GenerateBox(object):
                         continue
 
                     if min_close_price >= meta_close_price:
-                        # Type1
+                        # Type1 一类
                         if market_name == Common.CONST_SH_MARKET and max_turn_over <= Common.CONST_SH_STOCK_TURNOVER and not bool_filter_result:
                             valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_1][stock_code] = stock_meta_data
                             continue
@@ -328,7 +332,7 @@ class GenerateBox(object):
                         if market_name == Common.CONST_CY_MARKET and max_turn_over <= 18 and not bool_filter_result:
                             valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_1][stock_code] = stock_meta_data
                             continue
-                        # Type2
+                        # Type2 二类
                         if market_name == Common.CONST_SH_MARKET and max_turn_over > Common.CONST_SH_STOCK_TURNOVER and not bool_filter_result:
                             valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_2][stock_code] = stock_meta_data
                             continue
@@ -343,7 +347,7 @@ class GenerateBox(object):
                             continue
 
                     if meta_close_price > min_close_price >= meta_low_price:
-                        # Type3
+                        # Type3 三类
                         if market_name == Common.CONST_SH_MARKET and max_turn_over <= Common.CONST_SH_STOCK_TURNOVER and not bool_filter_result:
                             valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_3][stock_code] = stock_meta_data
                             continue
@@ -356,7 +360,7 @@ class GenerateBox(object):
                         if market_name == Common.CONST_CY_MARKET and max_turn_over <= Common.CONST_CY_STOCK_TURNOVER and not bool_filter_result:
                             valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_3][stock_code] = stock_meta_data
                             continue
-                        # Type4
+                        # Type4 四类
                         if market_name == Common.CONST_SH_MARKET and max_turn_over > Common.CONST_SH_STOCK_TURNOVER and not bool_filter_result:
                             valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_4][stock_code] = stock_meta_data
                             continue
@@ -373,9 +377,6 @@ class GenerateBox(object):
                 except Exception as err:
                     self.log.logger.error(u"[第2阶段] 股票: %s, 分类错误: %s" % (stock_code, err.message))
                     continue
-                    
-                # 延迟休息，防止被封
-                time.sleep(Common.CONST_TASK_WAITING_TIME / 1000.0)
 
         return valid_stock_data_set
 

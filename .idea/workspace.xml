@@ -17,7 +17,7 @@
           <file pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/Trader.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="726">
+                <state relative-caret-position="-3316">
                   <caret line="166" column="61" selection-start-line="166" selection-start-column="59" selection-end-line="166" selection-end-column="61" />
                 </state>
               </provider>
@@ -51,11 +51,8 @@
           <file pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/Box.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="210">
-                  <caret line="375" column="20" selection-start-line="375" selection-start-column="20" selection-end-line="375" selection-end-column="20" />
-                  <folding>
-                    <element signature="e#14558#21152#0" />
-                  </folding>
+                <state relative-caret-position="591">
+                  <caret line="362" column="33" selection-start-line="362" selection-start-column="33" selection-end-line="362" selection-end-column="33" />
                 </state>
               </provider>
             </entry>
@@ -231,12 +228,12 @@
       <workItem from="1548079572653" duration="37000" />
       <workItem from="1548384503230" duration="4217000" />
       <workItem from="1548389549922" duration="8791000" />
-      <workItem from="1548404119842" duration="1098000" />
+      <workItem from="1548404119842" duration="1451000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="52313000" />
+    <option name="totallyTimeSpent" value="52666000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -397,18 +394,15 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/Trader.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="726">
+        <state relative-caret-position="-3316">
           <caret line="166" column="61" selection-start-line="166" selection-start-column="59" selection-end-line="166" selection-end-column="61" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/Box.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="210">
-          <caret line="375" column="20" selection-start-line="375" selection-start-column="20" selection-end-line="375" selection-end-column="20" />
-          <folding>
-            <element signature="e#14558#21152#0" />
-          </folding>
+        <state relative-caret-position="591">
+          <caret line="362" column="33" selection-start-line="362" selection-start-column="33" selection-end-line="362" selection-end-column="33" />
         </state>
       </provider>
     </entry>
