@@ -25,8 +25,8 @@ MIN_DATA_CHECK_HOURS = 4
 MIN_STOP_LOSS_RATIO = -3.0  # 负数，下跌3%
 MIN_SELL_RAISE_RATIO = 3.0  # 涨幅3%
 MAX_VALID_BOX_INTERVAL_HOURS = 4  # 票箱会在每天的早上8：30，和中午12：00 左右开始选取，所以不会有操过4个小时
-MAX_TRADE_SELL_TOTAL_RATIO = 0.6
-OFFSET_PRICE = 0.01
+MAX_SELL_TOTAL_RATIO = 0.6
+MIN_TASK_WAITING_TIME = 10  # 单位：秒
 
 
 # ============================================
@@ -239,9 +239,9 @@ class Trader(object):
 
                         level5_quote_value = level5_quotes_dataset[stock_code]
                         avg_level5_price = level5_quote_value["buy5_avg_price"]
-                        # 按照交易总数固定比例投放交易股票数量
+                        # 按照交易总数固定比例投放交易股票数量, 1手 = 100股
                         max_can_sell_count = int(
-                            (level5_quote_value["buy5_step_count"] / 100) * MAX_TRADE_SELL_TOTAL_RATIO) * 100
+                            (level5_quote_value["buy5_step_count"] / 100) * MAX_SELL_TOTAL_RATIO) * 100
 
                         # 执行下订单动作, 4 市价委托(上海五档即成剩撤/ 深圳五档即成剩撤) -- 此时价格没有用处，用 0 传入即可
                         err_info = OrderAdapter.send_stock_order(self.connect_instance, stock_code,
@@ -278,6 +278,8 @@ class Trader(object):
 
                         # 减去当前的交易的投放量
                         current_own_count -= max_can_sell_count
+                        # 等待订单消化时间
+                        time.sleep(MIN_TASK_WAITING_TIME)
 
                 except Exception as err:
                     self.log.logger.error(u"执行持仓股票扫描出现出错: %s" % err.message)

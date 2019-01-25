@@ -272,7 +272,7 @@ class GenerateBox(object):
         for stock_item in valid_stock_info_list:
             self._compute_task_handler(stock_item, valid_stock_data_set)
             # 延迟休息，防止被封
-            time.sleep(Common.CONST_TASK_WAITING_MS / 1000.0)
+            time.sleep(Common.CONST_TASK_WAITING_TIME / 1000.0)
 
         return valid_stock_data_set
 
@@ -317,7 +317,7 @@ class GenerateBox(object):
                         continue
 
                     # 延迟休息，防止被封
-                    time.sleep(Common.CONST_TASK_WAITING_MS / 1000.0)
+                    time.sleep(Common.CONST_TASK_WAITING_TIME / 1000.0)
 
                     if min_close_price >= meta_close_price:
                         # Type1
