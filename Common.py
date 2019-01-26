@@ -25,10 +25,9 @@ CONST_DIR_CONF = "./conf"
 CONST_DIR_DATABASE = "./db"
 CONST_DIR_BACKUP = "./bak"
 
-CONST_CONFIG_BOX_FILENAME = "box.json"
 CONST_CONFIG_HOLIDAY_FILENAME = "holidays.json"
 CONST_CONFIG_MAIL_FILENAME = "mail.json"
-CONST_CONFIG_TRADER_FILENAME = "trader.json"
+CONST_CONFIG_ADAPTER_FILENAME = "adapter.json"
 
 CONST_LOG_MAIL_FILENAME = "mail.log"
 CONST_LOG_BOX_FILENAME = "box.log"
@@ -133,13 +132,11 @@ def get_current_datetime():
 
 def dict_to_file(data, filename):
     with codecs.open(filename, 'wb', 'utf-8') as _file:
-        # pickle.dump(data, _file)
         _file.write(get_encrypted_string(pickle.dumps(data)))
 
 
 def file_to_dict(filename):
     with codecs.open(filename, 'r', 'utf-8') as _file:
-        # return pickle.load(_file)
         return get_decrypted_string(pickle.loads(_file.read()))
 
 
@@ -198,3 +195,13 @@ def get_decrypted_string(secret_text):
     aes_crypto = AES.new(CONST_CRYPTO_AES_CBC_KEY, AES.MODE_CBC, CONST_CRYPTO_AES_INIT_VECTOR)
     plain_text = aes_crypto.decrypt(a2b_hex(secret_text))
     return plain_text.rstrip('\0')
+
+
+def load_adapter_config(filename):
+    if not file_exist(filename):
+        return None, u"交易模块配置文件: %s 不存在." % filename
+    try:
+        with codecs.open(filename, 'r', 'utf-8') as _file:
+            return json.load(_file), None
+    except Exception as err:
+        return None, err.message

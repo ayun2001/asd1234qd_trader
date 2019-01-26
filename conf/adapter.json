@@ -1,7 +1,12 @@
 {
   "max_stock_number": 5,
   "max_capital_value": 50000,
-  "servers": [],
+  "order_servers": [],
+  "hq_servers": [
+    "119.147.212.81:7709",
+    "14.215.128.18:7709",
+    "59.173.18.140:7709"
+  ],
   "version": "",
   "branch_id": "",
   "account_id": "",

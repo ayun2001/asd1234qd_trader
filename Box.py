@@ -1,7 +1,5 @@
 # coding=utf-8
-
-import codecs
-import json
+import threading
 import time
 
 from prettytable import PrettyTable
@@ -14,21 +12,12 @@ from Log import Logger
 box_log_filename = "%s/%s_%s" % (Common.CONST_DIR_LOG, time.strftime('%Y%m%d', time.localtime(time.time())),
                                  Common.CONST_LOG_BOX_FILENAME)
 box_db_filename = "%s/%s" % (Common.CONST_DIR_DATABASE, Common.CONST_DB_BOX_FILENAME)
-box_config_filename = "%s/%s" % (Common.CONST_DIR_CONF, Common.CONST_CONFIG_BOX_FILENAME)
+box_config_filename = "%s/%s" % (Common.CONST_DIR_CONF, Common.CONST_CONFIG_ADAPTER_FILENAME)
 
 MIN_DATA_CHECK_HOURS = 4
 MIN_60M_TIMEDELTA = MIN_DATA_CHECK_HOURS * 4
 MIN_60M_PRICE_RISE = 5.0
-
-
-def _load_box_config():
-    if not Common.file_exist(box_config_filename):
-        return None, u"交易模块配置文件: %s 不存在." % box_config_filename
-    try:
-        with codecs.open(box_config_filename, 'r', 'utf-8') as _file:
-            return json.load(_file), None
-    except Exception as err:
-        return None, err.message
+MAX_BOX_THREAD_RUNNING_TIME = 40 * 60  # 40分钟内必须要完成所有分析，要不然自动停止
 
 
 # 保存股票盒到硬盘
@@ -131,7 +120,7 @@ class GenerateBox(object):
                     u"获得市场: %s, 股票: %s, 名称：%s, 历史数据错误: %s" % (market_desc, stock_code, stock_name, err_info))
                 # 发现连接错误 10038 需要重连
                 if err_info.find("errCode=10038") > -1:
-                    time.sleep(Common.CONST_RETRY_CONNECT_INTERVAL)  # 休息指定的事件，重新创建连接对象
+                    time.sleep(Common.CONST_RETRY_CONNECT_INTERVAL)  # 休息指定的时间，重新创建连接对象
                     self.connect_instance, err_info = HQAdapter.create_connect_instance(self.config)
                     if err_info is not None:
                         self.log.logger.error(u"重新创建行情服务器连接实例失败: %s" % err_info)
@@ -198,7 +187,7 @@ class GenerateBox(object):
                     u"获得市场: %s, 股票: %s, 名称：%s, 历史数据错误: %s" % (market_desc, stock_code, stock_name, err_info))
                 # 发现连接错误 10038 需要重连
                 if err_info.find("errCode=10038") > -1:
-                    time.sleep(Common.CONST_RETRY_CONNECT_INTERVAL)  # 休息指定的事件，重新创建连接对象
+                    time.sleep(Common.CONST_RETRY_CONNECT_INTERVAL)  # 休息指定的时间，重新创建连接对象
                     self.connect_instance, err_info = HQAdapter.create_connect_instance(self.config)
                     if err_info is not None:
                         self.log.logger.error(u"重新创建行情服务器连接实例失败: %s" % err_info)
@@ -206,7 +195,6 @@ class GenerateBox(object):
                         self.connect_instance.SetTimeout(Common.CONST_CONNECT_TIMEOUT, Common.CONST_CONNECT_TIMEOUT)
                         self.log.logger.info(u"重新创建行情服务器连接实例成功...")
                 else:  # 如果是执行错误，就直接跳出函数，直接结束
-                    self.log.logger.error(err_info)
                     return False
             else:  # 正常就直接跳出循环
                 break
@@ -382,7 +370,7 @@ class GenerateBox(object):
 
     def generate(self):
         # 加载股票箱的配置文件
-        self.config, err_info = _load_box_config()
+        self.config, err_info = Common.load_adapter_config(box_config_filename)
         if err_info is not None:
             self.log.logger.error(u"加载股票箱配置文件错误: %s", err_info)
             return None
@@ -435,5 +423,7 @@ def gen_box_main():
 
 
 if __name__ == '__main__':
-    # 运行主程序
-    gen_box_main()
+    # 运行主程序, 这里需要使用线程函数的join的超时功能, 防止程序一直在后台运行
+    current_thread = threading.Thread(target=gen_box_main)
+    current_thread.start()
+    current_thread.join(timeout=MAX_BOX_THREAD_RUNNING_TIME)

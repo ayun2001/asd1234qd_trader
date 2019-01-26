@@ -30,10 +30,10 @@ def check_stop_trade_stock(dataset):
 
 
 def create_connect_instance(config):
-    _temp_last_selected_server_key = "ZKesa1cEoD"
+    _temp_last_selected_server_key = "hq_ZKesa1cEoD"
     try:
         while True:  # 需要利用config配置项目保存一个临时数据，这个数据只在运行过程中有效
-            current_selected_server = random.choice(config["servers"])
+            current_selected_server = random.choice(config["hq_servers"])
             if current_selected_server == config.get(_temp_last_selected_server_key) and len(config["servers"]) > 1:
                 time.sleep(Common.CONST_SELECT_SERVER_INTERVAL)
                 continue
