@@ -3,13 +3,7 @@
   <component name="ChangeListManager">
     <list default="true" id="ea61e7c0-b131-4b2b-a7b1-9c6b290db9da" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Box.py" beforeDir="false" afterPath="$PROJECT_DIR$/Box.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Common.py" beforeDir="false" afterPath="$PROJECT_DIR$/Common.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/HQAdapter.py" beforeDir="false" afterPath="$PROJECT_DIR$/HQAdapter.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/OrderAdapter.py" beforeDir="false" afterPath="$PROJECT_DIR$/OrderAdapter.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Trader.py" beforeDir="false" afterPath="$PROJECT_DIR$/Trader.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/conf/box.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/conf/trader.json" beforeDir="false" afterPath="$PROJECT_DIR$/conf/adapter.json" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -24,8 +18,11 @@
           <file pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/Trader.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="727">
-                  <caret line="493" column="83" selection-start-line="493" selection-start-column="83" selection-end-line="493" selection-end-column="83" />
+                <state relative-caret-position="705">
+                  <caret line="514" column="57" selection-start-line="514" selection-start-column="57" selection-end-line="514" selection-end-column="57" />
+                  <folding>
+                    <element signature="e#16#29#0" expanded="true" />
+                  </folding>
                 </state>
               </provider>
             </entry>
@@ -55,10 +52,10 @@
               </provider>
             </entry>
           </file>
-          <file pinned="false" current-in-tab="false">
+          <file pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/HQAdapter.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="176">
+                <state relative-caret-position="-3756">
                   <caret line="11" lean-forward="true" selection-start-line="11" selection-end-line="11" />
                   <folding>
                     <element signature="e#16#29#0" expanded="true" />
@@ -67,7 +64,7 @@
               </provider>
             </entry>
           </file>
-          <file pinned="false" current-in-tab="true">
+          <file pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/Box.py">
               <provider selected="true" editor-type-id="text-editor">
                 <state relative-caret-position="736">
@@ -166,7 +163,7 @@
     </option>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="-89" />
+    <option name="x" value="74" />
     <option name="y" value="23" />
     <option name="width" value="2301" />
     <option name="height" value="1189" />
@@ -257,12 +254,12 @@
       <workItem from="1548389549922" duration="8791000" />
       <workItem from="1548404119842" duration="8549000" />
       <workItem from="1548414951969" duration="305000" />
-      <workItem from="1548486914270" duration="4399000" />
+      <workItem from="1548486914270" duration="5187000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="64468000" />
+    <option name="totallyTimeSpent" value="65256000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -274,7 +271,7 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="-89" y="23" width="2301" height="1189" extended-state="0" />
+    <frame x="74" y="23" width="2301" height="1189" extended-state="0" />
     <editor active="true" />
     <layout>
       <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.4804011" visible="true" weight="0.15316512" />
@@ -418,16 +415,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/HQAdapter.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="176">
-          <caret line="11" lean-forward="true" selection-start-line="11" selection-end-line="11" />
-          <folding>
-            <element signature="e#16#29#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$APPLICATION_HOME_DIR$/helpers/typeshed/stdlib/2and3/threading.pyi">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="357">
@@ -445,10 +432,23 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/HQAdapter.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-3756">
+          <caret line="11" lean-forward="true" selection-start-line="11" selection-end-line="11" />
+          <folding>
+            <element signature="e#16#29#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/Trader.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="727">
-          <caret line="493" column="83" selection-start-line="493" selection-start-column="83" selection-end-line="493" selection-end-column="83" />
+        <state relative-caret-position="705">
+          <caret line="514" column="57" selection-start-line="514" selection-start-column="57" selection-end-line="514" selection-end-column="57" />
+          <folding>
+            <element signature="e#16#29#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
