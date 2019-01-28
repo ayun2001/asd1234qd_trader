@@ -102,7 +102,6 @@ def _generate_trade_mail_message(data):
         # 生成买入信息列表
         if trade_type_id == Common.CONST_STOCK_BUY and len(trade_record_data) > 0:
             table = PrettyTable([u"股票大盘", u"股票代码", u"股票名称", u"价格(元)", u"数量(股)", u"总价(元)"])
-            table.format = True
 
             for record_item in trade_record_data:
                 try:
@@ -122,7 +121,6 @@ def _generate_trade_mail_message(data):
         # 生成卖出信息列表
         if trade_type_id == Common.CONST_STOCK_SELL and len(trade_record_data) > 0:
             table = PrettyTable([u"股票大盘", u"股票代码", u"股票名称", u"价格(元)", u"数量(股)", u"总价(元)", u"营收(元)", u"营收率(百分率)"])
-            table.format = True
 
             for record_item in trade_record_data:
                 try:

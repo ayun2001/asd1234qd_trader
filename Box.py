@@ -36,8 +36,7 @@ def _generate_box_mail_message(data):
     sh_number = 0
     sz_number = 0
 
-    table = PrettyTable([u"股票大盘", u"股票分类", u"数量(个)", u"待选股票列表"])
-    table.format = True  # 加入边框等CSS的效果
+    table = PrettyTable([u"股票大盘", u"股票分类", u"数量(个)", u"待选股票"])
     for market_name, market_values in data.items():
         for stock_class_type, class_type_values in market_values.items():
             count = len(class_type_values.keys())
