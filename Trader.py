@@ -147,17 +147,32 @@ def _generate_trade_mail_message(data):
 
 
 def _check_stock_buy_point(instance, market_code, market_desc, stock_code, stock_name, class_type):
+    # 读取 60分钟 数据
     history_data_frame, err_info = HQAdapter.get_history_data_frame(instance, market=market_code, code=stock_code,
                                                                     market_desc=market_desc, name=stock_name,
                                                                     ktype=Common.CONST_K_60M,
                                                                     kcount=Common.CONST_K_LENGTH)
     if err_info is not None:
-        return False, u"获得市场: %s, 股票: %s, 名称：%s, 历史K线数据错误: %s" % (market_desc, stock_code, stock_name, err_info)
+        return False, u"获得市场: %s, 股票: %s, 名称：%s, 历史60分钟K线数据错误: %s" % (market_desc, stock_code, stock_name, err_info)
 
-    # 计算相关数据
+    # 计算60M相关数据
     kdj_values_list = sorted(list(history_data_frame['kdj_j'].values[:MIN_DATA_CHECK_HOURS]), reverse=True)
     kdj_cross_list = list(history_data_frame['kdj_cross'].values[:MIN_DATA_CHECK_HOURS])
     kdj_cross_express_list = filter(lambda _item: _item != '', kdj_cross_list)  # 去掉之间没有值的空格
+
+    # 拉取数据间隔, 延迟休息, 防止被封
+    time.sleep(Common.CONST_TASK_WAITING_TIME / 1000.0)
+
+    # 读取 日线 数据
+    history_data_frame, err_info = HQAdapter.get_history_data_frame(instance, market=market_code, code=stock_code,
+                                                                    market_desc=market_desc, name=stock_name,
+                                                                    ktype=Common.CONST_K_DAY,
+                                                                    kcount=Common.CONST_K_LENGTH)
+    if err_info is not None:
+        return False, u"获得市场: %s, 股票: %s, 名称：%s, 历史日线K线数据错误: %s" % (market_desc, stock_code, stock_name, err_info)
+
+    # 计算日线相关数据
+    close_values_list = sorted(list(history_data_frame['close'].values[:MIN_DATA_CHECK_HOURS]), reverse=True)
     ma5_values_list = sorted(list(history_data_frame['ma5'].values[:MIN_DATA_CHECK_HOURS]), reverse=True)
     ma10_values_list = sorted(list(history_data_frame['ma10'].values[:MIN_DATA_CHECK_HOURS]), reverse=True)
 
@@ -172,19 +187,23 @@ def _check_stock_buy_point(instance, market_code, market_desc, stock_code, stock
         bool_up_cross_kdj = False
 
     # 获得当前相关的数据值
+    current_close_value = close_values_list[0]
     current_j_value = kdj_values_list[0]
     current_ma5_value = ma5_values_list[0]
     current_ma10_value = ma10_values_list[0]
 
     # 不同类型的股票分别对待
-    if class_type == Common.CONST_STOCK_TYPE_1:
-        pass
-    if class_type == Common.CONST_STOCK_TYPE_2:
-        pass
-    if class_type == Common.CONST_STOCK_TYPE_3:
-        pass
-    if class_type == Common.CONST_STOCK_TYPE_4:
-        pass
+    if (class_type == Common.CONST_STOCK_TYPE_1) and (current_close_value <= current_ma5_value) and bool_up_cross_kdj:
+        return True, u"触发买入条件 市场: %s, 股票: %s, 名称：%s, 类型：%s, 发生买入" % (market_desc, stock_code, class_type, stock_name)
+    if (class_type == Common.CONST_STOCK_TYPE_2) and (current_close_value <= current_ma10_value) and bool_up_cross_kdj:
+        return True, u"触发买入条件 市场: %s, 股票: %s, 名称：%s, 类型：%s, 发生买入" % (market_desc, stock_code, class_type, stock_name)
+    if (class_type == Common.CONST_STOCK_TYPE_3) and (current_close_value <= current_ma10_value) and bool_up_cross_kdj:
+        return True, u"触发买入条件 市场: %s, 股票: %s, 名称：%s, 类型：%s, 发生买入" % (market_desc, stock_code, class_type, stock_name)
+    if (class_type == Common.CONST_STOCK_TYPE_4) and (current_close_value <= current_ma10_value) and \
+            current_j_value < 0 and bool_up_cross_kdj:
+        return True, u"触发买入条件 市场: %s, 股票: %s, 名称：%s, 类型：%s, 发生买入" % (market_desc, stock_code, class_type, stock_name)
+
+    return False, u"执行 市场: %s, 股票: %s, 名称：%s, 类型：%s, 继续观望..." % (market_desc, stock_code, class_type, stock_name)
 
 
 def _check_stock_sell_point(instance, market_code, market_desc, stock_code, stock_name):
@@ -215,18 +234,18 @@ def _check_stock_sell_point(instance, market_code, market_desc, stock_code, stoc
     if len(kdj_cross_express_list) > 0:
         try:
             down_index_id = kdj_cross_list.index("down_cross")
-            bool_up_cross_kdj = kdj_cross_express_list[0] == "down_cross" and down_index_id < MIN_DATA_CHECK_HOURS
+            bool_down_cross_kdj = kdj_cross_express_list[0] == "down_cross" and down_index_id < MIN_DATA_CHECK_HOURS
         except ValueError:
-            bool_up_cross_kdj = False
+            bool_down_cross_kdj = False
     else:
-        bool_up_cross_kdj = False
+        bool_down_cross_kdj = False
 
     # 触发止损条件 (3%)
     if pct_change_list[0] < MIN_STOP_LOSS_RATIO:  # 已经倒序，第一个就是当前这个小时
         return True, u"触发止损条件 市场: %s, 股票: %s, 名称：%s, 发生卖出" % (market_desc, stock_code, stock_name)
 
     # 触发卖出条件 (上涨超过3%，KDJ_J> 100, KDJ死叉了)
-    if bool_more_than_spec_raise and (bool_max_j_value or bool_up_cross_kdj):
+    if bool_more_than_spec_raise and (bool_max_j_value or bool_down_cross_kdj):
         return True, u"触发卖出条件 市场: %s, 股票: %s, 名称：%s, 发生卖出" % (market_desc, stock_code, stock_name)
 
     return False, u"执行 市场: %s, 股票: %s, 名称：%s, 继续持仓..." % (market_desc, stock_code, stock_name)
