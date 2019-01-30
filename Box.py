@@ -149,7 +149,7 @@ class GenerateBox(object):
             market_desc=market_desc,
             stock_code=stock_code,
             stock_name=stock_name,
-            ktype=Common.CONST_K_DAY,
+            ktype=Common.CONST_K_DAY,  # 日线数据
             kcount=Common.CONST_K_LENGTH
         )
 
@@ -194,7 +194,7 @@ class GenerateBox(object):
             market_desc=market_desc,
             stock_code=stock_code,
             stock_name=stock_name,
-            ktype=Common.CONST_K_60M,
+            ktype=Common.CONST_K_60M,  # 60分钟数据
             kcount=Common.CONST_K_LENGTH
         )
 
