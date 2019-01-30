@@ -33,6 +33,9 @@ MIN_TASK_WAITING_TIME = 20  # 单位：秒
 MIN_TRADE_TIME_INTERVAL = 5 * 60 * 60  # 单位：秒
 MAX_TRADER_THREAD_RUNNING_TIME = 20 * 60  # 20分钟内必须要完成所有交易，要不然自动停止
 
+ZERO_J_VALUE = 0
+HALF_J_VALUE = 50
+
 
 # ============================================
 # 函数定义
@@ -67,6 +70,7 @@ def _load_position_db_file():
       "price": 0.0,
       "count": 0，
       "trade_account_id": 0,   #账户id，以后用来聚合用
+      "class_type": "", 股票分类
     }}
     """
     if not Common.file_exist(trader_db_position_filename):
@@ -142,13 +146,45 @@ def _generate_trade_mail_message(data):
     return mail_message
 
 
-def _check_stock_buy_point(instance, market_code, market_desc, stock_code, stock_name):
+def _check_stock_buy_point(instance, market_code, market_desc, stock_code, stock_name, class_type):
     history_data_frame, err_info = HQAdapter.get_history_data_frame(instance, market=market_code, code=stock_code,
                                                                     market_desc=market_desc, name=stock_name,
                                                                     ktype=Common.CONST_K_60M,
                                                                     kcount=Common.CONST_K_LENGTH)
     if err_info is not None:
         return False, u"获得市场: %s, 股票: %s, 名称：%s, 历史K线数据错误: %s" % (market_desc, stock_code, stock_name, err_info)
+
+    # 计算相关数据
+    kdj_values_list = sorted(list(history_data_frame['kdj_j'].values[:MIN_DATA_CHECK_HOURS]), reverse=True)
+    kdj_cross_list = list(history_data_frame['kdj_cross'].values[:MIN_DATA_CHECK_HOURS])
+    kdj_cross_express_list = filter(lambda _item: _item != '', kdj_cross_list)  # 去掉之间没有值的空格
+    ma5_values_list = sorted(list(history_data_frame['ma5'].values[:MIN_DATA_CHECK_HOURS]), reverse=True)
+    ma10_values_list = sorted(list(history_data_frame['ma10'].values[:MIN_DATA_CHECK_HOURS]), reverse=True)
+
+    # 判断 KDJ的J值 金叉
+    if len(kdj_cross_express_list) > 0:
+        try:
+            down_index_id = kdj_cross_list.index("up_cross")
+            bool_up_cross_kdj = kdj_cross_express_list[0] == "up_cross" and down_index_id < MIN_DATA_CHECK_HOURS
+        except ValueError:
+            bool_up_cross_kdj = False
+    else:
+        bool_up_cross_kdj = False
+
+    # 获得当前相关的数据值
+    current_j_value = kdj_values_list[0]
+    current_ma5_value = ma5_values_list[0]
+    current_ma10_value = ma10_values_list[0]
+
+    # 不同类型的股票分别对待
+    if class_type == Common.CONST_STOCK_TYPE_1:
+        pass
+    if class_type == Common.CONST_STOCK_TYPE_2:
+        pass
+    if class_type == Common.CONST_STOCK_TYPE_3:
+        pass
+    if class_type == Common.CONST_STOCK_TYPE_4:
+        pass
 
 
 def _check_stock_sell_point(instance, market_code, market_desc, stock_code, stock_name):
@@ -178,20 +214,19 @@ def _check_stock_sell_point(instance, market_code, market_desc, stock_code, stoc
     # 判断 KDJ的J值 死叉
     if len(kdj_cross_express_list) > 0:
         try:
-            down_cross_index_id = kdj_cross_list.index("down_cross")
-            bool_down_cross_kdj = kdj_cross_express_list[0] == "down_cross" and \
-                                  down_cross_index_id < MIN_SELL_RAISE_RATIO
+            down_index_id = kdj_cross_list.index("down_cross")
+            bool_up_cross_kdj = kdj_cross_express_list[0] == "down_cross" and down_index_id < MIN_DATA_CHECK_HOURS
         except ValueError:
-            bool_down_cross_kdj = False
+            bool_up_cross_kdj = False
     else:
-        bool_down_cross_kdj = False
+        bool_up_cross_kdj = False
 
     # 触发止损条件 (3%)
     if pct_change_list[0] < MIN_STOP_LOSS_RATIO:  # 已经倒序，第一个就是当前这个小时
         return True, u"触发止损条件 市场: %s, 股票: %s, 名称：%s, 发生卖出" % (market_desc, stock_code, stock_name)
 
     # 触发卖出条件 (上涨超过3%，KDJ_J> 100, KDJ死叉了)
-    if bool_more_than_spec_raise and (bool_max_j_value or bool_down_cross_kdj):
+    if bool_more_than_spec_raise and (bool_max_j_value or bool_up_cross_kdj):
         return True, u"触发卖出条件 市场: %s, 股票: %s, 名称：%s, 发生卖出" % (market_desc, stock_code, stock_name)
 
     return False, u"执行 市场: %s, 股票: %s, 名称：%s, 继续持仓..." % (market_desc, stock_code, stock_name)
@@ -228,6 +263,7 @@ class TradeExecutor(object):
             "market_desc":  # 市场描述
             "stock_id": "",    # 股票代码
             "stock_name": "",  # 股票名称
+            "class_type": "", 股票分类
             "price": 0.0,   # 股票单价
             "count": 0,       # 成交多少股
             "total": 0.0,        # 成交总金额 （没有算交易税）
@@ -345,6 +381,7 @@ class TradeExecutor(object):
                                     "market_desc": market_desc,
                                     "stock_code": stock_code,
                                     "stock_name": stock_name,
+                                    "class_type": stock_class_type,
                                     "price": avg_level5_price,
                                     "count": max_can_buy_count,
                                     "total": sell_total_value,
@@ -353,14 +390,15 @@ class TradeExecutor(object):
                                 }
                                 records_set.append(trader_record)
                                 self.log.logger.info(
-                                    u"执行动作 市场: %s, 股票: %s, 名称：%s, 信号: %s, 价格: %.2f, 数量: %d, 总价: %.2f, 营收(元): %.2f, 营收率(%%): %.2f" % (
-                                        market_desc, stock_code, stock_name, Common.CONST_STOCK_SELL_DESC,
-                                        avg_level5_price, max_can_buy_count, sell_total_value, revenue_value,
-                                        revenue_change))
+                                    u"执行动作 市场: %s, 股票: %s, 名称：%s, 类型: %s, 信号: %s, 价格: %.2f, 数量: %d, 总价: %.2f, 营收(元): %.2f, 营收率(%%): %.2f" % (
+                                        market_desc, stock_code, stock_name, stock_class_type,
+                                        Common.CONST_STOCK_SELL_DESC, avg_level5_price, max_can_buy_count,
+                                        sell_total_value, revenue_value, revenue_change))
                             else:
-                                self.log.logger.warn(u"没有执行动作 市场: %s, 股票: %s, 名称：%s, 信号: %s, 价格: %.2f, 数量: %d" % (
-                                    market_desc, stock_code, stock_name, Common.CONST_STOCK_SELL_DESC, avg_level5_price,
-                                    max_can_buy_count))
+                                self.log.logger.warn(
+                                    u"没有执行动作 市场: %s, 股票: %s, 名称：%s, 类型: %s, 信号: %s, 价格: %.2f, 数量: %d" % (
+                                        market_desc, stock_code, stock_name, stock_class_type,
+                                        Common.CONST_STOCK_SELL_DESC, avg_level5_price, max_can_buy_count))
 
                             # 等待订单消化时间
                             time.sleep(MIN_TASK_WAITING_TIME)
@@ -394,10 +432,11 @@ class TradeExecutor(object):
                     market_code = stock_values["market_code"]
                     market_desc = stock_values["market_desc"]
                     stock_name = stock_values["stock_name"]
-                    position_own_value = position_data[stock_code]
-                    last_trade_timestamp = position_own_value["timestamp"]
-                    current_own_count = position_own_value["count"]
-                    current_trade_account_id = position_own_value["trade_account_id"]
+                    stock_class_type = stock_values["class_type"]
+                    last_trade_timestamp = stock_values["timestamp"]
+                    current_own_count = stock_values["count"]
+                    current_trade_account_id = stock_values["trade_account_id"]
+                    current_position_price = stock_values["price"]
 
                     # 判断股票是否当天够买的，如果是跳过 (满足最小交易时间)
                     current_own_time_interval = Common.get_current_timestamp() - last_trade_timestamp
@@ -470,9 +509,10 @@ class TradeExecutor(object):
 
                             # 对执行错误执行处理
                             if err_info is not None:
-                                self.log.logger.warn(u"没有执行动作 市场: %s, 股票: %s, 名称：%s, 信号: %s, 价格: %.2f, 数量: %d" % (
-                                    market_desc, stock_code, stock_name, Common.CONST_STOCK_SELL_DESC, avg_level5_price,
-                                    max_can_sell_count))
+                                self.log.logger.warn(
+                                    u"没有执行动作 市场: %s, 股票: %s, 类型: %s, 名称：%s, 信号: %s, 价格: %.2f, 数量: %d" % (
+                                        market_desc, stock_code, stock_name, stock_class_type,
+                                        Common.CONST_STOCK_SELL_DESC, avg_level5_price, max_can_sell_count))
                                 # 发现连接错误 10038 需要重连
                                 if err_info.find("errCode=10038") > -1:
                                     time.sleep(Common.CONST_RETRY_CONNECT_INTERVAL)  # 休息指定的时间，重新创建连接对象
@@ -487,8 +527,8 @@ class TradeExecutor(object):
                                     break
                             else:  # 正常就直接跳出循环，记录所有相关数据
                                 sell_total_value = avg_level5_price * max_can_sell_count
-                                revenue_value = (avg_level5_price - position_own_value["price"]) * max_can_sell_count
-                                revenue_change = revenue_value / (position_own_value["price"] * max_can_sell_count)
+                                revenue_value = (avg_level5_price - current_position_price) * max_can_sell_count
+                                revenue_change = revenue_value / (current_position_price * max_can_sell_count)
 
                                 records_set.append({
                                     "timestamp": Common.get_current_timestamp(),
@@ -500,6 +540,7 @@ class TradeExecutor(object):
                                     "market_desc": market_desc,
                                     "stock_code": stock_code,
                                     "stock_name": stock_name,
+                                    "class_type": stock_class_type,
                                     "price": avg_level5_price,
                                     "count": max_can_sell_count,
                                     "total": sell_total_value,
@@ -509,10 +550,10 @@ class TradeExecutor(object):
 
                                 # 日志记录
                                 self.log.logger.info(
-                                    u"执行动作 市场: %s, 股票: %s, 名称：%s, 信号: %s, 价格: %.2f, 数量: %d, 总价: %.2f, 营收(元): %.2f, 营收率(%%): %.2f" % (
-                                        market_desc, stock_code, stock_name, Common.CONST_STOCK_SELL_DESC,
-                                        avg_level5_price, max_can_sell_count, sell_total_value, revenue_value,
-                                        revenue_change))
+                                    u"执行动作 市场: %s, 股票: %s, 名称：%s, 类型: %s, 信号: %s, 价格: %.2f, 数量: %d, 总价: %.2f, 营收(元): %.2f, 营收率(%%): %.2f" % (
+                                        market_desc, stock_code, stock_name, stock_class_type,
+                                        Common.CONST_STOCK_SELL_DESC, avg_level5_price, max_can_sell_count,
+                                        sell_total_value, revenue_value, revenue_change))
 
                                 # 减去当前的交易的投放量
                                 current_own_count -= max_can_sell_count
