@@ -18,7 +18,7 @@ box_config_filename = "%s/%s" % (Common.CONST_DIR_CONF, Common.CONST_CONFIG_ADAP
 MIN_DATA_CHECK_HOURS = 4
 MIN_60M_TIMEDELTA = MIN_DATA_CHECK_HOURS * 4
 MIN_60M_PRICE_RISE = 5.0
-MAX_BOX_THREAD_RUNNING_TIME = 45 * 60  # 40分钟内必须要完成所有分析，要不然自动停止
+MAX_BOX_THREAD_RUNNING_TIME = 45 * 60  # 45分钟内必须要完成所有分析，要不然自动停止
 
 
 # 保存股票盒到硬盘
