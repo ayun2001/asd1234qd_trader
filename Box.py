@@ -39,18 +39,22 @@ def _generate_box_mail_message(data):
     table = PrettyTable([u"股票大盘", u"股票分类", u"数量(个)", u"待选股票"])
     for market_name, market_values in data.items():
         for stock_class_type, class_type_values in market_values.items():
-            count = len(class_type_values.keys())
-            total_number += count
+            selected_count = len(class_type_values.keys())
+            total_number += selected_count
             if market_name == Common.CONST_SZ_MARKET:
-                sz_number += count
+                sz_number += selected_count
             if market_name == Common.CONST_SH_MARKET:
-                sh_number += count
+                sh_number += selected_count
             if market_name == Common.CONST_ZX_MARKET:
-                zx_number += count
+                zx_number += selected_count
             if market_name == Common.CONST_CY_MARKET:
-                cy_number += count
-            table.add_row([Common.MARKET_NAME_MAPPING[market_name], Common.STOCK_TYPE_NAME_MAPPING[stock_class_type],
-                           count, u",".join(class_type_values.keys()) if count > 0 else u"无"])
+                cy_number += selected_count
+            table.add_row([
+                Common.MARKET_NAME_MAPPING[market_name],  # 所属市场名称
+                Common.STOCK_TYPE_NAME_MAPPING[stock_class_type],  # 股票分类
+                selected_count,  # 选择股票数量
+                u",".join(class_type_values.keys()) if selected_count > 0 else u"无"  # 待选股票列表
+            ])
 
     return table.get_html_string() + u"<p>总共选取股票数量: %d --> 上海: %d, 深圳: %d, 中小: %d, 创业: %d </p>" % (
         total_number, sh_number, sz_number, zx_number, cy_number)
