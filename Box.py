@@ -25,7 +25,6 @@ MAX_BOX_THREAD_RUNNING_TIME = 40 * 60  # 40分钟内必须要完成所有分析�
 def _storage_box_data(data):
     if not Common.file_exist(Common.CONST_DIR_DATABASE):
         Common.create_directory(Common.CONST_DIR_DATABASE)
-
     Common.dict_to_file(data, box_db_filename)
 
 
@@ -87,12 +86,9 @@ class GenerateBox(object):
         while True:
             if self.connect_instance is not None:
                 # 获得股票的K线信息
-                history_data_frame, err_info = HQAdapter.get_history_data_frame(self.connect_instance,
-                                                                                market=market_code,
-                                                                                code=stock_code,
-                                                                                market_desc=market_desc,
-                                                                                name=stock_name, ktype=ktype,
-                                                                                kcount=kcount)
+                history_data_frame, err_info = HQAdapter.get_history_data_frame(
+                    self.connect_instance, market=market_code, code=stock_code, market_desc=market_desc,
+                    name=stock_name, ktype=ktype, kcount=kcount)
             else:
                 history_data_frame = None
                 err_info = u"行情服务器连接实例为空, [errCode=10038], 等待重新创建..."
@@ -110,7 +106,9 @@ class GenerateBox(object):
                     else:
                         self.connect_instance.SetTimeout(Common.CONST_CONNECT_TIMEOUT, Common.CONST_CONNECT_TIMEOUT)
                         self.log.logger.info(u"重新创建行情服务器连接实例成功...")
-            else:  # 正常就直接跳出循环
+                else:
+                    return None  # 错误，返回None
+            else:  # 正确，返回数据
                 return history_data_frame
 
     # 扩展股票数据
@@ -145,13 +143,11 @@ class GenerateBox(object):
 
         # 获取日线历史数据
         history_data_frame = self._get_safe_history_data_frame(
-            market_code=market_code,
-            market_desc=market_desc,
-            stock_code=stock_code,
-            stock_name=stock_name,
-            ktype=Common.CONST_K_DAY,  # 日线数据
-            kcount=Common.CONST_K_LENGTH
-        )
+            market_code=market_code, market_desc=market_desc, stock_code=stock_code, stock_name=stock_name,
+            ktype=Common.CONST_K_DAY, kcount=Common.CONST_K_LENGTH)
+
+        if history_data_frame is None:
+            return
 
         history_data_frame_index_list = history_data_frame.index
         history_data_count = len(history_data_frame_index_list)
@@ -190,13 +186,11 @@ class GenerateBox(object):
 
         # 获取60分钟历史数据
         history_data_frame = self._get_safe_history_data_frame(
-            market_code=market_code,
-            market_desc=market_desc,
-            stock_code=stock_code,
-            stock_name=stock_name,
-            ktype=Common.CONST_K_60M,  # 60分钟数据
-            kcount=Common.CONST_K_LENGTH
-        )
+            market_code=market_code, market_desc=market_desc, stock_code=stock_code, stock_name=stock_name,
+            ktype=Common.CONST_K_60M, kcount=Common.CONST_K_LENGTH)
+
+        if history_data_frame is None:
+            return False
 
         # 翻转这个data_frame
         history_data_frame.sort_index(ascending=False, inplace=True)
@@ -297,9 +291,10 @@ class GenerateBox(object):
                     market_name = stock_meta_data["market_name"]
                     market_desc = stock_meta_data["market_desc"]
 
-                    bool_filter_result = self._stock_60m_k_type_filter(market_name=market_name, stock_code=stock_code,
-                                                                       stock_name=stock_name, market_desc=market_desc,
-                                                                       days=interval_days)
+                    bool_filter_result = self._stock_60m_k_type_filter(
+                        market_name=market_name, stock_code=stock_code, stock_name=stock_name,
+                        market_desc=market_desc, days=interval_days
+                    )
                     if not bool_filter_result:
                         continue
 

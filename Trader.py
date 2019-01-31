@@ -148,10 +148,9 @@ def _generate_trade_mail_message(data):
 
 def _check_stock_buy_point(instance, market_code, market_desc, stock_code, stock_name, class_type):
     # 读取 60分钟 数据
-    history_data_frame, err_info = HQAdapter.get_history_data_frame(instance, market=market_code, code=stock_code,
-                                                                    market_desc=market_desc, name=stock_name,
-                                                                    ktype=Common.CONST_K_60M,
-                                                                    kcount=Common.CONST_K_LENGTH)
+    history_data_frame, err_info = HQAdapter.get_history_data_frame(
+        instance, market=market_code, code=stock_code, market_desc=market_desc, name=stock_name,
+        ktype=Common.CONST_K_60M, kcount=Common.CONST_K_LENGTH)
     if err_info is not None:
         return False, u"获得市场: %s, 股票: %s, 名称：%s, 历史60分钟K线数据错误: %s" % (market_desc, stock_code, stock_name, err_info)
 
@@ -164,10 +163,10 @@ def _check_stock_buy_point(instance, market_code, market_desc, stock_code, stock
     time.sleep(Common.CONST_TASK_WAITING_TIME / 1000.0)
 
     # 读取 日线 数据
-    history_data_frame, err_info = HQAdapter.get_history_data_frame(instance, market=market_code, code=stock_code,
-                                                                    market_desc=market_desc, name=stock_name,
-                                                                    ktype=Common.CONST_K_DAY,
-                                                                    kcount=Common.CONST_K_LENGTH)
+    history_data_frame, err_info = HQAdapter.get_history_data_frame(
+        instance, market=market_code, code=stock_code, market_desc=market_desc, name=stock_name,
+        ktype=Common.CONST_K_DAY, kcount=Common.CONST_K_LENGTH)
+
     if err_info is not None:
         return False, u"获得市场: %s, 股票: %s, 名称：%s, 历史日线K线数据错误: %s" % (market_desc, stock_code, stock_name, err_info)
 
@@ -207,10 +206,10 @@ def _check_stock_buy_point(instance, market_code, market_desc, stock_code, stock
 
 
 def _check_stock_sell_point(instance, market_code, market_desc, stock_code, stock_name):
-    history_data_frame, err_info = HQAdapter.get_history_data_frame(instance, market=market_code, code=stock_code,
-                                                                    market_desc=market_desc, name=stock_name,
-                                                                    ktype=Common.CONST_K_60M,
-                                                                    kcount=Common.CONST_K_LENGTH)
+    history_data_frame, err_info = HQAdapter.get_history_data_frame(
+        instance, market=market_code, code=stock_code, market_desc=market_desc, name=stock_name,
+        ktype=Common.CONST_K_60M, kcount=Common.CONST_K_LENGTH
+    )
     if err_info is not None:
         return False, u"获得市场: %s, 股票: %s, 名称：%s, 历史K线数据错误: %s" % (market_desc, stock_code, stock_name, err_info)
 
@@ -345,9 +344,9 @@ class TradeExecutor(object):
                         current_trade_account_id = Common.get_decrypted_string(self.config["trade_id"][market_code])
 
                         # 检查股票交易卖点
-                        bool_buy, err_info = _check_stock_buy_point(self.order_connect_instance, stock_code,
-                                                                    market_code,
-                                                                    market_desc, stock_name)
+                        bool_buy, err_info = _check_stock_buy_point(
+                            self.order_connect_instance, stock_code, market_code, market_desc, stock_name,
+                            stock_class_type)
                         self.log.logger.error(u"执行持仓 市场: %s, 股票: %s, 名称：%s, 卖点扫描, 结果: %s" % (
                             market_desc, stock_code, stock_name, err_info))
 
@@ -488,8 +487,8 @@ class TradeExecutor(object):
                         while True:
                             if self.hq_connect_instance is not None:
                                 # 获得5档价格数据
-                                l5_quotes_dataset, err_info = HQAdapter.get_stock_quotes(self.hq_connect_instance,
-                                                                                         [(market_code, stock_code)])
+                                l5_quotes_dataset, err_info = HQAdapter.get_stock_quotes(
+                                    self.hq_connect_instance, [(market_code, stock_code)])
                             else:
                                 l5_quotes_dataset = None
                                 err_info = u"行情服务器连接实例为空, [errCode=10038], 等待重新创建..."
@@ -505,8 +504,8 @@ class TradeExecutor(object):
                                     if err_info is not None:
                                         self.log.logger.error(u"重新创建行情服务器连接实例失败: %s" % err_info)
                                     else:
-                                        self.hq_connect_instance.SetTimeout(Common.CONST_CONNECT_TIMEOUT,
-                                                                            Common.CONST_CONNECT_TIMEOUT)
+                                        self.hq_connect_instance.SetTimeout(
+                                            Common.CONST_CONNECT_TIMEOUT, Common.CONST_CONNECT_TIMEOUT)
                                         self.log.logger.info(u"重新创建行情服务器连接实例成功...")
                             else:  # 正常就直接跳出循环
                                 break
@@ -520,9 +519,9 @@ class TradeExecutor(object):
                         while True:
                             if self.order_connect_instance is not None:
                                 # 执行下订单动作, 4 市价委托(上海五档即成剩撤/ 深圳五档即成剩撤) -- 此时价格没有用处，用 0 传入即可
-                                err_info = OrderAdapter.send_stock_order(self.order_connect_instance, stock_code,
-                                                                         current_trade_account_id,
-                                                                         Common.CONST_STOCK_SELL, 0, max_can_sell_count)
+                                err_info = OrderAdapter.send_stock_order(
+                                    self.order_connect_instance, stock_code, current_trade_account_id,
+                                    Common.CONST_STOCK_SELL, 0, max_can_sell_count)
                             else:
                                 err_info = u"交易服务器连接实例为空, [errCode=10038], 等待重新创建..."
 

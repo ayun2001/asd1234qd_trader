@@ -225,6 +225,7 @@ def get_history_data_frame(instance, market, market_desc, code, name, ktype=Comm
         if check_stop_trade_stock(history_data_frame):
             return None, u"发现市场: %s, 股票: %s, 名称: %s, 已经停牌，跳过..." % (market_desc, code, name)
 
+        # 添加其他的数据元素
         try:
             # 添加ma5, ma10均线数据
             TA.make_ma_data(history_data_frame)
