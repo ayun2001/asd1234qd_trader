@@ -146,110 +146,6 @@ def _generate_trade_mail_message(data):
     return mail_message
 
 
-def _check_stock_buy_point(instance, market_code, market_desc, stock_code, stock_name, class_type):
-    # 读取 60分钟 数据
-    history_data_frame, err_info = HQAdapter.get_history_data_frame(
-        instance, market=market_code, code=stock_code, market_desc=market_desc, name=stock_name,
-        ktype=Common.CONST_K_60M, kcount=Common.CONST_K_LENGTH)
-    if err_info is not None:
-        return False, u"获得市场: %s, 股票: %s, 名称：%s, 历史60分钟K线数据错误: %s" % (market_desc, stock_code, stock_name, err_info)
-
-    # 计算60M相关数据
-    kdj_values_list = sorted(list(history_data_frame['kdj_j'].values[:MIN_DATA_CHECK_HOURS]), reverse=True)
-    kdj_cross_list = list(history_data_frame['kdj_cross'].values[:MIN_DATA_CHECK_HOURS])
-    kdj_cross_express_list = filter(lambda _item: _item != '', kdj_cross_list)  # 去掉之间没有值的空格
-
-    # 拉取数据间隔, 延迟休息, 防止被封
-    time.sleep(Common.CONST_TASK_WAITING_TIME / 1000.0)
-
-    # 读取 日线 数据
-    history_data_frame, err_info = HQAdapter.get_history_data_frame(
-        instance, market=market_code, code=stock_code, market_desc=market_desc, name=stock_name,
-        ktype=Common.CONST_K_DAY, kcount=Common.CONST_K_LENGTH)
-
-    if err_info is not None:
-        return False, u"获得市场: %s, 股票: %s, 名称：%s, 历史日线K线数据错误: %s" % (market_desc, stock_code, stock_name, err_info)
-
-    # 计算日线相关数据
-    close_values_list = sorted(list(history_data_frame['close'].values[:MIN_DATA_CHECK_HOURS]), reverse=True)
-    ma5_values_list = sorted(list(history_data_frame['ma5'].values[:MIN_DATA_CHECK_HOURS]), reverse=True)
-    ma10_values_list = sorted(list(history_data_frame['ma10'].values[:MIN_DATA_CHECK_HOURS]), reverse=True)
-
-    # 判断 KDJ的J值 金叉
-    if len(kdj_cross_express_list) > 0:
-        try:
-            down_index_id = kdj_cross_list.index("up_cross")
-            bool_up_cross_kdj = kdj_cross_express_list[0] == "up_cross" and down_index_id < MIN_DATA_CHECK_HOURS
-        except ValueError:
-            bool_up_cross_kdj = False
-    else:
-        bool_up_cross_kdj = False
-
-    # 获得当前相关的数据值
-    current_close_value = close_values_list[0]
-    current_j_value = kdj_values_list[0]
-    current_ma5_value = ma5_values_list[0]
-    current_ma10_value = ma10_values_list[0]
-
-    # 不同类型的股票分别对待
-    if (class_type == Common.CONST_STOCK_TYPE_1) and (current_close_value <= current_ma5_value) and bool_up_cross_kdj:
-        return True, u"触发买入条件 市场: %s, 股票: %s, 名称：%s, 类型：%s, 发生买入" % (market_desc, stock_code, class_type, stock_name)
-    if (class_type == Common.CONST_STOCK_TYPE_2) and (current_close_value <= current_ma10_value) and bool_up_cross_kdj:
-        return True, u"触发买入条件 市场: %s, 股票: %s, 名称：%s, 类型：%s, 发生买入" % (market_desc, stock_code, class_type, stock_name)
-    if (class_type == Common.CONST_STOCK_TYPE_3) and (current_close_value <= current_ma10_value) and bool_up_cross_kdj:
-        return True, u"触发买入条件 市场: %s, 股票: %s, 名称：%s, 类型：%s, 发生买入" % (market_desc, stock_code, class_type, stock_name)
-    if (class_type == Common.CONST_STOCK_TYPE_4) and (current_close_value <= current_ma10_value) and \
-            current_j_value < 0 and bool_up_cross_kdj:
-        return True, u"触发买入条件 市场: %s, 股票: %s, 名称：%s, 类型：%s, 发生买入" % (market_desc, stock_code, class_type, stock_name)
-
-    return False, u"执行 市场: %s, 股票: %s, 名称：%s, 类型：%s, 继续观望..." % (market_desc, stock_code, class_type, stock_name)
-
-
-def _check_stock_sell_point(instance, market_code, market_desc, stock_code, stock_name):
-    history_data_frame, err_info = HQAdapter.get_history_data_frame(
-        instance, market=market_code, code=stock_code, market_desc=market_desc, name=stock_name,
-        ktype=Common.CONST_K_60M, kcount=Common.CONST_K_LENGTH
-    )
-    if err_info is not None:
-        return False, u"获得市场: %s, 股票: %s, 名称：%s, 历史K线数据错误: %s" % (market_desc, stock_code, stock_name, err_info)
-
-    # 计算相关数据
-    pct_change_list = sorted(list(history_data_frame['pct_change'].values[:MIN_DATA_CHECK_HOURS]), reverse=True)
-    kdj_values_list = list(history_data_frame['kdj_j'].values[:MIN_DATA_CHECK_HOURS])
-    kdj_cross_list = list(history_data_frame['kdj_cross'].values[:MIN_DATA_CHECK_HOURS])
-    kdj_cross_express_list = filter(lambda _item: _item != '', kdj_cross_list)  # 去掉之间没有值的空格
-
-    # 求最大值
-    max_j_value = max(kdj_values_list)
-    max_pct_change_value = max(pct_change_list)
-
-    # j值在最近4天内不能出现大于等于100
-    bool_max_j_value = max_j_value >= 99.9
-
-    # 不能出现小时内涨幅超过 5%的
-    bool_more_than_spec_raise = max_pct_change_value > MIN_SELL_RAISE_RATIO
-
-    # 判断 KDJ的J值 死叉
-    if len(kdj_cross_express_list) > 0:
-        try:
-            down_index_id = kdj_cross_list.index("down_cross")
-            bool_down_cross_kdj = kdj_cross_express_list[0] == "down_cross" and down_index_id < MIN_DATA_CHECK_HOURS
-        except ValueError:
-            bool_down_cross_kdj = False
-    else:
-        bool_down_cross_kdj = False
-
-    # 触发止损条件 (3%)
-    if pct_change_list[0] < MIN_STOP_LOSS_RATIO:  # 已经倒序，第一个就是当前这个小时
-        return True, u"触发止损条件 市场: %s, 股票: %s, 名称：%s, 发生卖出" % (market_desc, stock_code, stock_name)
-
-    # 触发卖出条件 (上涨超过3%，KDJ_J> 100, KDJ死叉了)
-    if bool_more_than_spec_raise and (bool_max_j_value or bool_down_cross_kdj):
-        return True, u"触发卖出条件 市场: %s, 股票: %s, 名称：%s, 发生卖出" % (market_desc, stock_code, stock_name)
-
-    return False, u"执行 市场: %s, 股票: %s, 名称：%s, 继续持仓..." % (market_desc, stock_code, stock_name)
-
-
 class TradeExecutor(object):
     def __init__(self):
         if not Common.file_exist(Common.CONST_DIR_LOG):
@@ -266,6 +162,244 @@ class TradeExecutor(object):
         self.order_connect_instance = None
         self.hq_connect_instance = None
         self.trade_records_data_set = {}
+
+    # 创建交易连接，拥有自动重试功能
+    def _create_safe_order_connect(self):
+        while True:
+            self.order_connect_instance, err_info = OrderAdapter.create_connect_instance(self.config)
+            if err_info is not None:
+                self.log.logger.error(u"创建交易服务器连接实例失败: %s" % err_info)
+                time.sleep(Common.CONST_RETRY_CONNECT_INTERVAL)  # 休息指定的事件，重新创建连接对象
+                continue
+            else:
+                break
+
+    # 创建行情连接，拥有自动重试功能
+    def _create_safe_hq_connect(self):
+        while True:
+            self.hq_connect_instance, err_info = HQAdapter.create_connect_instance(self.config)
+            if err_info is not None:
+                self.log.logger.error(u"创建行情服务器连接实例失败: %s" % err_info)
+                time.sleep(Common.CONST_RETRY_CONNECT_INTERVAL)  # 休息指定的事件，重新创建连接对象
+                continue
+            else:
+                self.hq_connect_instance.SetTimeout(Common.CONST_CONNECT_TIMEOUT, Common.CONST_CONNECT_TIMEOUT)
+                break
+
+    # 获得历史数据，拥有自动重试功能
+    def _get_safe_history_data_frame(self, market_code, market_desc, stock_code, stock_name, ktype, kcount):
+        while True:
+            if self.connect_instance is not None:
+                # 获得股票的K线信息
+                history_data_frame, err_info = HQAdapter.get_history_data_frame(
+                    self.connect_instance, market=market_code, code=stock_code, market_desc=market_desc,
+                    name=stock_name, ktype=ktype, kcount=kcount)
+            else:
+                history_data_frame = None
+                err_info = u"行情服务器连接实例为空, [errCode=10038], 等待重新创建..."
+
+            # 对执行错误执行处理
+            if err_info is not None:
+                self.log.logger.error(
+                    u"获得市场: %s, 股票: %s, 名称：%s, 历史数据错误: %s" % (market_desc, stock_code, stock_name, err_info))
+                # 发现连接错误 10038 需要重连
+                if err_info.find("errCode=10038") > -1:
+                    time.sleep(Common.CONST_RETRY_CONNECT_INTERVAL)  # 休息指定的时间，重新创建连接对象
+                    self.connect_instance, err_info = HQAdapter.create_connect_instance(self.config)
+                    if err_info is not None:
+                        self.log.logger.error(u"重新创建行情服务器连接实例失败: %s" % err_info)
+                    else:
+                        self.connect_instance.SetTimeout(Common.CONST_CONNECT_TIMEOUT, Common.CONST_CONNECT_TIMEOUT)
+                        self.log.logger.info(u"重新创建行情服务器连接实例成功...")
+                else:
+                    return None  # 错误，返回None
+            else:  # 正确，返回数据
+                return history_data_frame
+
+    # 获得过票5当数据，拥有自动重试功能
+    def _get_safe_stock_quotes(self, market_code, market_desc, stock_code, stock_name, class_type):
+        while True:
+            if self.hq_connect_instance is not None:
+                # 获得5档价格数据
+                level5_quotes_dataset, err_info = HQAdapter.get_stock_quotes(
+                    self.hq_connect_instance, [(market_code, stock_code)])
+            else:
+                level5_quotes_dataset = None
+                err_info = u"行情服务器连接实例为空, [errCode=10038], 等待重新创建..."
+
+            # 对执行错误执行处理
+            if err_info is not None:
+                self.log.logger.error(u"获得 市场: %s, 股票: %s, 名称：%s, 类型：%s, 5档行情数据错误: %s" % (
+                    market_desc, stock_code, stock_name, class_type, err_info))
+                # 发现连接错误 10038 需要重连
+                if err_info.find("errCode=10038") > -1:
+                    time.sleep(Common.CONST_RETRY_CONNECT_INTERVAL)  # 休息指定的时间，重新创建连接对象
+                    self.hq_connect_instance, err_info = HQAdapter.create_connect_instance(self.config)
+                    if err_info is not None:
+                        self.log.logger.error(u"重新创建行情服务器连接实例失败: %s" % err_info)
+                    else:
+                        self.hq_connect_instance.SetTimeout(
+                            Common.CONST_CONNECT_TIMEOUT, Common.CONST_CONNECT_TIMEOUT)
+                        self.log.logger.info(u"重新创建行情服务器连接实例成功...")
+                else:
+                    return None  # 错误，返回None
+            else:  # 正确，返回数据
+                return level5_quotes_dataset
+
+    # 下股票订单，带自动重连
+    def _send_safe_order(self, market_desc, stock_code, stock_name, class_type, account_id, action_id,
+                         trade_price, trade_count):
+        while True:
+            if self.order_connect_instance is not None:
+                # 执行下订单动作, 4 市价委托(上海五档即成剩撤/ 深圳五档即成剩撤) -- 此时价格没有用处，用 0 传入即可
+                err_info = OrderAdapter.send_stock_order(
+                    self.order_connect_instance, stock_code, account_id, action_id, 0, trade_count)
+            else:
+                err_info = u"交易服务器连接实例为空, [errCode=10038], 等待重新创建..."
+
+            # 对执行错误执行处理
+            if err_info is not None:
+                self.log.logger.warn(
+                    u"没有执行动作 市场: %s, 股票: %s, 类型: %s, 名称：%s, 信号: %s, 价格: %.2f, 数量: %d" % (
+                        market_desc, stock_code, stock_name, class_type, action_id,
+                        trade_price, trade_count))
+                # 发现连接错误 10038 需要重连
+                if err_info.find("errCode=10038") > -1:
+                    time.sleep(Common.CONST_RETRY_CONNECT_INTERVAL)  # 休息指定的时间，重新创建连接对象
+                    self.order_connect_instance, err_info = OrderAdapter.create_connect_instance(
+                        self.config)
+                    if err_info is not None:
+                        self.log.logger.error(u"重新创建交易服务器连接实例失败: %s" % err_info)
+                    else:
+                        self.log.logger.info(u"重新创建交易服务器连接实例成功...")
+                else:
+                    # 下订单错误，退出
+                    return False
+            else:  # 正常就直接跳出循环，退出
+                return True
+
+    def _check_stock_sell_point(self, market_code, market_desc, stock_code, stock_name, class_type):
+        # 获得60分钟的历史数据
+        history_data_frame = self._get_safe_history_data_frame(
+            market_code=market_code, stock_code=stock_code, market_desc=market_desc, stock_name=stock_name,
+            ktype=Common.CONST_K_60M, kcount=Common.CONST_K_LENGTH)
+
+        if history_data_frame is None:
+            return False
+
+        # 计算相关数据
+        pct_change_list = sorted(list(history_data_frame['pct_change'].values[:MIN_DATA_CHECK_HOURS]), reverse=True)
+        kdj_values_list = list(history_data_frame['kdj_j'].values[:MIN_DATA_CHECK_HOURS])
+        kdj_cross_list = list(history_data_frame['kdj_cross'].values[:MIN_DATA_CHECK_HOURS])
+        kdj_cross_express_list = filter(lambda _item: _item != '', kdj_cross_list)  # 去掉之间没有值的空格
+
+        # 求最大值
+        max_j_value = max(kdj_values_list)
+        max_pct_change_value = max(pct_change_list)
+
+        # j值在最近4天内不能出现大于等于100
+        bool_max_j_value = max_j_value >= 99.9
+
+        # 不能出现小时内涨幅超过 5%的
+        bool_more_than_spec_raise = max_pct_change_value > MIN_SELL_RAISE_RATIO
+
+        # 判断 KDJ的J值 死叉
+        if len(kdj_cross_express_list) > 0:
+            try:
+                down_index_id = kdj_cross_list.index("down_cross")
+                bool_down_cross_kdj = kdj_cross_express_list[0] == "down_cross" and down_index_id < MIN_DATA_CHECK_HOURS
+            except ValueError:
+                bool_down_cross_kdj = False
+        else:
+            bool_down_cross_kdj = False
+
+        # 触发止损条件 (3%)
+        if pct_change_list[0] < MIN_STOP_LOSS_RATIO:  # 已经倒序，第一个就是当前这个小时
+            self.log.logger.info(u"触发止损条件 市场: %s, 股票: %s, 名称：%s, 类型：%s, 发生卖出" % (
+                market_desc, stock_code, stock_name, class_type))
+            return True
+
+        # 触发卖出条件 (上涨超过3%，KDJ_J> 100, KDJ死叉了)
+        if bool_more_than_spec_raise and (bool_max_j_value or bool_down_cross_kdj):
+            self.log.logger.info(u"触发卖出条件 市场: %s, 股票: %s, 名称：%s, 类型：%s, 发生卖出" % (
+                market_desc, stock_code, stock_name, class_type))
+            return True
+
+        self.log.logger.info(u"执行 市场: %s, 股票: %s, 名称：%s, 类型：%s, 继续持仓..." % (
+            market_desc, stock_code, stock_name, class_type))
+        return False
+
+    def _check_stock_buy_point(self, market_code, market_desc, stock_code, stock_name, class_type):
+        # 获得60分钟的历史数据
+        history_data_frame = self._get_safe_history_data_frame(
+            market_code=market_code, stock_code=stock_code, market_desc=market_desc, stock_name=stock_name,
+            ktype=Common.CONST_K_60M, kcount=Common.CONST_K_LENGTH)
+
+        if history_data_frame is None:
+            return False
+
+        # 计算60M相关数据
+        kdj_values_list = sorted(list(history_data_frame['kdj_j'].values[:MIN_DATA_CHECK_HOURS]), reverse=True)
+        kdj_cross_list = list(history_data_frame['kdj_cross'].values[:MIN_DATA_CHECK_HOURS])
+        kdj_cross_express_list = filter(lambda _item: _item != '', kdj_cross_list)  # 去掉之间没有值的空格
+
+        # 拉取数据间隔, 延迟休息, 防止被封
+        time.sleep(Common.CONST_TASK_WAITING_TIME / 1000.0)
+
+        # 获得日线的历史数据
+        history_data_frame = self._get_safe_history_data_frame(
+            market_code=market_code, stock_code=stock_code, market_desc=market_desc, stock_name=stock_name,
+            ktype=Common.CONST_K_DAY, kcount=Common.CONST_K_LENGTH)
+
+        if history_data_frame is None:
+            return False
+
+        # 计算日线相关数据
+        close_values_list = sorted(list(history_data_frame['close'].values[:MIN_DATA_CHECK_HOURS]), reverse=True)
+        ma5_values_list = sorted(list(history_data_frame['ma5'].values[:MIN_DATA_CHECK_HOURS]), reverse=True)
+        ma10_values_list = sorted(list(history_data_frame['ma10'].values[:MIN_DATA_CHECK_HOURS]), reverse=True)
+
+        # 判断 KDJ的J值 金叉
+        if len(kdj_cross_express_list) > 0:
+            try:
+                down_index_id = kdj_cross_list.index("up_cross")
+                bool_up_cross_kdj = kdj_cross_express_list[0] == "up_cross" and down_index_id < MIN_DATA_CHECK_HOURS
+            except ValueError:
+                bool_up_cross_kdj = False
+        else:
+            bool_up_cross_kdj = False
+
+        # 获得当前相关的数据值
+        current_close_value = close_values_list[0]
+        current_j_value = kdj_values_list[0]
+        current_ma5_value = ma5_values_list[0]
+        current_ma10_value = ma10_values_list[0]
+
+        # 不同类型的股票分别对待
+        if (class_type == Common.CONST_STOCK_TYPE_1) and (
+                current_close_value <= current_ma5_value) and bool_up_cross_kdj:
+            self.log.logger.info(u"触发买入条件 市场: %s, 股票: %s, 名称：%s, 类型：%s, 发生买入" % (
+                market_desc, stock_code, class_type, stock_name))
+            return True
+        if (class_type == Common.CONST_STOCK_TYPE_2) and (
+                current_close_value <= current_ma10_value) and bool_up_cross_kdj:
+            self.log.logger.info(u"触发买入条件 市场: %s, 股票: %s, 名称：%s, 类型：%s, 发生买入" % (
+                market_desc, stock_code, class_type, stock_name))
+            return True
+        if (class_type == Common.CONST_STOCK_TYPE_3) and (
+                current_close_value <= current_ma10_value) and bool_up_cross_kdj:
+            self.log.logger.info(u"触发买入条件 市场: %s, 股票: %s, 名称：%s, 类型：%s, 发生买入" % (
+                market_desc, stock_code, class_type, stock_name))
+            return True
+        if (class_type == Common.CONST_STOCK_TYPE_4) and (current_close_value <= current_ma10_value) and \
+                current_j_value < 0 and bool_up_cross_kdj:
+            self.log.logger.info(u"触发买入条件 市场: %s, 股票: %s, 名称：%s, 类型：%s, 发生买入" % (
+                market_desc, stock_code, class_type, stock_name))
+            return True
+
+        self.log.logger(u"执行 市场: %s, 股票: %s, 名称：%s, 类型：%s, 继续观望..." % (
+            market_desc, stock_code, class_type, stock_name))
+        return False
 
     # 记录交易记录
     # 交易记录的格式
@@ -344,11 +478,9 @@ class TradeExecutor(object):
                         current_trade_account_id = Common.get_decrypted_string(self.config["trade_id"][market_code])
 
                         # 检查股票交易卖点
-                        bool_buy, err_info = _check_stock_buy_point(
-                            self.order_connect_instance, stock_code, market_code, market_desc, stock_name,
-                            stock_class_type)
-                        self.log.logger.error(u"执行持仓 市场: %s, 股票: %s, 名称：%s, 卖点扫描, 结果: %s" % (
-                            market_desc, stock_code, stock_name, err_info))
+                        bool_buy = self._check_stock_buy_point(
+                            stock_code=stock_code, stock_name=stock_name, market_code=market_code,
+                            market_desc=market_desc, class_type=stock_class_type)
 
                         # 如果没有买入信号，跳过后端的代码
                         if not bool_buy:
@@ -366,15 +498,15 @@ class TradeExecutor(object):
                             #     "trade_account_id": 0,  # 账户id，以后用来聚合用
                             # }
 
-                            # 获得5档价格数据
-                            level5_quotes_dataset, err_info = HQAdapter.get_stock_quotes(self.order_connect_instance,
-                                                                                         [(market_code, stock_code)])
-                            if err_info is None:
-                                self.log.logger.error(u"获得 市场: %s, 股票: %s, 名称：%s, 5档行情数据错误: %s" % (
-                                    market_desc, stock_code, stock_name, err_info))
+                            # 获得5档数据
+                            level5_quotes_data_set = self._get_safe_stock_quotes(
+                                stock_code=stock_code, stock_name=stock_name, market_code=market_code,
+                                market_desc=market_desc, class_type=stock_class_type)
+
+                            if level5_quotes_data_set is None:
                                 continue
 
-                            level5_quote_value = level5_quotes_dataset[stock_code]
+                            level5_quote_value = level5_quotes_data_set[stock_code]
                             avg_level5_price = level5_quote_value["sell5_avg_price"]
                             # 按照交易总数固定比例投放交易股票数量, 1手 = 100股
                             max_can_buy_count = int(
@@ -465,10 +597,9 @@ class TradeExecutor(object):
                         continue
 
                     # 检查股票交易卖点
-                    bool_sell, err_info = _check_stock_sell_point(self.order_connect_instance, stock_code, market_code,
-                                                                  market_desc, stock_name)
-                    self.log.logger.error(u"执行持仓 市场: %s, 股票: %s, 名称：%s, 卖点扫描, 结果: %s" % (
-                        market_desc, stock_code, stock_name, err_info))
+                    bool_sell = self._check_stock_sell_point(
+                        stock_code=stock_code, stock_name=stock_name, market_code=market_code, market_desc=market_desc,
+                        class_type=stock_class_type)
 
                     # 如果没有卖出信号，跳过后端的代码
                     if not bool_sell:
@@ -484,99 +615,64 @@ class TradeExecutor(object):
                                 market_desc, stock_code, stock_name, Common.CONST_STOCK_SELL_DESC))
                             break
 
-                        while True:
-                            if self.hq_connect_instance is not None:
-                                # 获得5档价格数据
-                                l5_quotes_dataset, err_info = HQAdapter.get_stock_quotes(
-                                    self.hq_connect_instance, [(market_code, stock_code)])
-                            else:
-                                l5_quotes_dataset = None
-                                err_info = u"行情服务器连接实例为空, [errCode=10038], 等待重新创建..."
+                        # 获得5档数据
+                        level5_quotes_data_set = self._get_safe_stock_quotes(
+                            stock_code=stock_code, stock_name=stock_name, market_code=market_code,
+                            market_desc=market_desc, class_type=stock_class_type)
 
-                            # 对执行错误执行处理
-                            if err_info is not None:
-                                time.sleep(Common.CONST_RETRY_CONNECT_INTERVAL)  # 休息指定的时间，重新创建连接对象
-                                self.log.logger.error(u"获得 市场: %s, 股票: %s, 名称：%s, 5档行情数据错误: %s" % (
-                                    market_desc, stock_code, stock_name, err_info))
-                                # 发现连接错误 10038 需要重连
-                                if err_info.find("errCode=10038") > -1:
-                                    self.hq_connect_instance, err_info = HQAdapter.create_connect_instance(self.config)
-                                    if err_info is not None:
-                                        self.log.logger.error(u"重新创建行情服务器连接实例失败: %s" % err_info)
-                                    else:
-                                        self.hq_connect_instance.SetTimeout(
-                                            Common.CONST_CONNECT_TIMEOUT, Common.CONST_CONNECT_TIMEOUT)
-                                        self.log.logger.info(u"重新创建行情服务器连接实例成功...")
-                            else:  # 正常就直接跳出循环
-                                break
+                        if level5_quotes_data_set is None:
+                            continue
 
-                        level5_quote_value = l5_quotes_dataset[stock_code]
+                        level5_quote_value = level5_quotes_data_set[stock_code]
                         avg_level5_price = level5_quote_value["buy5_avg_price"]
                         # 按照交易总数固定比例投放交易股票数量, 1手 = 100股
                         max_can_sell_count = int(
                             (level5_quote_value["buy5_step_count"] / 100) * MAX_SELL_TOTAL_RATIO) * 100
 
-                        while True:
-                            if self.order_connect_instance is not None:
-                                # 执行下订单动作, 4 市价委托(上海五档即成剩撤/ 深圳五档即成剩撤) -- 此时价格没有用处，用 0 传入即可
-                                err_info = OrderAdapter.send_stock_order(
-                                    self.order_connect_instance, stock_code, current_trade_account_id,
-                                    Common.CONST_STOCK_SELL, 0, max_can_sell_count)
-                            else:
-                                err_info = u"交易服务器连接实例为空, [errCode=10038], 等待重新创建..."
+                        # 发送卖出订单
+                        order_ok = self._send_safe_order(
+                            market_desc=market_desc, stock_code=stock_code, stock_name=stock_name,
+                            class_type=stock_class_type, account_id=current_trade_account_id,
+                            action_id=Common.CONST_STOCK_SELL, trade_price=avg_level5_price,
+                            trade_count=max_can_sell_count
+                        )
 
-                            # 对执行错误执行处理
-                            if err_info is not None:
-                                self.log.logger.warn(
-                                    u"没有执行动作 市场: %s, 股票: %s, 类型: %s, 名称：%s, 信号: %s, 价格: %.2f, 数量: %d" % (
-                                        market_desc, stock_code, stock_name, stock_class_type,
-                                        Common.CONST_STOCK_SELL_DESC, avg_level5_price, max_can_sell_count))
-                                # 发现连接错误 10038 需要重连
-                                if err_info.find("errCode=10038") > -1:
-                                    time.sleep(Common.CONST_RETRY_CONNECT_INTERVAL)  # 休息指定的时间，重新创建连接对象
-                                    self.order_connect_instance, err_info = OrderAdapter.create_connect_instance(
-                                        self.config)
-                                    if err_info is not None:
-                                        self.log.logger.error(u"重新创建交易服务器连接实例失败: %s" % err_info)
-                                    else:
-                                        self.log.logger.info(u"重新创建交易服务器连接实例成功...")
-                                else:
-                                    # 下订单错误，跳过这次执行，全部重头再来 ，跳出循环
-                                    break
-                            else:  # 正常就直接跳出循环，记录所有相关数据
-                                sell_total_value = avg_level5_price * max_can_sell_count
-                                revenue_value = (avg_level5_price - current_position_price) * max_can_sell_count
-                                revenue_change = revenue_value / (current_position_price * max_can_sell_count)
+                        if not order_ok:
+                            continue
 
-                                records_set.append({
-                                    "timestamp": Common.get_current_timestamp(),
-                                    "datetime": Common.get_current_datetime(),
-                                    "trade_account_id": current_trade_account_id,
-                                    "order_type": Common.CONST_STOCK_SELL_DESC,
-                                    "order_type_id": Common.CONST_STOCK_SELL,
-                                    "market_code": market_code,
-                                    "market_desc": market_desc,
-                                    "stock_code": stock_code,
-                                    "stock_name": stock_name,
-                                    "class_type": stock_class_type,
-                                    "price": avg_level5_price,
-                                    "count": max_can_sell_count,
-                                    "total": sell_total_value,
-                                    "revenue_change": revenue_change,
-                                    "revenue_value": revenue_value
-                                })
+                        # 计算相关数据
+                        sell_total_value = avg_level5_price * max_can_sell_count
+                        revenue_value = (avg_level5_price - current_position_price) * max_can_sell_count
+                        revenue_change = revenue_value / (current_position_price * max_can_sell_count)
 
-                                # 日志记录
-                                self.log.logger.info(
-                                    u"执行动作 市场: %s, 股票: %s, 名称：%s, 类型: %s, 信号: %s, 价格: %.2f, 数量: %d, 总价: %.2f, 营收(元): %.2f, 营收率(%%): %.2f" % (
-                                        market_desc, stock_code, stock_name, stock_class_type,
-                                        Common.CONST_STOCK_SELL_DESC, avg_level5_price, max_can_sell_count,
-                                        sell_total_value, revenue_value, revenue_change))
+                        # 添加交集记录数据
+                        records_set.append({
+                            "timestamp": Common.get_current_timestamp(),
+                            "datetime": Common.get_current_datetime(),
+                            "trade_account_id": current_trade_account_id,
+                            "order_type": Common.CONST_STOCK_SELL_DESC,
+                            "order_type_id": Common.CONST_STOCK_SELL,
+                            "market_code": market_code,
+                            "market_desc": market_desc,
+                            "stock_code": stock_code,
+                            "stock_name": stock_name,
+                            "class_type": stock_class_type,
+                            "price": avg_level5_price,
+                            "count": max_can_sell_count,
+                            "total": sell_total_value,
+                            "revenue_change": revenue_change,
+                            "revenue_value": revenue_value
+                        })
 
-                                # 减去当前的交易的投放量
-                                current_own_count -= max_can_sell_count
-                                # 跳出循环
-                                break
+                        # 日志记录
+                        self.log.logger.info(
+                            u"执行动作 市场: %s, 股票: %s, 名称：%s, 类型: %s, 信号: %s, 价格: %.2f, 数量: %d, 总价: %.2f, 营收(元): %.2f, 营收率(%%): %.2f" % (
+                                market_desc, stock_code, stock_name, stock_class_type,
+                                Common.CONST_STOCK_SELL_DESC, avg_level5_price, max_can_sell_count,
+                                sell_total_value, revenue_value, revenue_change))
+
+                        # 减去当前的交易的投放量
+                        current_own_count -= max_can_sell_count
 
                         # 等待订单消化时间
                         time.sleep(MIN_TASK_WAITING_TIME)
@@ -601,31 +697,15 @@ class TradeExecutor(object):
             self.log.logger.error(u"加载交易器配置文件错误: %s", err_info)
             return None
 
-        while True:
-            self.order_connect_instance, err_info = OrderAdapter.create_connect_instance(self.config)
-            if err_info is not None:
-                self.log.logger.error(u"创建交易服务器连接实例失败: %s" % err_info)
-                time.sleep(Common.CONST_RETRY_CONNECT_INTERVAL)  # 休息指定的事件，重新创建连接对象
-                continue
-            else:
-                break
-
-        while True:
-            self.hq_connect_instance, err_info = HQAdapter.create_connect_instance(self.config)
-            if err_info is not None:
-                self.log.logger.error(u"创建行情服务器连接实例失败: %s" % err_info)
-                time.sleep(Common.CONST_RETRY_CONNECT_INTERVAL)  # 休息指定的事件，重新创建连接对象
-                continue
-            else:
-                self.hq_connect_instance.SetTimeout(Common.CONST_CONNECT_TIMEOUT, Common.CONST_CONNECT_TIMEOUT)
-                break
+        # 创建服务器连接
+        self._create_safe_hq_connect()
+        self._create_safe_order_connect()
 
         # 清空交易记录
         self.trade_records_data_set = {}
 
-        # 先卖出
+        # 执行数据扫描, 先卖出, 再买入
         self._position_scanner()
-        # 再买入
         self._box_scanner()
 
         # 返回正确的交易记录数据

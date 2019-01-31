@@ -73,7 +73,7 @@ class GenerateBox(object):
         self.connect_instance = None
         self.config = None
 
-    # 创建行情连接，
+    # 创建行情连接，拥有自动重试功能
     def _create_safe_connect(self):
         while True:
             self.connect_instance, err_info = HQAdapter.create_connect_instance(self.config)

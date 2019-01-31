@@ -2,7 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="ea61e7c0-b131-4b2b-a7b1-9c6b290db9da" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Box.py" beforeDir="false" afterPath="$PROJECT_DIR$/Box.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Trader.py" beforeDir="false" afterPath="$PROJECT_DIR$/Trader.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -11,16 +13,17 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="FileEditorManager">
-    <splitter split-orientation="horizontal" split-proportion="0.50301063">
+    <splitter split-orientation="horizontal" split-proportion="0.5013915">
       <split-first>
         <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
           <file pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/Trader.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="4236">
-                  <caret line="332" column="77" lean-forward="true" selection-start-line="332" selection-start-column="77" selection-end-line="332" selection-end-column="77" />
+                <state relative-caret-position="-1546">
+                  <caret line="582" column="61" selection-start-line="582" selection-start-column="61" selection-end-line="582" selection-end-column="61" />
                   <folding>
                     <element signature="e#16#29#0" expanded="true" />
+                    <element signature="e#12023#19389#0" />
                   </folding>
                 </state>
               </provider>
@@ -42,8 +45,8 @@
           <file pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/Box.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="320">
-                  <caret line="20" column="43" selection-start-line="20" selection-start-column="43" selection-end-line="20" selection-end-column="43" />
+                <state relative-caret-position="1072">
+                  <caret line="378" column="36" lean-forward="true" selection-start-line="378" selection-start-column="36" selection-end-line="378" selection-end-column="36" />
                   <folding>
                     <element signature="e#16#32#0" expanded="true" />
                   </folding>
@@ -54,8 +57,8 @@
           <file pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/Common.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="-193">
-                  <caret line="141" lean-forward="true" selection-start-line="141" selection-end-line="141" />
+                <state relative-caret-position="2096">
+                  <caret line="141" selection-start-line="141" selection-end-line="141" />
                 </state>
               </provider>
             </entry>
@@ -131,17 +134,17 @@
         <option value="$PROJECT_DIR$/OrderAdapter.py" />
         <option value="$PROJECT_DIR$/Common.py" />
         <option value="$PROJECT_DIR$/Algorithm.py" />
-        <option value="$PROJECT_DIR$/Trader.py" />
         <option value="$PROJECT_DIR$/HQAdapter.py" />
         <option value="$PROJECT_DIR$/Box.py" />
+        <option value="$PROJECT_DIR$/Trader.py" />
       </list>
     </option>
   </component>
-  <component name="ProjectFrameBounds">
-    <option name="x" value="92" />
-    <option name="y" value="137" />
-    <option name="width" value="2312" />
-    <option name="height" value="1098" />
+  <component name="ProjectFrameBounds" extendedState="6">
+    <option name="x" value="11" />
+    <option name="y" value="37" />
+    <option name="width" value="2530" />
+    <option name="height" value="1315" />
   </component>
   <component name="ProjectLevelVcsManager" settingsEditedManually="true">
     <ConfirmationsSetting value="2" id="Add" />
@@ -230,12 +233,13 @@
       <workItem from="1548671229791" duration="446000" />
       <workItem from="1548832671111" duration="3320000" />
       <workItem from="1548837333667" duration="1818000" />
-      <workItem from="1548903233776" duration="3004000" />
+      <workItem from="1548903233776" duration="3203000" />
+      <workItem from="1548925277790" duration="3318000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="74640000" />
+    <option name="totallyTimeSpent" value="78157000" />
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -247,11 +251,11 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="92" y="137" width="2312" height="1098" extended-state="0" />
+    <frame x="0" y="23" width="2560" height="1345" extended-state="6" />
     <editor active="true" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.47614315" visible="true" weight="0.15814978" />
-      <window_info id="Structure" order="1" sideWeight="0.5238569" side_tool="true" visible="true" weight="0.15814978" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.47565842" visible="true" weight="0.1437649" />
+      <window_info id="Structure" order="1" sideWeight="0.5243416" side_tool="true" visible="true" weight="0.1437649" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" weight="0.3290793" />
@@ -369,13 +373,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/conf/adapter.json">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="224">
-          <caret line="14" column="1" selection-start-line="14" selection-start-column="1" selection-end-line="14" selection-end-column="1" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/OrderAdapter.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="192">
@@ -396,29 +393,37 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Common.py">
+    <entry file="file://$PROJECT_DIR$/conf/adapter.json">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-193">
-          <caret line="141" lean-forward="true" selection-start-line="141" selection-end-line="141" />
+        <state relative-caret-position="224">
+          <caret line="14" column="1" selection-start-line="14" selection-start-column="1" selection-end-line="14" selection-end-column="1" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Trader.py">
+    <entry file="file://$PROJECT_DIR$/Common.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="4236">
-          <caret line="332" column="77" lean-forward="true" selection-start-line="332" selection-start-column="77" selection-end-line="332" selection-end-column="77" />
-          <folding>
-            <element signature="e#16#29#0" expanded="true" />
-          </folding>
+        <state relative-caret-position="2096">
+          <caret line="141" selection-start-line="141" selection-end-line="141" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/Box.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="320">
-          <caret line="20" column="43" selection-start-line="20" selection-start-column="43" selection-end-line="20" selection-end-column="43" />
+        <state relative-caret-position="1072">
+          <caret line="378" column="36" lean-forward="true" selection-start-line="378" selection-start-column="36" selection-end-line="378" selection-end-column="36" />
           <folding>
             <element signature="e#16#32#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Trader.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-1546">
+          <caret line="582" column="61" selection-start-line="582" selection-start-column="61" selection-end-line="582" selection-end-column="61" />
+          <folding>
+            <element signature="e#16#29#0" expanded="true" />
+            <element signature="e#12023#19389#0" />
           </folding>
         </state>
       </provider>
