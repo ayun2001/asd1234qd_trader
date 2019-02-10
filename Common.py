@@ -143,7 +143,7 @@ def file_to_dict(filename):
 def change_seconds_to_time(total_time):
     day_time_length = 24 * 60 * 60
     hour_time_length = 60 * 60
-    min_time_length = 60
+    minute_time_length = 60
     if total_time < 60:
         return u"%d 秒" % math.ceil(total_time)
     elif total_time > day_time_length:
@@ -151,10 +151,10 @@ def change_seconds_to_time(total_time):
         return u"%d 日, %s" % (int(days[0]), change_seconds_to_time(days[1]))
     elif total_time > hour_time_length:
         hours = divmod(total_time, hour_time_length)
-        return u"%d 小时, %s" % (int(hours[0]), change_seconds_to_time(hours[1]))
+        return u"%d 时, %s" % (int(hours[0]), change_seconds_to_time(hours[1]))
     else:
-        mins = divmod(total_time, min_time_length)
-    return u"%d 分钟, %d 秒" % (int(mins[0]), math.ceil(mins[1]))
+        minutes = divmod(total_time, minute_time_length)
+    return u"%d 分, %d 秒" % (int(minutes[0]), math.ceil(minutes[1]))
 
 
 def check_today_is_holiday_time():

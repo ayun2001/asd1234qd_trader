@@ -39,19 +39,23 @@ def send_mail(title, msg):
         log.logger.error(u"邮件发送客户端配置文件加载错误: %s", err)
         return
 
-    host = config.get("host", "localhost")
-    port = config.get("port", 25)
-    user = config.get("user", "root")
-    pwd = Common.get_decrypted_string(config.get("pwd", ""))
-    # pwd = config.get("pwd", "")
-    sender = config.get("sender", "localhost")
-    receivers = config.get("receivers", [])
-    message = MIMEText(msg, 'html', 'utf-8')  # 'plain' 普通文本邮件， 'html' HTML邮件
-    message['Subject'] = Header(title, 'utf-8')
-    message['From'] = Header(sender, 'utf-8')  # 发送者
-    message['To'] = Header(';'.join(receivers), 'utf-8')  # 接收者
-
     try:
+        # 设置邮件参数
+        host = config.get("host", "localhost")
+        port = config.get("port", 25)
+        user = config.get("user", "root")
+        pwd = Common.get_decrypted_string(config.get("pwd", ""))
+        # pwd = config.get("pwd", "")
+        sender = config.get("sender", "localhost")
+        receivers = config.get("receivers", [])
+
+        # 创建邮件体
+        message = MIMEText(msg, 'html', 'utf-8')  # 'plain' 普通文本邮件， 'html' HTML邮件
+        message['Subject'] = Header(title, 'utf-8')
+        message['From'] = Header(sender, 'utf-8')  # 发送者
+        message['To'] = Header(';'.join(receivers), 'utf-8')  # 接收者
+
+        # 发送邮件
         smtp_instance = smtplib.SMTP()
         smtp_instance.connect(host, port)  # 25 为 SMTP 端口号
         smtp_instance.login(user, pwd)
