@@ -3,15 +3,13 @@
 import codecs
 import json
 import smtplib
-import time
 from email.header import Header
 from email.mime.text import MIMEText
 
 import Common
 from Log import Logger
 
-mail_log_filename = "%s/%s_%s" % (Common.CONST_DIR_LOG, time.strftime('%Y%m%d', time.localtime(time.time())),
-                                  Common.CONST_LOG_MAIL_FILENAME)
+mail_log_filename = "%s/%s" % (Common.CONST_DIR_LOG, Common.CONST_LOG_MAIL_FILENAME)
 mail_config_filename = "%s/%s" % (Common.CONST_DIR_CONF, Common.CONST_CONFIG_MAIL_FILENAME)
 
 

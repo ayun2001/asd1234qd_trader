@@ -16,8 +16,7 @@ import OrderAdapter
 from Log import Logger
 
 _current_datetime = datetime.datetime.now()
-trader_log_filename = "%s/%s_%s" % (Common.CONST_DIR_LOG, time.strftime('%Y%m%d', time.localtime(time.time())),
-                                    Common.CONST_LOG_TRADER_FILENAME)
+trader_log_filename = "%s/%s" % (Common.CONST_DIR_LOG, Common.CONST_LOG_TRADER_FILENAME)
 trader_config_filename = "%s/%s" % (Common.CONST_DIR_CONF, Common.CONST_CONFIG_ADAPTER_FILENAME)
 trader_db_records_filename = "%s/%s_%s_%s" % (Common.CONST_DIR_DATABASE, _current_datetime.year,
                                               _current_datetime.month, Common.CONST_DB_RECORDS_FILENAME)
