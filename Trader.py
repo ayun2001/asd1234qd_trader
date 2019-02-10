@@ -296,13 +296,13 @@ class TradeExecutor(object):
         max_pct_change_value = max(pct_change_list)
 
         # j值在最近4天内不能出现大于等于100
-        bool_max_j_value = max_j_value >= 99.9
+        bool_max_j_value = max_j_value >= Common.CONST_MAX_KDJ_J_VALUE
 
         # 不能出现小时内涨幅超过 5%的
         bool_more_than_spec_raise = max_pct_change_value > MIN_SELL_RAISE_RATIO
 
         # 判断 KDJ的J值 死叉
-        if len(kdj_cross_express_list) > 0:
+        if len(kdj_cross_express_list) > Common.CONST_DATA_LIST_EMPTY:
             try:
                 down_index_id = kdj_cross_list.index("down_cross")
                 bool_down_cross_kdj = kdj_cross_express_list[0] == "down_cross" and down_index_id < MIN_DATA_CHECK_HOURS
@@ -358,7 +358,7 @@ class TradeExecutor(object):
         ma10_values_list = sorted(list(history_data_frame['ma10'].values[:MIN_DATA_CHECK_HOURS]), reverse=True)
 
         # 判断 KDJ的J值 金叉
-        if len(kdj_cross_express_list) > 0:
+        if len(kdj_cross_express_list) > Common.CONST_DATA_LIST_EMPTY:
             try:
                 down_index_id = kdj_cross_list.index("up_cross")
                 bool_up_cross_kdj = kdj_cross_express_list[0] == "up_cross" and down_index_id < MIN_DATA_CHECK_HOURS

@@ -23,7 +23,7 @@ def _make_hq_query_index_list(count, step):
 
 def check_stop_trade_stock(dataset):
     stock_trade_volume_list = dataset['volume'].values
-    if len(stock_trade_volume_list) == Common.CONST_DATA_LIST_IS_NULL or stock_trade_volume_list[-1] == 0.0:
+    if len(stock_trade_volume_list) == Common.CONST_DATA_LIST_EMPTY or stock_trade_volume_list[-1] == 0.0:
         return True
     else:
         return False

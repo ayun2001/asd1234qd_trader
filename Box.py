@@ -15,10 +15,12 @@ box_log_filename = "%s/%s_%s" % (Common.CONST_DIR_LOG, time.strftime('%Y%m%d', t
 box_db_filename = "%s/%s" % (Common.CONST_DIR_DATABASE, Common.CONST_DB_BOX_FILENAME)
 box_config_filename = "%s/%s" % (Common.CONST_DIR_CONF, Common.CONST_CONFIG_ADAPTER_FILENAME)
 
+MIN_DATA_CHECK_DAYS = 4
 MIN_DATA_CHECK_HOURS = 4
 MIN_60M_TIMEDELTA = MIN_DATA_CHECK_HOURS * 4
 MIN_60M_PRICE_RISE = 5.0
 MAX_BOX_THREAD_RUNNING_TIME = 45 * 60  # 45分钟内必须要完成所有分析，要不然自动停止
+MIN_CHANGE_STOP_RAISE_RATIO = 9.9
 
 
 # 保存股票盒到硬盘
@@ -53,7 +55,7 @@ def _generate_box_mail_message(data):
                 Common.MARKET_NAME_MAPPING[market_name],  # 所属市场名称
                 Common.STOCK_TYPE_NAME_MAPPING[stock_class_type],  # 股票分类
                 selected_count,  # 选择股票数量
-                u",".join(class_type_values.keys()) if selected_count > 0 else u"无"  # 待选股票列表
+                u",".join(class_type_values.keys()) if selected_count > Common.CONST_DATA_LIST_EMPTY else u"无"  # 列表
             ])
 
     return table.get_html_string() + u"<p>总共选取股票数量: %d --> 上海: %d, 深圳: %d, 中小: %d, 创业: %d </p>" % (
@@ -126,7 +128,7 @@ class GenerateBox(object):
                 stock_t_list.extend([(key, data["desc"], v["code"], v["name"]) for v in data["values"]])
             except KeyError:
                 continue
-        if len(stock_t_list) == Common.CONST_DATA_LIST_IS_NULL:
+        if len(stock_t_list) == Common.CONST_DATA_LIST_EMPTY:
             self.log.logger.error(u"转换后的股票清单为空, 检查源数据 ...")
             return None
         else:
@@ -156,7 +158,7 @@ class GenerateBox(object):
         history_data_frame_index_list = history_data_frame.index
         history_data_count = len(history_data_frame_index_list)
         # 这里需要高度关注下，因为默认可能只有14天
-        if history_data_count < (Common.CONST_K_LENGTH / 2 if Common.CONST_K_LENGTH < 3 else 14):
+        if history_data_count < (Common.CONST_K_LENGTH / 2):
             self.log.logger.error(u"参与计算得市场: %s, 股票: %s, 名称：%s, K数据: %d (不够>=14)." % (
                 market_desc, stock_code, stock_name, history_data_count))
             return
@@ -165,9 +167,9 @@ class GenerateBox(object):
             try:
                 close_value, low_value, open_value, pct_change_value = express_stock_hist_data_frame.loc[
                     item_date_time].values
-                if pct_change_value > 9.9 and close_value > open_value:  # 只要涨停的,排除1字板, 涨幅必须大于99%的
+                if pct_change_value > MIN_CHANGE_STOP_RAISE_RATIO and close_value > open_value:  # 只要涨停的,排除1字板, 涨幅必须大于99%的
                     interval_days = history_data_count - list(history_data_frame_index_list).index(item_date_time)
-                    if 4 <= interval_days < history_data_count:  # 这里是老薛的要求，涨停后必须还有3天的数据观察期
+                    if MIN_DATA_CHECK_DAYS <= interval_days < history_data_count:  # 这里是老薛的要求，涨停后必须还有3天的数据观察期
                         stock_content_info = {
                             "meta_data": {"days": interval_days, "datetime": item_date_time, "close": close_value,
                                           "low": low_value, "stock_code": stock_code, "stock_name": stock_name,
@@ -181,7 +183,7 @@ class GenerateBox(object):
                     market_desc, stock_code, stock_name, item_date_time, err.message))
             continue
 
-    def _stock_60m_k_type_filter(self, market_name="", market_desc="", stock_name="", stock_code="300729", days=0):
+    def _stock_60m_k_type_filter(self, market_name, market_desc, stock_name, stock_code, days):
         try:
             market_code = Common.MARKET_CODE_MAPPING[market_name]
         except KeyError:
@@ -207,11 +209,11 @@ class GenerateBox(object):
         max_j_value = max(kdj_values_list)
         max_pct_change_value = max(pct_change_list)
         # j值在最近4天内不能出现大于等于100
-        bool_max_j_value = max_j_value >= 99.9
+        bool_max_j_value = max_j_value >= Common.CONST_MAX_KDJ_J_VALUE
         # 不能出现小时内涨幅超过 5%的
         bool_more_than_spec_raise = max_pct_change_value > MIN_60M_PRICE_RISE
         # 判断 KDJ的J值
-        if len(kdj_cross_express_list) > Common.CONST_DATA_LIST_IS_NULL:
+        if len(kdj_cross_express_list) > Common.CONST_DATA_LIST_EMPTY:
             try:
                 up_index_id = kdj_cross_list.index("up_cross")
                 bool_up_cross_kdj = kdj_cross_express_list[0] == "up_cross" and up_index_id >= MIN_DATA_CHECK_HOURS
