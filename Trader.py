@@ -28,7 +28,7 @@ MIN_DATA_CHECK_HOURS = 4
 MIN_STOP_LOSS_RATIO = -3.0  # 负数，下跌3%
 MIN_SELL_RAISE_RATIO = 3.0  # 涨幅3%
 MAX_VALID_BOX_INTERVAL_HOURS = 4  # 票箱会在每天的早上8：30，和中午12：00 左右开始选取，所以不会有操过4个小时
-MAX_SELL_TOTAL_RATIO = 0.6
+MAX_SELL_TOTAL_RATIO = 0.6  # 最大能够一次性卖出的百分比
 MIN_TASK_WAITING_TIME = 20  # 单位：秒
 MIN_TRADE_TIME_INTERVAL = 5 * 60 * 60  # 单位：秒
 MAX_TRADER_THREAD_RUNNING_TIME = 20 * 60  # 20分钟内必须要完成所有交易，要不然自动停止
@@ -261,13 +261,11 @@ class TradeExecutor(object):
             if err_info is not None:
                 self.log.logger.warn(
                     u"没有执行动作 市场: %s, 股票: %s, 类型: %s, 名称：%s, 信号: %s, 价格: %.2f, 数量: %d" % (
-                        market_desc, stock_code, stock_name, class_type, action_id,
-                        trade_price, trade_count))
+                        market_desc, stock_code, stock_name, class_type, action_id, trade_price, trade_count))
                 # 发现连接错误 10038 需要重连
                 if err_info.find("errCode=10038") > -1:
                     time.sleep(Common.CONST_RETRY_CONNECT_INTERVAL)  # 休息指定的时间，重新创建连接对象
-                    self.order_connect_instance, err_info = OrderAdapter.create_connect_instance(
-                        self.config)
+                    self.order_connect_instance, err_info = OrderAdapter.create_connect_instance(self.config)
                     if err_info is not None:
                         self.log.logger.error(u"重新创建交易服务器连接实例失败: %s" % err_info)
                     else:
@@ -625,17 +623,17 @@ class TradeExecutor(object):
 
                         level5_quote_value = level5_quotes_data_set[stock_code]
                         avg_level5_price = level5_quote_value["buy5_avg_price"]
+                        buy_level5_step_count = level5_quote_value["buy5_step_count"]
+
                         # 按照交易总数固定比例投放交易股票数量, 1手 = 100股
-                        max_can_sell_count = int(
-                            (level5_quote_value["buy5_step_count"] / 100) * MAX_SELL_TOTAL_RATIO) * 100
+                        max_can_sell_count = int((buy_level5_step_count / 100.0) * MAX_SELL_TOTAL_RATIO) * 100
 
                         # 发送卖出订单
                         order_ok = self._send_safe_order(
                             market_desc=market_desc, stock_code=stock_code, stock_name=stock_name,
                             class_type=stock_class_type, account_id=current_trade_account_id,
                             action_id=Common.CONST_STOCK_SELL, trade_price=avg_level5_price,
-                            trade_count=max_can_sell_count
-                        )
+                            trade_count=max_can_sell_count)
 
                         if not order_ok:
                             continue
