@@ -715,7 +715,7 @@ def trade_exec_main():
 
     if Common.check_today_is_holiday_time():
         trade_exec.log.logger.warning(u"节假日休假, 股票市场不交易, 跳过...")
-        exit(0)
+        exit(Common.CONST_APP_EXIT_CODE)
 
     trade_exec.log.logger.info(u"============== [开始自动交易] ==============")
     start_timestamp = time.time()
@@ -728,7 +728,7 @@ def trade_exec_main():
     if valid_trade_records is None:
         trade_exec.log.logger.error(u"执行交易记录为空")
         Mail.send_mail(title=u"[%s] 交易执行错误" % current_datetime, msg="[ERROR]")
-        exit(0)
+        exit(Common.CONST_APP_EXIT_CODE)
 
     current_datetime = Common.get_current_datetime()
     total_compute_time = Common.change_seconds_to_time(int(end_timestamp - start_timestamp))

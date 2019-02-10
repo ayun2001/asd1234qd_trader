@@ -126,7 +126,7 @@ class GenerateBox(object):
                 stock_t_list.extend([(key, data["desc"], v["code"], v["name"]) for v in data["values"]])
             except KeyError:
                 continue
-        if len(stock_t_list) == Common.CONST_STOCK_LIST_IS_NULL:
+        if len(stock_t_list) == Common.CONST_DATA_LIST_IS_NULL:
             self.log.logger.error(u"转换后的股票清单为空, 检查源数据 ...")
             return None
         else:
@@ -211,7 +211,7 @@ class GenerateBox(object):
         # 不能出现小时内涨幅超过 5%的
         bool_more_than_spec_raise = max_pct_change_value > MIN_60M_PRICE_RISE
         # 判断 KDJ的J值
-        if len(kdj_cross_express_list) > 0:
+        if len(kdj_cross_express_list) > Common.CONST_DATA_LIST_IS_NULL:
             try:
                 up_index_id = kdj_cross_list.index("up_cross")
                 bool_up_cross_kdj = kdj_cross_express_list[0] == "up_cross" and up_index_id >= MIN_DATA_CHECK_HOURS
@@ -387,7 +387,7 @@ def gen_box_main():
 
     if Common.check_today_is_holiday_time():
         gen_box.log.logger.warning(u"节假日休假, 股票市场不交易, 跳过...")
-        exit(0)
+        exit(Common.CONST_APP_EXIT_CODE)
 
     gen_box.log.logger.info(u"============== [开始计算票箱] ==============")
     start_timestamp = time.time()
@@ -400,7 +400,7 @@ def gen_box_main():
     if valid_stock_box is None:
         gen_box.log.logger.error(u"生成的表股票箱为空")
         Mail.send_mail(title=u"[%s] 股票箱计算错误" % current_datetime, msg="[ERROR]")
-        exit(0)
+        exit(Common.CONST_APP_EXIT_CODE)
 
     total_compute_time = Common.change_seconds_to_time(int(end_timestamp - start_timestamp))
     gen_box.log.logger.info(u"计算总费时: %s" % total_compute_time)

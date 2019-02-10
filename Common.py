@@ -15,6 +15,8 @@ from Crypto.Cipher import AES
 # ============================================
 # 全局常量
 
+CONST_APP_EXIT_CODE = 0
+
 # 这里密钥key 长度必须为16（AES-128）、24（AES-192）、或32（AES-256）Bytes 长度.目前AES-128足够用
 CONST_CRYPTO_AES_CBC_KEY = "9adunmMw6km6lriO"
 CONST_CRYPTO_AES_CBC_KEY_LENGTH = len(CONST_CRYPTO_AES_CBC_KEY)
@@ -49,7 +51,7 @@ CONST_K_DAY = 4
 CONST_K_LENGTH = 30
 
 CONST_TASK_WAITING_TIME = 300
-CONST_STOCK_LIST_IS_NULL = 0
+CONST_DATA_LIST_IS_NULL = 0
 
 CONST_STOCK_TYPE_1 = "type1"
 CONST_STOCK_TYPE_2 = "type2"
