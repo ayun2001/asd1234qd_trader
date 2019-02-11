@@ -198,7 +198,7 @@ class TradeExecutor(object):
                     name=stock_name, ktype=ktype, kcount=kcount)
             else:
                 history_data_frame = None
-                err_info = u"行情服务器连接实例为空, [errCode=10038], 等待重新创建..."
+                err_info = u"行情服务器连接实例为空, 等待重新创建, errCode=10038"
 
             # 对执行错误执行处理
             if err_info is not None:
@@ -227,7 +227,7 @@ class TradeExecutor(object):
                     self.hq_connect_instance, [(market_code, stock_code)])
             else:
                 level5_quotes_dataset = None
-                err_info = u"行情服务器连接实例为空, [errCode=10038], 等待重新创建..."
+                err_info = u"行情服务器连接实例为空, 等待重新创建, errCode=10038"
 
             # 对执行错误执行处理
             if err_info is not None:
@@ -257,7 +257,7 @@ class TradeExecutor(object):
                 err_info = OrderAdapter.send_stock_order(
                     self.order_connect_instance, stock_code, account_id, action_id, 0, trade_count)
             else:
-                err_info = u"交易服务器连接实例为空, [errCode=10038], 等待重新创建..."
+                err_info = u"交易服务器连接实例为空, 等待重新创建, errCode=10038"
 
             # 对执行错误执行处理
             if err_info is not None:

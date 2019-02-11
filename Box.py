@@ -77,11 +77,13 @@ class GenerateBox(object):
 
     # 创建行情连接，
     def _create_safe_connect(self):
+        retry_multiplying_factor = 0
         while True:
+            retry_multiplying_factor += 1
             self.connect_instance, err_info = HQAdapter.create_connect_instance(self.config)
             if self.connect_instance is None:
                 self.log.logger.error(u"创建行情服务器连接实例失败: %s" % err_info)
-                time.sleep(Common.CONST_RETRY_CONNECT_INTERVAL)  # 休息指定的事件，重新创建连接对象
+                time.sleep(Common.CONST_RETRY_CONNECT_INTERVAL * retry_multiplying_factor)  # 休息指定的事件，重新创建连接对象
                 continue
             else:
                 self.connect_instance.SetTimeout(Common.CONST_CONNECT_TIMEOUT, Common.CONST_CONNECT_TIMEOUT)
@@ -90,7 +92,9 @@ class GenerateBox(object):
 
     # 获得历史数据，拥有自动重试功能
     def _get_safe_history_data_frame(self, market_code, market_desc, stock_code, stock_name, ktype, kcount):
+        retry_multiplying_factor = 0
         while True:
+            retry_multiplying_factor += 1
             if self.connect_instance is not None:
                 # 获得股票的K线信息
                 history_data_frame, err_info = HQAdapter.get_history_data_frame(
@@ -98,7 +102,7 @@ class GenerateBox(object):
                     name=stock_name, ktype=ktype, kcount=kcount)
             else:
                 history_data_frame = None
-                err_info = u"行情服务器连接实例为空, [errCode=10038], 等待重新创建.."
+                err_info = u"行情服务器连接实例为空, 等待重新创建, errCode=10038"
 
             # 对执行错误执行处理
             if err_info is not None:
@@ -106,7 +110,7 @@ class GenerateBox(object):
                     u"获得市场: %s, 股票: %s, 名称：%s, 历史数据错误: %s" % (market_desc, stock_code, stock_name, err_info))
                 # 发现连接错误 10038 需要重连
                 if err_info.find("errCode=10038") > -1:
-                    time.sleep(Common.CONST_RETRY_CONNECT_INTERVAL)  # 休息指定的时间，重新创建连接对象
+                    time.sleep(Common.CONST_RETRY_CONNECT_INTERVAL * retry_multiplying_factor)  # 休息指定的时间，重新创建连接对象
                     self.connect_instance, err_info = HQAdapter.create_connect_instance(self.config)
                     if self.connect_instance is None:
                         self.log.logger.error(u"重新创建行情服务器连接实例失败: %s" % err_info)

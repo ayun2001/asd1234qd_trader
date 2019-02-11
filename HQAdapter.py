@@ -187,7 +187,7 @@ def get_history_data_frame(instance, market, market_desc, code, name, ktype=Comm
     else:
         contents = finance_content.split('\n')
         if len(contents) < 2:
-            return None, u"获得市场: %s, 股票:, %s 名称: %s, 数据结构不完整..." % (market_desc, code, name)
+            return None, u"获得市场: %s, 股票:, %s 名称: %s, 数据结构不完整" % (market_desc, code, name)
         try:
             circulating_equity_number = float(contents[1].split('\t')[2]) * 10000  # 变成标准股数
         except Exception as err:
@@ -196,7 +196,7 @@ def get_history_data_frame(instance, market, market_desc, code, name, ktype=Comm
     # 获得K线详细信息
     history_data_content, data_count, err_info = get_stock_bars(instance, ktype, market, code, 0, kcount * 3)
     if data_count <= 0:
-        return None, u"获得市场: %s, 股票:, %s, 名称: %s, K数据总数不合法(<=0), 跳过..." % (market_desc, code, name)
+        return None, u"获得市场: %s, 股票:, %s, 名称: %s, K数据总数不合法(<=0), 跳过" % (market_desc, code, name)
     if err_info is not None:
         return None, err_info
     else:
@@ -223,7 +223,7 @@ def get_history_data_frame(instance, market, market_desc, code, name, ktype=Comm
 
         # 检查股票是否停牌
         if check_stop_trade_stock(history_data_frame):
-            return None, u"发现市场: %s, 股票: %s, 名称: %s, 已经停牌，跳过..." % (market_desc, code, name)
+            return None, u"发现市场: %s, 股票: %s, 名称: %s, 已经停牌，跳过" % (market_desc, code, name)
 
         try:
             # 添加ma5, ma10均线数据
