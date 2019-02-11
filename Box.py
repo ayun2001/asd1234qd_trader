@@ -20,6 +20,7 @@ MIN_60M_TIMEDELTA = MIN_DATA_CHECK_HOURS * 4
 MIN_60M_PRICE_RISE = 5.0
 MAX_BOX_THREAD_RUNNING_TIME = 45 * 60  # 45分钟内必须要完成所有分析，要不然自动停止
 MIN_CHANGE_STOP_RAISE_RATIO = 9.9
+MAX_KDJ_J_VALUE = 99.9
 
 
 # 保存股票盒到硬盘
@@ -210,7 +211,7 @@ class GenerateBox(object):
         max_j_value = max(kdj_values_list)
         max_pct_change_value = max(pct_change_list)
         # j值在最近4天内不能出现大于等于100
-        bool_max_j_value = max_j_value >= 99.9
+        bool_max_j_value = max_j_value >= MAX_KDJ_J_VALUE
         # 不能出现小时内涨幅超过 5%的
         bool_more_than_spec_raise = max_pct_change_value > MIN_60M_PRICE_RISE
         # 判断 KDJ的J值
