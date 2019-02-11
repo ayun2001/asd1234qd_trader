@@ -39,7 +39,7 @@ def create_connect_instance(config):
     try:
         instance = TradeX2.Logon(host, port, client_version, client_branch_id, login_account_id, trade_account_id,
                                  password, tx_password)
-        return instance, None
+        return instance, u"地址: %s, 端口: %d" % (host, port)
     except TradeX2.error as err:
         return None, u"连接交易服务器错误: %s" % err.message
 

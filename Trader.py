@@ -32,8 +32,9 @@ MIN_TASK_WAITING_TIME = 20  # 单位：秒
 MIN_TRADE_TIME_INTERVAL = 5 * 60 * 60  # 单位：秒
 MAX_TRADER_THREAD_RUNNING_TIME = 20 * 60  # 20分钟内必须要完成所有交易，要不然自动停止
 
-ZERO_J_VALUE = 0
-HALF_J_VALUE = 50
+ZERO_KDJ_J_VALUE = 0
+HALF_KDJ_J_VALUE = 50
+MAX_KDJ_J_VALUE = 99.9
 
 
 # ============================================
@@ -171,27 +172,29 @@ class TradeExecutor(object):
                 time.sleep(Common.CONST_RETRY_CONNECT_INTERVAL)  # 休息指定的事件，重新创建连接对象
                 continue
             else:
+                self.log.logger.info(u"选中交易服务器 # %s" % err_info)
                 break
 
     # 创建行情连接，拥有自动重试功能
     def _create_safe_hq_connect(self):
         while True:
             self.hq_connect_instance, err_info = HQAdapter.create_connect_instance(self.config)
-            if err_info is not None:
+            if self.hq_connect_instance is None:
                 self.log.logger.error(u"创建行情服务器连接实例失败: %s" % err_info)
                 time.sleep(Common.CONST_RETRY_CONNECT_INTERVAL)  # 休息指定的事件，重新创建连接对象
                 continue
             else:
                 self.hq_connect_instance.SetTimeout(Common.CONST_CONNECT_TIMEOUT, Common.CONST_CONNECT_TIMEOUT)
+                self.log.logger.info(u"选中行情服务器 # %s" % err_info)
                 break
 
     # 获得历史数据，拥有自动重试功能
     def _get_safe_history_data_frame(self, market_code, market_desc, stock_code, stock_name, ktype, kcount):
         while True:
-            if self.connect_instance is not None:
+            if self.hq_connect_instance is not None:
                 # 获得股票的K线信息
                 history_data_frame, err_info = HQAdapter.get_history_data_frame(
-                    self.connect_instance, market=market_code, code=stock_code, market_desc=market_desc,
+                    self.hq_connect_instance, market=market_code, code=stock_code, market_desc=market_desc,
                     name=stock_name, ktype=ktype, kcount=kcount)
             else:
                 history_data_frame = None
@@ -204,12 +207,12 @@ class TradeExecutor(object):
                 # 发现连接错误 10038 需要重连
                 if err_info.find("errCode=10038") > -1:
                     time.sleep(Common.CONST_RETRY_CONNECT_INTERVAL)  # 休息指定的时间，重新创建连接对象
-                    self.connect_instance, err_info = HQAdapter.create_connect_instance(self.config)
-                    if err_info is not None:
+                    self.hq_connect_instance, err_info = HQAdapter.create_connect_instance(self.config)
+                    if self.hq_connect_instance is None:
                         self.log.logger.error(u"重新创建行情服务器连接实例失败: %s" % err_info)
                     else:
-                        self.connect_instance.SetTimeout(Common.CONST_CONNECT_TIMEOUT, Common.CONST_CONNECT_TIMEOUT)
-                        self.log.logger.info(u"重新创建行情服务器连接实例成功...")
+                        self.hq_connect_instance.SetTimeout(Common.CONST_CONNECT_TIMEOUT, Common.CONST_CONNECT_TIMEOUT)
+                        self.log.logger.info(u"重新创建行情服务器连接实例成功, 选中行情服务器 # %s" % err_info)
                 else:
                     return None  # 错误，返回None
             else:  # 正确，返回数据
@@ -234,12 +237,12 @@ class TradeExecutor(object):
                 if err_info.find("errCode=10038") > -1:
                     time.sleep(Common.CONST_RETRY_CONNECT_INTERVAL)  # 休息指定的时间，重新创建连接对象
                     self.hq_connect_instance, err_info = HQAdapter.create_connect_instance(self.config)
-                    if err_info is not None:
+                    if self.hq_connect_instance is None:
                         self.log.logger.error(u"重新创建行情服务器连接实例失败: %s" % err_info)
                     else:
                         self.hq_connect_instance.SetTimeout(
                             Common.CONST_CONNECT_TIMEOUT, Common.CONST_CONNECT_TIMEOUT)
-                        self.log.logger.info(u"重新创建行情服务器连接实例成功...")
+                        self.log.logger.info(u"重新创建行情服务器连接实例成功, 选中行情服务器 # %s" % err_info)
                 else:
                     return None  # 错误，返回None
             else:  # 正确，返回数据
@@ -295,13 +298,13 @@ class TradeExecutor(object):
         max_pct_change_value = max(pct_change_list)
 
         # j值在最近4天内不能出现大于等于100
-        bool_max_j_value = max_j_value >= Common.CONST_MAX_KDJ_J_VALUE
+        bool_max_j_value = max_j_value >= MAX_KDJ_J_VALUE
 
         # 不能出现小时内涨幅超过 5%的
         bool_more_than_spec_raise = max_pct_change_value > MIN_SELL_RAISE_RATIO
 
         # 判断 KDJ的J值 死叉
-        if len(kdj_cross_express_list) > Common.CONST_DATA_LIST_EMPTY:
+        if len(kdj_cross_express_list) > 0:
             try:
                 down_index_id = kdj_cross_list.index("down_cross")
                 bool_down_cross_kdj = kdj_cross_express_list[0] == "down_cross" and down_index_id < MIN_DATA_CHECK_HOURS
@@ -357,7 +360,7 @@ class TradeExecutor(object):
         ma10_values_list = sorted(list(history_data_frame['ma10'].values[:MIN_DATA_CHECK_HOURS]), reverse=True)
 
         # 判断 KDJ的J值 金叉
-        if len(kdj_cross_express_list) > Common.CONST_DATA_LIST_EMPTY:
+        if len(kdj_cross_express_list) > 0:
             try:
                 down_index_id = kdj_cross_list.index("up_cross")
                 bool_up_cross_kdj = kdj_cross_express_list[0] == "up_cross" and down_index_id < MIN_DATA_CHECK_HOURS
@@ -713,8 +716,8 @@ def trade_exec_main():
     trade_exec = TradeExecutor()
 
     if Common.check_today_is_holiday_time():
-        trade_exec.log.logger.warning(u"节假日休假, 股票市场不交易, 跳过...")
-        exit(Common.CONST_APP_EXIT_CODE)
+        trade_exec.log.logger.warning(u"节假日休假, 股票市场不交易, 跳过")
+        exit(0)
 
     trade_exec.log.logger.info(u"============== [开始自动交易] ==============")
     start_timestamp = time.time()
@@ -727,7 +730,7 @@ def trade_exec_main():
     if valid_trade_records is None:
         trade_exec.log.logger.error(u"执行交易记录为空")
         Mail.send_mail(title=u"[%s] 交易执行错误" % current_datetime, msg="[ERROR]")
-        exit(Common.CONST_APP_EXIT_CODE)
+        exit(0)
 
     current_datetime = Common.get_current_datetime()
     total_compute_time = Common.change_seconds_to_time(int(end_timestamp - start_timestamp))
@@ -741,5 +744,6 @@ def trade_exec_main():
 if __name__ == '__main__':
     # 运行主程序, 这里需要使用线程函数的join的超时功能, 防止程序一直在后台运行
     current_thread = threading.Thread(target=trade_exec_main)
+    current_thread.daemon = True  # 所有daemon值为True的子线程将随主线程一起结束，而不论是否运行完成。
     current_thread.start()
     current_thread.join(timeout=MAX_TRADER_THREAD_RUNNING_TIME)

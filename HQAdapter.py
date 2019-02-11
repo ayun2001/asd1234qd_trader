@@ -48,7 +48,7 @@ def create_connect_instance(config):
 
     try:
         instance = TradeX2.TdxHq_Connect(host, port)
-        return instance, None
+        return instance, u"地址: %s, 端口: %d" % (host, port)
     except TradeX2.TdxHq_error as err:
         return None, err.message.decode('gbk')
 

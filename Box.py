@@ -78,12 +78,13 @@ class GenerateBox(object):
     def _create_safe_connect(self):
         while True:
             self.connect_instance, err_info = HQAdapter.create_connect_instance(self.config)
-            if err_info is not None:
+            if self.connect_instance is None:
                 self.log.logger.error(u"创建行情服务器连接实例失败: %s" % err_info)
                 time.sleep(Common.CONST_RETRY_CONNECT_INTERVAL)  # 休息指定的事件，重新创建连接对象
                 continue
             else:
                 self.connect_instance.SetTimeout(Common.CONST_CONNECT_TIMEOUT, Common.CONST_CONNECT_TIMEOUT)
+                self.log.logger.info(u"选中行情服务器 # %s" % err_info)
                 break
 
     # 获得历史数据，拥有自动重试功能
@@ -96,7 +97,7 @@ class GenerateBox(object):
                     name=stock_name, ktype=ktype, kcount=kcount)
             else:
                 history_data_frame = None
-                err_info = u"行情服务器连接实例为空, [errCode=10038], 等待重新创建..."
+                err_info = u"行情服务器连接实例为空, [errCode=10038], 等待重新创建.."
 
             # 对执行错误执行处理
             if err_info is not None:
@@ -106,11 +107,11 @@ class GenerateBox(object):
                 if err_info.find("errCode=10038") > -1:
                     time.sleep(Common.CONST_RETRY_CONNECT_INTERVAL)  # 休息指定的时间，重新创建连接对象
                     self.connect_instance, err_info = HQAdapter.create_connect_instance(self.config)
-                    if err_info is not None:
+                    if self.connect_instance is None:
                         self.log.logger.error(u"重新创建行情服务器连接实例失败: %s" % err_info)
                     else:
                         self.connect_instance.SetTimeout(Common.CONST_CONNECT_TIMEOUT, Common.CONST_CONNECT_TIMEOUT)
-                        self.log.logger.info(u"重新创建行情服务器连接实例成功...")
+                        self.log.logger.info(u"重新创建行情服务器连接实例成功, 选中行情服务器 # %s" % err_info)
                 else:
                     return None  # 错误，返回None
             else:  # 正确，返回数据
@@ -119,7 +120,7 @@ class GenerateBox(object):
     # 扩展股票数据
     def _get_stock_temp_list(self, stock_list=None):
         if stock_list is None:
-            self.log.logger.error(u"股票清单为空, 检查源数据 ...")
+            self.log.logger.error(u"股票清单为空, 检查源数据")
             return None
         stock_t_list = []
         for key, data in stock_list.items():
@@ -128,7 +129,7 @@ class GenerateBox(object):
             except KeyError:
                 continue
         if len(stock_t_list) == 0:
-            self.log.logger.error(u"转换后的股票清单为空, 检查源数据 ...")
+            self.log.logger.error(u"转换后的股票清单为空, 检查源数据")
             return None
         else:
             return stock_t_list
@@ -136,14 +137,14 @@ class GenerateBox(object):
     # 跳出涨停盘的股票
     def _compute_task_handler(self, input_data=None, output_dataset=None):
         if input_data is None:
-            self.log.logger.error(u"股票数据为空, 检查源数据 ...")
+            self.log.logger.error(u"股票数据为空, 检查源数据")
             return
         market_name, market_desc, stock_code, stock_name = input_data
-        self.log.logger.info(u"[第1阶段] 正在获得并处理 市场: %s, 股票: %s, 名称：%s 的数据 ..." % (market_desc, stock_code, stock_name))
+        self.log.logger.info(u"[第1阶段] 正在获得并处理 市场: %s, 股票: %s, 名称：%s 的数据" % (market_desc, stock_code, stock_name))
         try:
             market_code = Common.MARKET_CODE_MAPPING[market_name]
         except KeyError:
-            self.log.logger.error(u"获得股票: %s, 名称：%s, 市场映射关系数据不存在." % (stock_code, stock_name))
+            self.log.logger.error(u"获得股票: %s, 名称：%s, 市场映射关系数据不存在" % (stock_code, stock_name))
             return
 
         # 获取日线历史数据
@@ -158,7 +159,7 @@ class GenerateBox(object):
         history_data_count = len(history_data_frame_index_list)
         # 这里需要高度关注下，因为默认可能只有14天
         if history_data_count < (Common.CONST_K_LENGTH / 2 if Common.CONST_K_LENGTH < 3 else 14):
-            self.log.logger.error(u"参与计算得市场: %s, 股票: %s, 名称：%s, K数据: %d (不够>=14)." % (
+            self.log.logger.error(u"参与计算得市场: %s, 股票: %s, 名称：%s, K数据: %d (不够>=14)" % (
                 market_desc, stock_code, stock_name, history_data_count))
             return
         express_stock_hist_data_frame = history_data_frame[["close", "low", "open", "pct_change"]]
@@ -174,8 +175,9 @@ class GenerateBox(object):
                                           "low": low_value, "stock_code": stock_code, "stock_name": stock_name,
                                           "market_name": market_name, "market_desc": market_desc},
                             "data_frame": history_data_frame}  # 这里是否包去掉以前的历史数据，还要分析下
-                        self.log.logger.info(u"[第1阶段] 市场: %s, 股票: %s, 名称: %s, 涨停价(元): %.3f, 涨停时间: %s, 距近时间(天): %d" % (
-                            market_desc, stock_code, stock_name, close_value, item_date_time, interval_days))
+                        self.log.logger.info(
+                            u"[第1阶段] 正在分析 市场: %s, 股票: %s, 名称: %s, 涨停价(元): %.3f, 涨停时间: %s, 距近时间(天): %d" % (
+                                market_desc, stock_code, stock_name, close_value, item_date_time, interval_days))
                         output_dataset[market_name][stock_code] = stock_content_info
             except Exception as err:
                 self.log.logger.error(u"市场: %s, 股票: %s, 名称: %s, 数据时间: %s, 错误: %s" % (
@@ -186,7 +188,7 @@ class GenerateBox(object):
         try:
             market_code = Common.MARKET_CODE_MAPPING[market_name]
         except KeyError:
-            self.log.logger.error(u"获得市场: %s, 股票: %s, 名称：%s 市场映射关系数据不存在." % (market_desc, stock_code, stock_name))
+            self.log.logger.error(u"获得市场: %s, 股票: %s, 名称：%s 市场映射关系数据不存在" % (market_desc, stock_code, stock_name))
             return False
 
         # 获取60分钟历史数据
@@ -227,7 +229,7 @@ class GenerateBox(object):
             bool_up_cross_kdj = False
             bool_down_cross_kdj = False
         self.log.logger.info(
-            u"[第2阶段] 市场: %s, 股票: %s, 名称：%s, KDJ_J值>=100: %s, KDJ死叉: %s, KDJ金叉(错过买点1天): %s, 涨幅超过%.2f%%: %s" % (
+            u"[第2阶段] 正在判断 市场: %s, 股票: %s, 名称：%s, KDJ_J值>=100: %s, KDJ死叉: %s, KDJ金叉(错过买点1天): %s, 涨幅超过%.2f%%: %s" % (
                 market_desc, stock_code, stock_name, str(bool_max_j_value), str(bool_down_cross_kdj),
                 str(bool_up_cross_kdj), MIN_60M_PRICE_RISE, str(bool_more_than_spec_raise)))
         # KDJ的j值大于100，KDJ死叉，出现过金叉，但是某天涨幅超过5%
@@ -386,7 +388,7 @@ def gen_box_main():
     gen_box = GenerateBox()
 
     if Common.check_today_is_holiday_time():
-        gen_box.log.logger.warning(u"节假日休假, 股票市场不交易, 跳过...")
+        gen_box.log.logger.warning(u"节假日休假, 股票市场不交易, 跳过")
         exit(0)
 
     gen_box.log.logger.info(u"============== [开始计算票箱] ==============")
