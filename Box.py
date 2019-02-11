@@ -14,8 +14,8 @@ box_log_filename = "%s/%s" % (Common.CONST_DIR_LOG, Common.CONST_LOG_BOX_FILENAM
 box_db_filename = "%s/%s" % (Common.CONST_DIR_DATABASE, Common.CONST_DB_BOX_FILENAME)
 box_config_filename = "%s/%s" % (Common.CONST_DIR_CONF, Common.CONST_CONFIG_ADAPTER_FILENAME)
 
-MIN_DATA_CHECK_DAYS = 4
 MIN_DATA_CHECK_HOURS = 4
+MIN_DATA_CHECK_DAYS = 4
 MIN_60M_TIMEDELTA = MIN_DATA_CHECK_HOURS * 4
 MIN_60M_PRICE_RISE = 5.0
 MAX_BOX_THREAD_RUNNING_TIME = 45 * 60  # 45分钟内必须要完成所有分析，要不然自动停止
@@ -51,10 +51,10 @@ def _generate_box_mail_message(data):
             if market_name == Common.CONST_CY_MARKET:
                 cy_number += selected_count
             table.add_row([
-                Common.MARKET_NAME_MAPPING[market_name],  # 所属市场名称
-                Common.STOCK_TYPE_NAME_MAPPING[stock_class_type],  # 股票分类
-                selected_count,  # 选择股票数量
-                u",".join(class_type_values.keys()) if selected_count > Common.CONST_DATA_LIST_EMPTY else u"无"  # 列表
+                Common.MARKET_NAME_MAPPING[market_name],  # 股票大盘的名字
+                Common.STOCK_TYPE_NAME_MAPPING[stock_class_type],  # 股票所属分类
+                selected_count,  # 选中股票数量
+                u",".join(class_type_values.keys()) if selected_count > 0 else u"无"  # 选中股票列表
             ])
 
     return table.get_html_string() + u"<p>总共选取股票数量: %d --> 上海: %d, 深圳: %d, 中小: %d, 创业: %d </p>" % (
@@ -74,7 +74,7 @@ class GenerateBox(object):
         self.connect_instance = None
         self.config = None
 
-    # 创建行情连接，拥有自动重试功能
+    # 创建行情连接，
     def _create_safe_connect(self):
         while True:
             self.connect_instance, err_info = HQAdapter.create_connect_instance(self.config)
@@ -127,7 +127,7 @@ class GenerateBox(object):
                 stock_t_list.extend([(key, data["desc"], v["code"], v["name"]) for v in data["values"]])
             except KeyError:
                 continue
-        if len(stock_t_list) == Common.CONST_DATA_LIST_EMPTY:
+        if len(stock_t_list) == 0:
             self.log.logger.error(u"转换后的股票清单为空, 检查源数据 ...")
             return None
         else:
@@ -157,7 +157,7 @@ class GenerateBox(object):
         history_data_frame_index_list = history_data_frame.index
         history_data_count = len(history_data_frame_index_list)
         # 这里需要高度关注下，因为默认可能只有14天
-        if history_data_count < (Common.CONST_K_LENGTH / 2):
+        if history_data_count < (Common.CONST_K_LENGTH / 2 if Common.CONST_K_LENGTH < 3 else 14):
             self.log.logger.error(u"参与计算得市场: %s, 股票: %s, 名称：%s, K数据: %d (不够>=14)." % (
                 market_desc, stock_code, stock_name, history_data_count))
             return
@@ -208,11 +208,11 @@ class GenerateBox(object):
         max_j_value = max(kdj_values_list)
         max_pct_change_value = max(pct_change_list)
         # j值在最近4天内不能出现大于等于100
-        bool_max_j_value = max_j_value >= Common.CONST_MAX_KDJ_J_VALUE
+        bool_max_j_value = max_j_value >= 99.9
         # 不能出现小时内涨幅超过 5%的
         bool_more_than_spec_raise = max_pct_change_value > MIN_60M_PRICE_RISE
         # 判断 KDJ的J值
-        if len(kdj_cross_express_list) > Common.CONST_DATA_LIST_EMPTY:
+        if len(kdj_cross_express_list) > 0:
             try:
                 up_index_id = kdj_cross_list.index("up_cross")
                 bool_up_cross_kdj = kdj_cross_express_list[0] == "up_cross" and up_index_id >= MIN_DATA_CHECK_HOURS
@@ -273,8 +273,7 @@ class GenerateBox(object):
             Common.CONST_ZX_MARKET: {Common.CONST_STOCK_TYPE_1: {}, Common.CONST_STOCK_TYPE_2: {},
                                      Common.CONST_STOCK_TYPE_3: {}, Common.CONST_STOCK_TYPE_4: {}},
             Common.CONST_CY_MARKET: {Common.CONST_STOCK_TYPE_1: {}, Common.CONST_STOCK_TYPE_2: {},
-                                     Common.CONST_STOCK_TYPE_3: {}, Common.CONST_STOCK_TYPE_4: {}},
-        }
+                                     Common.CONST_STOCK_TYPE_3: {}, Common.CONST_STOCK_TYPE_4: {}}}
 
         for market_code, market_values in stock_pool.items():
             for stock_code, stock_info_values in market_values.items():
@@ -388,7 +387,7 @@ def gen_box_main():
 
     if Common.check_today_is_holiday_time():
         gen_box.log.logger.warning(u"节假日休假, 股票市场不交易, 跳过...")
-        exit(Common.CONST_APP_EXIT_CODE)
+        exit(0)
 
     gen_box.log.logger.info(u"============== [开始计算票箱] ==============")
     start_timestamp = time.time()
@@ -401,7 +400,7 @@ def gen_box_main():
     if valid_stock_box is None:
         gen_box.log.logger.error(u"生成的表股票箱为空")
         Mail.send_mail(title=u"[%s] 股票箱计算错误" % current_datetime, msg="[ERROR]")
-        exit(Common.CONST_APP_EXIT_CODE)
+        exit(0)
 
     total_compute_time = Common.change_seconds_to_time(int(end_timestamp - start_timestamp))
     gen_box.log.logger.info(u"计算总费时: %s" % total_compute_time)
@@ -416,5 +415,6 @@ def gen_box_main():
 if __name__ == '__main__':
     # 运行主程序, 这里需要使用线程函数的join的超时功能, 防止程序一直在后台运行
     current_thread = threading.Thread(target=gen_box_main)
+    current_thread.daemon = True  # 所有daemon值为True的子线程将随主线程一起结束，而不论是否运行完成。
     current_thread.start()
     current_thread.join(timeout=MAX_BOX_THREAD_RUNNING_TIME)

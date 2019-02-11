@@ -22,24 +22,23 @@ class Logger(object):
     # W 每星期（interval==0时代表星期一）
     # midnight 每天凌晨
 
-    def __init__(self, filename, level='info', when='MIDNIGHT', backup_count=30, debug=True,
+    def __init__(self, filename, level='info', when='MIDNIGHT', backup_count=10, debug=True,
                  # 如果需要看到路径，将 %(filename) 替换成 %(pathname)
                  fmt=u'[%(asctime)s] %(filename)s [行:%(lineno)d] --> %(levelname)s: %(message)s'):
         self.logger = logging.getLogger(filename)
-        log_format = logging.Formatter(fmt)  # 设置日志格式
+        format_str = logging.Formatter(fmt)  # 设置日志格式
         self.logger.setLevel(self.level_relations.get(level))  # 设置日志级别
 
-        # 往文件里写入#指定间隔时间自动生成文件的处理器
-        time_handler = handlers.TimedRotatingFileHandler(
-            filename=filename, when=when, backupCount=backup_count, encoding='utf-8')
+        th = handlers.TimedRotatingFileHandler(filename=filename, when=when, backupCount=backup_count,
+                                               encoding='utf-8')  # 往文件里写入#指定间隔时间自动生成文件的处理器
 
-        time_handler.setFormatter(log_format)  # 设置文件里写入的格式
-        self.logger.addHandler(time_handler)
+        th.setFormatter(format_str)  # 设置文件里写入的格式
+        self.logger.addHandler(th)
 
         if debug:
-            console_handler = logging.StreamHandler()  # 往屏幕上输出
-            console_handler.setFormatter(log_format)  # 设置屏幕上显示的格式
-            self.logger.addHandler(console_handler)  # 把对象加到logger里
+            sh = logging.StreamHandler()  # 往屏幕上输出
+            sh.setFormatter(format_str)  # 设置屏幕上显示的格式
+            self.logger.addHandler(sh)  # 把对象加到logger里
 
 
 if __name__ == '__main__':

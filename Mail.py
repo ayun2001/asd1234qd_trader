@@ -3,6 +3,7 @@
 import codecs
 import json
 import smtplib
+import time
 from email.header import Header
 from email.mime.text import MIMEText
 
@@ -26,12 +27,10 @@ def _load_config():
 def send_mail(title, msg):
     if not Common.file_exist(Common.CONST_DIR_LOG):
         Common.create_directory(Common.CONST_DIR_LOG)
-
     if not Common.file_exist(Common.CONST_DIR_CONF):
         Common.create_directory(Common.CONST_DIR_CONF)
 
     log = Logger(mail_log_filename, level='debug')
-
     config, err = _load_config()
     if config is None:
         log.logger.error(u"邮件发送客户端配置文件加载错误: %s", err)
@@ -39,13 +38,13 @@ def send_mail(title, msg):
 
     try:
         # 设置邮件参数
-        host = config.get("host", "localhost")
-        port = config.get("port", 25)
-        user = config.get("user", "root")
-        pwd = Common.get_decrypted_string(config.get("pwd", ""))
+        host = config["host"]
+        port = config["port"]
+        user = config["user"]
+        pwd = Common.get_decrypted_string(config["pwd"])
         # pwd = config.get("pwd", "")
-        sender = config.get("sender", "localhost")
-        receivers = config.get("receivers", [])
+        sender = config["sender"]
+        receivers = config["receivers"]
 
         # 创建邮件体
         message = MIMEText(msg, 'html', 'utf-8')  # 'plain' 普通文本邮件， 'html' HTML邮件
@@ -53,7 +52,6 @@ def send_mail(title, msg):
         message['From'] = Header(sender, 'utf-8')  # 发送者
         message['To'] = Header(';'.join(receivers), 'utf-8')  # 接收者
 
-        # 发送邮件
         smtp_instance = smtplib.SMTP()
         smtp_instance.connect(host, port)  # 25 为 SMTP 端口号
         smtp_instance.login(user, pwd)

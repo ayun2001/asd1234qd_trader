@@ -23,7 +23,7 @@ def _make_hq_query_index_list(count, step):
 
 def check_stop_trade_stock(dataset):
     stock_trade_volume_list = dataset['volume'].values
-    if len(stock_trade_volume_list) == Common.CONST_DATA_LIST_EMPTY or stock_trade_volume_list[-1] == 0.0:
+    if len(stock_trade_volume_list) == 0 or stock_trade_volume_list[-1] == 0.0:
         return True
     else:
         return False
@@ -31,12 +31,11 @@ def check_stop_trade_stock(dataset):
 
 def create_connect_instance(config):
     temp_last_selected_server_key = "hq_ZKesa1cEoD"
-    min_server_count = 1
     try:
         while True:  # 需要利用config配置项目保存一个临时数据，这个数据只在运行过程中有效
             current_selected_server = random.choice(config["hq_servers"])
             if current_selected_server == config.get(temp_last_selected_server_key) and \
-                    len(config["hq_servers"]) > min_server_count:
+                    len(config["hq_servers"]) > 1:
                 time.sleep(Common.CONST_SELECT_SERVER_INTERVAL)
                 continue
             else:
@@ -85,7 +84,7 @@ def get_stock_codes(instance):
                                  'values': []},
     }
 
-    min_stock_field_count = 3
+    min_field_count = 3
     sh_market_stock_expr = re.compile(r'^60[0-3][0-9]+$')  # 匹配上海市场股票
     sz_market_stock_expr = re.compile(r'^[03]0[0-9]+$')  # 匹配深圳市场股票
     zx_market_stock_expr = re.compile(r'^002[0-9]+$')  # 匹配中小板市场股票
@@ -108,7 +107,7 @@ def get_stock_codes(instance):
     else:
         for line in stock_code_content.split('\n')[1:]:  # 循环中去掉第一行标题
             fields = line.split('\t')
-            if len(fields) >= min_stock_field_count and sh_market_stock_expr.match(
+            if len(fields) >= min_field_count and sh_market_stock_expr.match(
                     fields[0]) is not None and st_stock_filter_expr.match(fields[2]) is None:
                 stock_codes[Common.CONST_SH_MARKET]['values'].append(
                     {'code': fields[0], 'name': fields[2].decode('gbk')})  # 这里一定要decode(gbk), 要不然后面报错
@@ -122,7 +121,7 @@ def get_stock_codes(instance):
         else:
             for line in stock_code_content.split('\n')[1:]:  # 循环中去掉第一行标题
                 fields = line.split('\t')
-                if len(fields) >= min_stock_field_count and sh_market_stock_expr.match(
+                if len(fields) >= min_field_count and sh_market_stock_expr.match(
                         fields[0]) is not None and st_stock_filter_expr.match(fields[2]) is None:
                     stock_codes[Common.CONST_SH_MARKET]['values'].append(
                         {'code': fields[0], 'name': fields[2].decode('gbk')})
@@ -135,7 +134,7 @@ def get_stock_codes(instance):
     else:
         for line in stock_code_content.split('\n')[1:]:  # 循环中去掉第一行标题
             fields = line.split('\t')
-            if len(fields) >= min_stock_field_count and sz_market_stock_expr.match(
+            if len(fields) >= min_field_count and sz_market_stock_expr.match(
                     fields[0]) is not None and st_stock_filter_expr.match(fields[2]) is None:
                 if zx_market_stock_expr.match(fields[0]) is not None:
                     stock_codes[Common.CONST_ZX_MARKET]['values'].append(
@@ -156,7 +155,7 @@ def get_stock_codes(instance):
         else:
             for line in stock_code_content.split('\n')[1:]:
                 fields = line.split('\t')
-                if len(fields) >= min_stock_field_count and sz_market_stock_expr.match(
+                if len(fields) >= min_field_count and sz_market_stock_expr.match(
                         fields[0]) is not None and st_stock_filter_expr.match(fields[2]) is None:
                     if zx_market_stock_expr.match(fields[0]) is not None:
                         stock_codes[Common.CONST_ZX_MARKET]['values'].append(
@@ -181,14 +180,13 @@ def get_stock_codes(instance):
 def get_history_data_frame(instance, market, market_desc, code, name, ktype=Common.CONST_K_DAY,
                            kcount=Common.CONST_K_LENGTH):
     min_k_type_field_count = 7
-    min_content_field_count = 2
     # 获得公司流通总股本, 用来算换手率（注意是单位： 万股）
     finance_content, err_info = get_finance_info(instance, market, code)
     if err_info is not None:
         return None, err_info
     else:
         contents = finance_content.split('\n')
-        if len(contents) < min_content_field_count:
+        if len(contents) < 2:
             return None, u"获得市场: %s, 股票:, %s 名称: %s, 数据结构不完整..." % (market_desc, code, name)
         try:
             circulating_equity_number = float(contents[1].split('\t')[2]) * 10000  # 变成标准股数
@@ -203,7 +201,7 @@ def get_history_data_frame(instance, market, market_desc, code, name, ktype=Comm
         return None, err_info
     else:
         contents = history_data_content.split('\n')
-        if len(contents) < min_content_field_count:
+        if len(contents) < 2:
             return None, u"获得市场: %s, 股票: %s, 名称: %s, K线数据结构不完整" % (market_desc, code, name)
 
         data_frame_spec_data_set = []
@@ -227,7 +225,6 @@ def get_history_data_frame(instance, market, market_desc, code, name, ktype=Comm
         if check_stop_trade_stock(history_data_frame):
             return None, u"发现市场: %s, 股票: %s, 名称: %s, 已经停牌，跳过..." % (market_desc, code, name)
 
-        # 添加其他的数据元素
         try:
             # 添加ma5, ma10均线数据
             TA.make_ma_data(history_data_frame)
