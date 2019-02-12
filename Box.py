@@ -88,6 +88,13 @@ class GenerateBox(object):
         multiplying_factor = 0
         while True:
             multiplying_factor += 1
+            # 判断重新连接的次数是否超过最大次数
+            if multiplying_factor > Common.CONST_MAX_CONNECT_RETRIES:
+                multiplying_factor = 1
+                Common.V_TRADE_X_MOD = Common.load_v_trade_x_mod()
+            # 关闭之前的连接
+            HQAdapter.destroy_connect_instance(self.connect_instance)
+            # 重新创建行服务器连接
             self.connect_instance, err_info = HQAdapter.create_connect_instance(self.config)
             if self.connect_instance is None:
                 retry_delay_time = Common.CONST_RETRY_CONNECT_INTERVAL * multiplying_factor
@@ -105,6 +112,13 @@ class GenerateBox(object):
         multiplying_factor = 0
         while True:
             multiplying_factor += 1
+
+            # 判断重新连接的次数是否超过最大次数
+            if multiplying_factor > Common.CONST_MAX_CONNECT_RETRIES:
+                multiplying_factor = 1
+                Common.V_TRADE_X_MOD = Common.load_v_trade_x_mod()
+
+            # 执行获得历史K线数据
             if self.connect_instance is not None:
                 # 获得股票的K线信息
                 history_data_frame, err_info = HQAdapter.get_history_data_frame(
@@ -122,7 +136,11 @@ class GenerateBox(object):
                 if err_info.find("errCode=10038") > -1:
                     retry_delay_time = Common.CONST_RETRY_CONNECT_INTERVAL * multiplying_factor
                     self.log.logger.info(u"等待: %s 后重试连接行情服务器" % Common.change_seconds_to_time(retry_delay_time))
-                    time.sleep(retry_delay_time)  # 休息指定的时间，重新创建连接对象
+                    # 休息指定的时间，重新创建连接对象
+                    time.sleep(retry_delay_time)
+                    # 关闭之前的连接
+                    HQAdapter.destroy_connect_instance(self.connect_instance)
+                    # 重新创建行服务器连接
                     self.connect_instance, err_info = HQAdapter.create_connect_instance(self.config)
                     if self.connect_instance is None:
                         self.log.logger.error(u"重新创建行情服务器连接实例失败: %s" % err_info)
@@ -398,7 +416,15 @@ class GenerateBox(object):
         if valid_stock_pool is None:
             return None
 
-        return self.stage2_filter_data(valid_stock_pool)
+        # 获得所选股票箱
+        selected_stock_box = self.stage2_filter_data(valid_stock_pool)
+
+        # 关闭数据连接
+        HQAdapter.destroy_connect_instance(self.connect_instance)
+        self.connect_instance = None
+
+        # 返回数据
+        return selected_stock_box
 
 
 def gen_box_main():

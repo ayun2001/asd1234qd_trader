@@ -62,8 +62,9 @@ CONST_CY_STOCK_TURNOVER = 18
 CONST_DATA_LIST_LEN_ZERO = 0
 CONST_SELECT_SERVER_INTERVAL = 1
 CONST_MIN_ACTIVATE_SELECT_SERVERS = 1
-CONST_RETRY_CONNECT_INTERVAL = 10.0
-CONST_CONNECT_TIMEOUT = 2500
+CONST_RETRY_CONNECT_INTERVAL = 10.0  # 重连等待基准时间
+CONST_MAX_CONNECT_RETRIES = 15  # 最大重连服务器的次数
+CONST_CONNECT_TIMEOUT = 2500  # TCP连接超时等待
 CONST_TASK_WAITING_TIME = 150
 
 CONST_STOCK_BUY = 0
@@ -78,9 +79,17 @@ MARKET_CODE_MAPPING = {CONST_SH_MARKET: 1, CONST_SZ_MARKET: 0, CONST_ZX_MARKET: 
 STOCK_TYPE_NAME_MAPPING = {CONST_STOCK_TYPE_1: u"一类", CONST_STOCK_TYPE_2: u"二类", CONST_STOCK_TYPE_3: u"三类",
                            CONST_STOCK_TYPE_4: u"四类"}
 
+# ============================================
+# 全局变量
+V_TRADE_X_MOD = __import__("TradeX2")  # 动态加载模块
+
 
 # ============================================
 # 全局函数
+def load_v_trade_x_mod():
+    return __import__("TradeX2")  # 动态加载模块
+
+
 def trim(string):
     if not isinstance(string, types.StringTypes):
         return string

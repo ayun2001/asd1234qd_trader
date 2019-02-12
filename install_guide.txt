@@ -2,6 +2,7 @@
 VCForPython27.msi, 直接双击安装即可
 python-2.7.15.msi, 直接双击安装即可 (必须是32bit的版本)
 ta-lib-0.4.0-msvc.zip, 解包到C盘跟路径即可，注意：解包后的目录名字不能修改
+cmder_mini.zip, Windows 终端CMD 替换软件 (启动软件后，右下角的设置按钮点开 General -> Fonts 下 Font charset 使用 Greek)
 
 # Python 需要安装的软件包名：
 prettytable 2.6.1
@@ -10,7 +11,7 @@ ta-lib 0.4.17
 pycrypto 2.6.1
 schedule 0.6.0
 
-#安装软件包
+# 安装软件包
 pip install numpy==1.16.1 pandas==0.23.1 matplotlib==2.2.3 prettytable pycrypto ta-lib -i https://pypi.douban.com/simple
 
 # 手动修正 crpyto 软件包的bug

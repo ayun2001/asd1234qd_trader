@@ -4,7 +4,6 @@ import random
 import re
 import time
 
-import TradeX2
 import pandas as pd
 
 import Common
@@ -47,10 +46,19 @@ def create_connect_instance(config):
         return None, u"行情配置信息关联错误: %s" % err.message.decode('gbk')
 
     try:
-        instance = TradeX2.TdxHq_Connect(host, port)
+        instance = Common.V_TRADE_X_MOD.TdxHq_Connect(host, port)
         return instance, u"地址: %s, 端口: %d" % (host, port)
-    except TradeX2.TdxHq_error as err:
+    except Common.V_TRADE_X_MOD.TdxHq_error as err:
         return None, err.message.decode('gbk')
+
+
+# 2）调用Logon 创建连接实例clientID,再通过其他API 函数向各个ClientID 进行查询或下单;
+# 3）应用程序退出时应调用del clientID 删除对象引用，实例销毁自动调用Logoff；
+def destroy_connect_instance(instance):
+    if instance is None:
+        return
+    else:
+        del instance
 
 
 def get_finance_info(instance, market, code):
