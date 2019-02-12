@@ -171,7 +171,7 @@ class GenerateBox(object):
         else:
             return stock_t_list
 
-    # 跳出涨停盘的股票
+    # 挑出涨停盘的股票
     def _compute_task_handler(self, input_dataset=None, output_dataset=None):
         # 内联函数，修正处理数据 20190212
         def _delete_old_data(origin_data, days):
