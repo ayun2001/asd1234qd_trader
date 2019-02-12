@@ -157,7 +157,7 @@ class TradeExecutor(object):
         if not Common.file_exist(Common.CONST_DIR_DATABASE):
             Common.create_directory(Common.CONST_DIR_DATABASE)
 
-        self.log = Logger(trader_log_filename, level='debug')
+        self.log = Logger(trader_log_filename, level='debug', backup_count=Common.CONST_LOG_BACKUP_FILE_COUNT)
         self.config = None
         self.order_connect_instance = None
         self.hq_connect_instance = None

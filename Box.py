@@ -77,7 +77,7 @@ class GenerateBox(object):
         if not Common.file_exist(Common.CONST_DIR_CONF):
             Common.create_directory(Common.CONST_DIR_CONF)
 
-        self.log = Logger(box_log_filename, level='debug')
+        self.log = Logger(box_log_filename, level='debug', backup_count=Common.CONST_LOG_BACKUP_FILE_COUNT)
         self.connect_instance = None
         self.config = None
 
@@ -264,7 +264,7 @@ class GenerateBox(object):
 
         # debug
         # stock_codes = {
-        #     Common.CONST_CY_MARKET: {'count': 1, 'desc': u"xx主板", 'values': [{'code': '300578', 'name': u"xxxx"}]},
+        #     Common.CONST_ZX_MARKET: {'count': 1, 'desc': u"xx主板", 'values': [{'code': '002454', 'name': u"xxxx"}]},
         # }
 
         valid_stock_info_list = self._get_stock_temp_list(stock_codes)

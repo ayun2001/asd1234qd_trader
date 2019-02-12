@@ -196,7 +196,7 @@ def get_history_data_frame(instance, market, market_desc, code, name, ktype=Comm
     # 获得K线详细信息
     history_data_content, data_count, err_info = get_stock_bars(instance, ktype, market, code, 0, kcount * 3)
     if data_count <= 0:
-        return None, u"获得市场: %s, 股票:, %s, 名称: %s, K数据总数不合法(<=0), 跳过" % (market_desc, code, name)
+        return None, u"获得市场: %s, 股票:, %s, 名称: %s, K数据总数不合法(<=0), 可能刚上市, 跳过" % (market_desc, code, name)
     if err_info is not None:
         return None, err_info
     else:
