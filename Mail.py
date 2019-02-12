@@ -17,7 +17,7 @@ def _load_config():
     if not Common.file_exist(mail_config_filename):
         return None, u"配置文件: %s 不存在."
     try:
-        with codecs.open(mail_config_filename, 'r', 'utf-8') as _file:
+        with codecs.open(mail_config_filename, "r", "utf-8") as _file:
             return json.load(_file), None
     except Exception as err:
         return None, err.message
@@ -29,7 +29,7 @@ def send_mail(title, msg):
     if not Common.file_exist(Common.CONST_DIR_CONF):
         Common.create_directory(Common.CONST_DIR_CONF)
 
-    log = Logger(mail_log_filename, level='debug', backup_count=Common.CONST_LOG_BACKUP_FILE_COUNT)
+    log = Logger(mail_log_filename, level="debug", backup_count=Common.CONST_LOG_BACKUP_FILE_COUNT)
     config, err = _load_config()
     if config is None:
         log.logger.error(u"邮件发送客户端配置文件加载错误: %s", err)
@@ -46,10 +46,10 @@ def send_mail(title, msg):
         receivers = config["receivers"]
 
         # 创建邮件体
-        message = MIMEText(msg, 'html', 'utf-8')  # 'plain' 普通文本邮件， 'html' HTML邮件
-        message['Subject'] = Header(title, 'utf-8')
-        message['From'] = Header(sender, 'utf-8')  # 发送者
-        message['To'] = Header(';'.join(receivers), 'utf-8')  # 接收者
+        message = MIMEText(msg, "html", "utf-8")  # "plain" 普通文本邮件， "html" HTML邮件
+        message["Subject"] = Header(title, "utf-8")
+        message["From"] = Header(sender, "utf-8")  # 发送者
+        message["To"] = Header(";".join(receivers), "utf-8")  # 接收者
 
         smtp_instance = smtplib.SMTP()
         smtp_instance.connect(host, port)  # 25 为 SMTP 端口号

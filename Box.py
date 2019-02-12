@@ -57,7 +57,7 @@ def _generate_box_mail_message(data):
                 # 股票大盘的名字
                 Common.MARKET_NAME_MAPPING[market_name],
                 # 股票所属分类
-                Common.STOCK_TYPE_NAME_MAPPING[stock_class_type],
+                Common.TYPE_NAME_MAPPING[stock_class_type],
                 # 选中股票数量
                 selected_count,
                 # 选中股票列表
@@ -79,7 +79,7 @@ class GenerateBox(object):
         if not Common.file_exist(Common.CONST_DIR_CONF):
             Common.create_directory(Common.CONST_DIR_CONF)
 
-        self.log = Logger(box_log_filename, level='debug', backup_count=Common.CONST_LOG_BACKUP_FILE_COUNT)
+        self.log = Logger(box_log_filename, level="debug", backup_count=Common.CONST_LOG_BACKUP_FILE_COUNT)
         self.connect_instance = None
         self.config = None
 
@@ -221,7 +221,8 @@ class GenerateBox(object):
 
     def _stock_60m_k_type_filter(self, market_name, market_desc, stock_name, stock_code, days):
         try:
-            market_code = Common.MARKET_CODE_MAPPING[market_name]
+            market_code = Common.MARKET_CODE_MAPPING[market_name]  # 市场代码
+            market_turnover_ratio = Common.MARKET_TURNOVER_MAPPING[market_name]  # 市场换手率
         except KeyError:
             self.log.logger.error(u"获得市场: %s, 股票: %s, 名称：%s 市场映射关系数据不存在" % (market_desc, stock_code, stock_name))
             return False
@@ -238,16 +239,19 @@ class GenerateBox(object):
         history_data_frame.sort_index(ascending=False, inplace=True)
         # 获得必须要的数据 [:days * 4] 修正值，关注到涨停的那天, 老薛只关注涨停后的3天的数据作为判断
         pct_change_list = list(history_data_frame["pct_change"].values[:days * MIN_DATA_CHECK_HOURS])
+        turnover_list = list(history_data_frame["turnover"].values[:days * MIN_DATA_CHECK_HOURS])
         kdj_values_list = list(history_data_frame["kdj_j"].values[:days * MIN_DATA_CHECK_HOURS])
         kdj_cross_list = list(history_data_frame["kdj_cross"].values[:days * MIN_DATA_CHECK_HOURS])
-        kdj_cross_express_list = filter(lambda _item: _item != '', kdj_cross_list)  # 去掉之间没有值的空格
+        kdj_cross_express_list = filter(lambda _item: _item != "", kdj_cross_list)  # 去掉之间没有值的空格
         # 求最大值
         max_j_value = max(kdj_values_list)
         max_pct_change_value = max(pct_change_list)
         # j值在最近4天内不能出现大于等于100
         bool_max_j_value = max_j_value >= MAX_KDJ_J_VALUE
-        # 不能出现小时内涨幅超过 5%的
-        bool_more_than_spec_raise = max_pct_change_value > MIN_60M_PRICE_RISE
+        # 不能出现小时内涨幅超过 5%的, 同时换手率不能超过指定的市场类型的保留换手率
+        max_pct_change_index = pct_change_list.index(max_pct_change_value)
+        bool_more_than_spec_raise = max_pct_change_value > MIN_60M_PRICE_RISE and \
+                                    turnover_list[max_pct_change_index] < market_turnover_ratio
         # 判断 KDJ的J值
         if len(kdj_cross_express_list) > Common.CONST_DATA_LIST_LEN_ZERO:
             try:

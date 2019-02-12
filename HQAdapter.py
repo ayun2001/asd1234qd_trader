@@ -21,7 +21,7 @@ def _make_hq_query_index_list(count, step):
 
 
 def check_stop_trade_stock(dataset):
-    stock_trade_volume_list = dataset['volume'].values
+    stock_trade_volume_list = dataset["volume"].values
     if len(stock_trade_volume_list) == 0 or stock_trade_volume_list[-1] == 0.0:
         return True
     else:
@@ -40,16 +40,16 @@ def create_connect_instance(config):
             else:
                 config[temp_last_selected_server_key] = current_selected_server
                 break
-        host, port = current_selected_server.split(':')
+        host, port = current_selected_server.split(":")
         port = int(port)
     except Exception as err:
-        return None, u"行情配置信息关联错误: %s" % err.message.decode('gbk')
+        return None, u"行情配置信息关联错误: %s" % err.message.decode("gbk")
 
     try:
         instance = Common.V_TRADE_X_MOD.TdxHq_Connect(host, port)
         return instance, u"地址: %s, 端口: %d" % (host, port)
     except Common.V_TRADE_X_MOD.TdxHq_error as err:
-        return None, err.message.decode('gbk')
+        return None, err.message.decode("gbk")
 
 
 # 2）调用Logon 创建连接实例clientID,再通过其他API 函数向各个ClientID 进行查询或下单;
@@ -64,7 +64,7 @@ def destroy_connect_instance(instance):
 def get_finance_info(instance, market, code):
     err_info, content = instance.GetFinanceInfo(market, code)
     if err_info != "":
-        return None, u"获得股票: %s, 财务信息错误: %s" % (code, err_info.decode('gbk'))  # 这里一定要decode(gbk), 要不然后面报错
+        return None, u"获得股票: %s, 财务信息错误: %s" % (code, err_info.decode("gbk"))  # 这里一定要decode(gbk), 要不然后面报错
     else:
         return content, None
 
@@ -72,7 +72,7 @@ def get_finance_info(instance, market, code):
 def get_stock_bars(instance, category, market, code, start, count):
     err_info, number, content = instance.GetSecurityBars(category, market, code, start, count)
     if err_info != "":
-        return None, 0, u"股票: %s, K线数据错误: %s" % (code, err_info.decode('gbk'))  # 这里一定要decode(gbk), 要不然后面报错
+        return None, 0, u"股票: %s, K线数据错误: %s" % (code, err_info.decode("gbk"))  # 这里一定要decode(gbk), 要不然后面报错
     else:
         return content, number, None
 
@@ -82,104 +82,104 @@ def get_stock_codes(instance):
     sh_market = 1
 
     stock_codes = {
-        Common.CONST_SZ_MARKET: {'count': 0, 'desc': Common.MARKET_NAME_MAPPING[Common.CONST_SZ_MARKET],
-                                 'values': []},
-        Common.CONST_SH_MARKET: {'count': 0, 'desc': Common.MARKET_NAME_MAPPING[Common.CONST_SH_MARKET],
-                                 'values': []},
-        Common.CONST_ZX_MARKET: {'count': 0, 'desc': Common.MARKET_NAME_MAPPING[Common.CONST_ZX_MARKET],
-                                 'values': []},
-        Common.CONST_CY_MARKET: {'count': 0, 'desc': Common.MARKET_NAME_MAPPING[Common.CONST_CY_MARKET],
-                                 'values': []},
+        Common.CONST_SZ_MARKET: {"count": 0, "desc": Common.MARKET_NAME_MAPPING[Common.CONST_SZ_MARKET],
+                                 "values": []},
+        Common.CONST_SH_MARKET: {"count": 0, "desc": Common.MARKET_NAME_MAPPING[Common.CONST_SH_MARKET],
+                                 "values": []},
+        Common.CONST_ZX_MARKET: {"count": 0, "desc": Common.MARKET_NAME_MAPPING[Common.CONST_ZX_MARKET],
+                                 "values": []},
+        Common.CONST_CY_MARKET: {"count": 0, "desc": Common.MARKET_NAME_MAPPING[Common.CONST_CY_MARKET],
+                                 "values": []},
     }
 
     min_field_count = 3
-    sh_market_stock_expr = re.compile(r'^60[0-3][0-9]+$')  # 匹配上海市场股票
-    sz_market_stock_expr = re.compile(r'^[03]0[0-9]+$')  # 匹配深圳市场股票
-    zx_market_stock_expr = re.compile(r'^002[0-9]+$')  # 匹配中小板市场股票
-    cy_market_stock_expr = re.compile(r'^30[0-9]+$')  # 匹配创业板市场股票
-    st_stock_filter_expr = re.compile(r'^\**ST.+$')  # 匹配ST股票（ST, *ST, **ST）
+    sh_market_stock_expr = re.compile(r"^60[0-3][0-9]+$")  # 匹配上海市场股票
+    sz_market_stock_expr = re.compile(r"^[03]0[0-9]+$")  # 匹配深圳市场股票
+    zx_market_stock_expr = re.compile(r"^002[0-9]+$")  # 匹配中小板市场股票
+    cy_market_stock_expr = re.compile(r"^30[0-9]+$")  # 匹配创业板市场股票
+    st_stock_filter_expr = re.compile(r"^\**ST.+$")  # 匹配ST股票（ST, *ST, **ST）
 
     err_info, sh_stock_count = instance.GetSecurityCount(sh_market)
     if err_info != "":
-        return None, u"获得上海市场股票总数错误: %s" % err_info.decode('gbk')
+        return None, u"获得上海市场股票总数错误: %s" % err_info.decode("gbk")
 
     err_info, sz_stock_count = instance.GetSecurityCount(sz_market)
     if err_info != "":
-        return None, u"获得深圳市场股票总数错误: %s" % err_info.decode('gbk')
+        return None, u"获得深圳市场股票总数错误: %s" % err_info.decode("gbk")
 
     # 拉取整个上海股票列表
     index = 0
     err_info, sh_step, stock_code_content = instance.GetSecurityList(sh_market, 0)
     if err_info != "":
-        return None, u"获得上海市场股票清单错误: [%d] %s" % (index, err_info.decode('gbk'))
+        return None, u"获得上海市场股票清单错误: [%d] %s" % (index, err_info.decode("gbk"))
     else:
-        for line in stock_code_content.split('\n')[1:]:  # 循环中去掉第一行标题
-            fields = line.split('\t')
+        for line in stock_code_content.split("\n")[1:]:  # 循环中去掉第一行标题
+            fields = line.split("\t")
             if len(fields) >= min_field_count and sh_market_stock_expr.match(
                     fields[0]) is not None and st_stock_filter_expr.match(fields[2]) is None:
-                stock_codes[Common.CONST_SH_MARKET]['values'].append(
-                    {'code': fields[0], 'name': fields[2].decode('gbk')})  # 这里一定要decode(gbk), 要不然后面报错
+                stock_codes[Common.CONST_SH_MARKET]["values"].append(
+                    {"code": fields[0], "name": fields[2].decode("gbk")})  # 这里一定要decode(gbk), 要不然后面报错
 
     # 不用再拉第一份数据了, 已经有了
     for start in _make_hq_query_index_list(sh_stock_count, sh_step)[1:]:
         index += 1
         err_info, sh_step, stock_code_content = instance.GetSecurityList(sh_market, start)
         if err_info != "":
-            return None, u"获得上海市场股票清单错误: [%d] %s" % (index, err_info.decode('gbk'))
+            return None, u"获得上海市场股票清单错误: [%d] %s" % (index, err_info.decode("gbk"))
         else:
-            for line in stock_code_content.split('\n')[1:]:  # 循环中去掉第一行标题
-                fields = line.split('\t')
+            for line in stock_code_content.split("\n")[1:]:  # 循环中去掉第一行标题
+                fields = line.split("\t")
                 if len(fields) >= min_field_count and sh_market_stock_expr.match(
                         fields[0]) is not None and st_stock_filter_expr.match(fields[2]) is None:
-                    stock_codes[Common.CONST_SH_MARKET]['values'].append(
-                        {'code': fields[0], 'name': fields[2].decode('gbk')})
+                    stock_codes[Common.CONST_SH_MARKET]["values"].append(
+                        {"code": fields[0], "name": fields[2].decode("gbk")})
 
     # 拉取整个深圳股票列表
     index = 0
     err_info, sz_step, stock_code_content = instance.GetSecurityList(sz_market, 0)
     if err_info != "":
-        return None, u"获得深圳市场股票清单错误: [%d] %s" % (index, err_info.decode('gbk'))
+        return None, u"获得深圳市场股票清单错误: [%d] %s" % (index, err_info.decode("gbk"))
     else:
-        for line in stock_code_content.split('\n')[1:]:  # 循环中去掉第一行标题
-            fields = line.split('\t')
+        for line in stock_code_content.split("\n")[1:]:  # 循环中去掉第一行标题
+            fields = line.split("\t")
             if len(fields) >= min_field_count and sz_market_stock_expr.match(
                     fields[0]) is not None and st_stock_filter_expr.match(fields[2]) is None:
                 if zx_market_stock_expr.match(fields[0]) is not None:
-                    stock_codes[Common.CONST_ZX_MARKET]['values'].append(
-                        {'code': fields[0], 'name': fields[2].decode('gbk')})
+                    stock_codes[Common.CONST_ZX_MARKET]["values"].append(
+                        {"code": fields[0], "name": fields[2].decode("gbk")})
                 elif cy_market_stock_expr.match(fields[0]) is not None:
-                    stock_codes[Common.CONST_CY_MARKET]['values'].append(
-                        {'code': fields[0], 'name': fields[2].decode('gbk')})
+                    stock_codes[Common.CONST_CY_MARKET]["values"].append(
+                        {"code": fields[0], "name": fields[2].decode("gbk")})
                 else:
-                    stock_codes[Common.CONST_SZ_MARKET]['values'].append(
-                        {'code': fields[0], 'name': fields[2].decode('gbk')})
+                    stock_codes[Common.CONST_SZ_MARKET]["values"].append(
+                        {"code": fields[0], "name": fields[2].decode("gbk")})
 
     # 不用再拉第一份数据了, 已经有了
     for start in _make_hq_query_index_list(sz_stock_count, sz_step)[1:]:  # 循环中去掉第一行标题
         index += 1
         err_info, sz_step, stock_code_content = instance.GetSecurityList(sz_market, start)
         if err_info != "":
-            return None, u"获得深圳市场股票清单错误: [%d] %s" % (index, err_info.decode('gbk'))
+            return None, u"获得深圳市场股票清单错误: [%d] %s" % (index, err_info.decode("gbk"))
         else:
-            for line in stock_code_content.split('\n')[1:]:
-                fields = line.split('\t')
+            for line in stock_code_content.split("\n")[1:]:
+                fields = line.split("\t")
                 if len(fields) >= min_field_count and sz_market_stock_expr.match(
                         fields[0]) is not None and st_stock_filter_expr.match(fields[2]) is None:
                     if zx_market_stock_expr.match(fields[0]) is not None:
-                        stock_codes[Common.CONST_ZX_MARKET]['values'].append(
-                            {'code': fields[0], 'name': fields[2].decode('gbk')})
+                        stock_codes[Common.CONST_ZX_MARKET]["values"].append(
+                            {"code": fields[0], "name": fields[2].decode("gbk")})
                     elif cy_market_stock_expr.match(fields[0]) is not None:
-                        stock_codes[Common.CONST_CY_MARKET]['values'].append(
-                            {'code': fields[0], 'name': fields[2].decode('gbk')})
+                        stock_codes[Common.CONST_CY_MARKET]["values"].append(
+                            {"code": fields[0], "name": fields[2].decode("gbk")})
                     else:
-                        stock_codes[Common.CONST_SZ_MARKET]['values'].append(
-                            {'code': fields[0], 'name': fields[2].decode('gbk')})
+                        stock_codes[Common.CONST_SZ_MARKET]["values"].append(
+                            {"code": fields[0], "name": fields[2].decode("gbk")})
 
     # 各板块股票数量统计
-    stock_codes[Common.CONST_SH_MARKET]['count'] = len(stock_codes[Common.CONST_SH_MARKET]['values'])
-    stock_codes[Common.CONST_SZ_MARKET]['count'] = len(stock_codes[Common.CONST_SZ_MARKET]['values'])
-    stock_codes[Common.CONST_ZX_MARKET]['count'] = len(stock_codes[Common.CONST_ZX_MARKET]['values'])
-    stock_codes[Common.CONST_CY_MARKET]['count'] = len(stock_codes[Common.CONST_CY_MARKET]['values'])
+    stock_codes[Common.CONST_SH_MARKET]["count"] = len(stock_codes[Common.CONST_SH_MARKET]["values"])
+    stock_codes[Common.CONST_SZ_MARKET]["count"] = len(stock_codes[Common.CONST_SZ_MARKET]["values"])
+    stock_codes[Common.CONST_ZX_MARKET]["count"] = len(stock_codes[Common.CONST_ZX_MARKET]["values"])
+    stock_codes[Common.CONST_CY_MARKET]["count"] = len(stock_codes[Common.CONST_CY_MARKET]["values"])
 
     # 返回数据
     return stock_codes, None
@@ -193,11 +193,11 @@ def get_history_data_frame(instance, market, market_desc, code, name, ktype=Comm
     if err_info is not None:
         return None, err_info
     else:
-        contents = finance_content.split('\n')
+        contents = finance_content.split("\n")
         if len(contents) < 2:
             return None, u"获得市场: %s, 股票:, %s 名称: %s, 数据结构不完整" % (market_desc, code, name)
         try:
-            circulating_equity_number = float(contents[1].split('\t')[2]) * 10000  # 变成标准股数
+            circulating_equity_number = float(contents[1].split("\t")[2]) * 10000  # 变成标准股数
         except Exception as err:
             return None, u"获得市场: %s, 股票:, %s 名称: %s, 流通股总数错误: %s" % (market_desc, code, name, err.message)
 
@@ -208,26 +208,26 @@ def get_history_data_frame(instance, market, market_desc, code, name, ktype=Comm
     if err_info is not None:
         return None, err_info
     else:
-        contents = history_data_content.split('\n')
+        contents = history_data_content.split("\n")
         if len(contents) < 2:
             return None, u"获得市场: %s, 股票: %s, 名称: %s, K线数据结构不完整" % (market_desc, code, name)
 
         data_frame_spec_data_set = []
         for line in contents[1:]:  # 去掉标题头
-            fields = line.split('\t')
+            fields = line.split("\t")
             if len(fields) < min_k_type_field_count:
                 continue
             try:
                 data_frame_spec_data_set.append(
-                    {'time': fields[0], 'open': float(fields[1]), 'close': float(fields[2]),
-                     'high': float(fields[3]), 'low': float(fields[4]), 'volume': float(fields[5]),
-                     'pvolume': float(fields[6]), 'turnover': float(fields[5]) * 100 / circulating_equity_number})
+                    {"time": fields[0], "open": float(fields[1]), "close": float(fields[2]),
+                     "high": float(fields[3]), "low": float(fields[4]), "volume": float(fields[5]),
+                     "pvolume": float(fields[6]), "turnover": float(fields[5]) * 100 / circulating_equity_number})
             except Exception as err:
                 return None, u"获得市场: %s, 股票: %s, 名称: %s, K线数据元素不完整, 错误: %s" % (market_desc, code, name, err.message)
 
         # 生成数据集
         history_data_frame = pd.DataFrame(data_frame_spec_data_set)
-        history_data_frame.set_index(['time'], inplace=True)
+        history_data_frame.set_index(["time"], inplace=True)
 
         # 检查股票是否停牌
         if check_stop_trade_stock(history_data_frame):
@@ -265,11 +265,11 @@ def get_history_data_frame(instance, market, market_desc, code, name, ktype=Comm
 def get_stock_quotes(instance, dataset):
     err_info, quotes_count, quotes_content = instance.GetSecurityQuotes(dataset)
     if err_info != "":
-        return None, err_info.decode('gbk')
+        return None, err_info.decode("gbk")
     else:
         level5_quotes_data_set = {}
-        for line in quotes_content.split('\n')[1:]:  # 循环中去掉第一行标题
-            fields = line.split('\t')
+        for line in quotes_content.split("\n")[1:]:  # 循环中去掉第一行标题
+            fields = line.split("\t")
             try:
                 # 计算当前level总价值
                 buy1_total = float(fields[17]) * int(fields[19])
@@ -328,4 +328,5 @@ def get_stock_quotes(instance, dataset):
                 }
             except Exception:
                 continue
+
         return level5_quotes_data_set, None
