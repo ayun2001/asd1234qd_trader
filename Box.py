@@ -64,8 +64,10 @@ def _generate_box_mail_message(data):
                 u",".join(class_type_values.keys()) if selected_count > Common.CONST_DATA_LIST_LEN_ZERO else u"无"
             ])
 
-    return table.get_html_string() + u"<p>总共选取股票数量: %d --> 上海: %d, 深圳: %d, 中小: %d, 创业: %d </p>" % (
+    summary_message = u"总共选取股票数量: %d --> 上海: %d, 深圳: %d, 中小: %d, 创业: %d" % (
         total_number, sh_number, sz_number, zx_number, cy_number)
+    mail_message = table.get_html_string() + u"<p>%s</p>" % summary_message
+    return mail_message, summary_message
 
 
 # 生成股票盒
@@ -420,8 +422,10 @@ def gen_box_main():
         exit(0)
 
     total_compute_time = Common.change_seconds_to_time(int(end_timestamp - start_timestamp))
+    mail_message, summary_message = _generate_box_mail_message(valid_stock_box)
+    sendmail_message = mail_message + u"<p>计算总费时: %s</p>" % total_compute_time
+    gen_box.log.logger.info(summary_message)
     gen_box.log.logger.info(u"计算总费时: %s" % total_compute_time)
-    sendmail_message = _generate_box_mail_message(valid_stock_box) + u"<p>计算总费时: %s</p>" % total_compute_time
 
     # 保存股票盒
     _storage_box_data(data={"timestamp": Common.get_current_timestamp(), "value": valid_stock_box})
