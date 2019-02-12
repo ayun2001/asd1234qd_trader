@@ -79,7 +79,7 @@ class GenerateBox(object):
         if not Common.file_exist(Common.CONST_DIR_CONF):
             Common.create_directory(Common.CONST_DIR_CONF)
 
-        self.log = Logger(box_log_filename, level="debug", backup_count=Common.CONST_LOG_BACKUP_FILE_COUNT)
+        self.log = Logger(box_log_filename, level="debug", backup_count=Common.CONST_LOG_BACKUP_FILES)
         self.connect_instance = None
         self.config = None
 
@@ -92,15 +92,16 @@ class GenerateBox(object):
             if multiplying_factor > Common.CONST_MAX_CONNECT_RETRIES:
                 multiplying_factor = 1
                 Common.V_TRADE_X_MOD = Common.load_v_trade_x_mod()
+                self.log.logger.info(u"重新加载底层驱动, 并重置等待时间")
             # 关闭之前的连接
             HQAdapter.destroy_connect_instance(self.connect_instance)
             # 重新创建行服务器连接
             self.connect_instance, err_info = HQAdapter.create_connect_instance(self.config)
             if self.connect_instance is None:
                 retry_delay_time = Common.CONST_RETRY_CONNECT_INTERVAL * multiplying_factor
-                time.sleep(retry_delay_time)  # 休息指定的事件，重新创建连接对象
                 self.log.logger.error(u"创建行情服务器连接实例失败: %s, 等待 %s 后重试" % (
                     err_info, Common.change_seconds_to_time(retry_delay_time)))
+                time.sleep(retry_delay_time)  # 休息指定的事件，重新创建连接对象
                 continue
             else:
                 self.connect_instance.SetTimeout(Common.CONST_CONNECT_TIMEOUT, Common.CONST_CONNECT_TIMEOUT)
@@ -117,6 +118,7 @@ class GenerateBox(object):
             if multiplying_factor > Common.CONST_MAX_CONNECT_RETRIES:
                 multiplying_factor = 1
                 Common.V_TRADE_X_MOD = Common.load_v_trade_x_mod()
+                self.log.logger.info(u"重新加载底层驱动, 并重置等待时间")
 
             # 执行获得历史K线数据
             if self.connect_instance is not None:
@@ -126,14 +128,14 @@ class GenerateBox(object):
                     name=stock_name, ktype=ktype, kcount=kcount)
             else:
                 history_data_frame = None
-                err_info = u"行情服务器连接实例为空, 等待重新创建, errCode=10038"
+                err_info = u"行情服务器连接实例为空, 等待重新创建, errCode=10038, 断开"
 
             # 对执行错误执行处理
             if err_info is not None:
                 self.log.logger.error(
                     u"获得市场: %s, 股票: %s, 名称：%s, 历史数据错误: %s" % (market_desc, stock_code, stock_name, err_info))
                 # 发现连接错误 10038 需要重连
-                if err_info.find("errCode=10038") > -1:
+                if err_info.find("errCode=10038") > -1 or err_info.find(u"断开") > -1:
                     retry_delay_time = Common.CONST_RETRY_CONNECT_INTERVAL * multiplying_factor
                     self.log.logger.info(u"等待: %s 后重试连接行情服务器" % Common.change_seconds_to_time(retry_delay_time))
                     # 休息指定的时间，重新创建连接对象

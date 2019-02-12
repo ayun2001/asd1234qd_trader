@@ -29,7 +29,7 @@ def send_mail(title, msg):
     if not Common.file_exist(Common.CONST_DIR_CONF):
         Common.create_directory(Common.CONST_DIR_CONF)
 
-    log = Logger(mail_log_filename, level="debug", backup_count=Common.CONST_LOG_BACKUP_FILE_COUNT)
+    log = Logger(mail_log_filename, level="debug", backup_count=Common.CONST_LOG_BACKUP_FILES)
     config, err = _load_config()
     if config is None:
         log.logger.error(u"邮件发送客户端配置文件加载错误: %s", err)
