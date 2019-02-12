@@ -172,11 +172,17 @@ class GenerateBox(object):
             return stock_t_list
 
     # 跳出涨停盘的股票
-    def _compute_task_handler(self, input_data=None, output_dataset=None):
-        if input_data is None:
+    def _compute_task_handler(self, input_dataset=None, output_dataset=None):
+        # 内联函数，修正处理数据 20190212
+        def _delete_old_data(origin_data, days):
+            return origin_data.drop(origin_data[:(len(origin_data.index) - days)].index)
+
+        # 正式数据处理过程
+        if input_dataset is None:
             self.log.logger.error(u"股票数据为空, 检查源数据")
             return
-        market_name, market_desc, stock_code, stock_name = input_data
+
+        market_name, market_desc, stock_code, stock_name = input_dataset
         self.log.logger.info(u"[第1阶段] 正在获得并处理 市场: %s, 股票: %s, 名称：%s 的数据" % (market_desc, stock_code, stock_name))
         try:
             market_code = Common.MARKET_CODE_MAPPING[market_name]
@@ -207,14 +213,16 @@ class GenerateBox(object):
                 if pct_change_value > MIN_CHANGE_STOP_RAISE_RATIO and close_value > open_value:  # 只要涨停的,排除1字板, 涨幅必须大于99%的
                     interval_days = history_data_count - list(history_data_frame_index_list).index(item_date_time)
                     if MIN_DATA_CHECK_DAYS <= interval_days < history_data_count:  # 这里是老薛的要求，涨停后必须还有3天的数据观察期
+                        # 生成股票数据
                         stock_content_info = {
                             "meta_data": {"days": interval_days, "datetime": item_date_time, "close": close_value,
                                           "low": low_value, "stock_code": stock_code, "stock_name": stock_name,
                                           "market_name": market_name, "market_desc": market_desc},
-                            "data_frame": history_data_frame}  # 这里是否包去掉以前的历史数据，还要分析下
+                            "data_frame": _delete_old_data(history_data_frame, interval_days)}  # 这里需要去掉涨停之前的历史数据
                         self.log.logger.info(
                             u"[第1阶段] 正在分析 市场: %s, 股票: %s, 名称: %s, 涨停价(元): %.3f, 涨停时间: %s, 距近时间(天): %d" % (
                                 market_desc, stock_code, stock_name, close_value, item_date_time, interval_days))
+                        # 保存数据
                         output_dataset[market_name][stock_code] = stock_content_info
             except Exception as err:
                 self.log.logger.error(u"市场: %s, 股票: %s, 名称: %s, 数据时间: %s, 错误: %s" % (
@@ -245,12 +253,12 @@ class GenerateBox(object):
         kdj_values_list = list(history_data_frame["kdj_j"].values[:days * MIN_DATA_CHECK_HOURS])
         kdj_cross_list = list(history_data_frame["kdj_cross"].values[:days * MIN_DATA_CHECK_HOURS])
         kdj_cross_express_list = filter(lambda _item: _item != "", kdj_cross_list)  # 去掉之间没有值的空格
-        # 求最大值
-        max_j_value = max(kdj_values_list)
+        # 20190212 J值修正，只看当前天数往前的4天时间内的J值最大值
+        max_j_value = max(kdj_values_list[:MIN_DATA_CHECK_DAYS * MIN_DATA_CHECK_HOURS])
         max_pct_change_value = max(pct_change_list)
         # j值在最近4天内不能出现大于等于100
         bool_max_j_value = max_j_value >= MAX_KDJ_J_VALUE
-        # 不能出现小时内涨幅超过 5%的, 同时换手率不能超过指定的市场类型的保留换手率
+        # 20190212 不能出现小时内涨幅超过 5%的, 同时换手率不能超过指定的市场类型的保留换手率
         max_pct_change_index = pct_change_list.index(max_pct_change_value)
         bool_more_than_spec_raise = max_pct_change_value > MIN_60M_PRICE_RISE and \
                                     turnover_list[max_pct_change_index] < market_turnover_ratio
@@ -283,6 +291,7 @@ class GenerateBox(object):
         valid_stock_data_set = {Common.CONST_SH_MARKET: {}, Common.CONST_SZ_MARKET: {}, Common.CONST_ZX_MARKET: {},
                                 Common.CONST_CY_MARKET: {}}
 
+        # 获得全局股票列表
         stock_codes, err_info = HQAdapter.get_stock_codes(self.connect_instance)
         if stock_codes is None:
             self.log.logger.error(u"[第1阶段] 获得股票代码池错误: %s", err_info)
@@ -290,13 +299,15 @@ class GenerateBox(object):
 
         # debug
         # stock_codes = {
-        #     Common.CONST_ZX_MARKET: {'count': 1, 'desc': u"xx主板", 'values': [{'code': '002454', 'name': u"xxxx"}]},
+        #     Common.CONST_ZX_MARKET: {'count': 1, 'desc': u"xx主板", 'values': [{'code': '002674', 'name': u"xxxx"}]},
         # }
 
+        # 转换当前数据结果集，方便后续分析
         valid_stock_info_list = self._get_stock_temp_list(stock_codes)
         if valid_stock_info_list is None:
             return None
 
+        # 获取当前股票池内股票的数据
         for stock_item in valid_stock_info_list:
             self._compute_task_handler(stock_item, valid_stock_data_set)
             # 延迟休息，防止被封
@@ -325,6 +336,7 @@ class GenerateBox(object):
 
                 # 执行数据处理和分类过程
                 try:
+                    # 元数据纠正，只能看涨停后的数据 20190212
                     stock_data_frame = stock_info_values["data_frame"]
                     stock_meta_data = stock_info_values["meta_data"]
                     stock_close_prices_list = list(stock_data_frame["close"].values)
@@ -338,12 +350,13 @@ class GenerateBox(object):
                     market_name = stock_meta_data["market_name"]
                     market_desc = stock_meta_data["market_desc"]
 
+                    # 执行60分钟数据过滤
                     bool_filter_result = self._stock_60m_k_type_filter(
                         market_name=market_name, stock_code=stock_code, stock_name=stock_name,
                         market_desc=market_desc, days=interval_days
                     )
-                    if not bool_filter_result:
-                        continue
+
+                    # print min_close_price, meta_close_price, meta_low_price
 
                     if min_close_price >= meta_close_price:
                         # Type1 一类
