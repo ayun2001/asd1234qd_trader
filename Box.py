@@ -43,6 +43,7 @@ def _generate_box_mail_message(data):
         for stock_class_type, class_type_values in market_values.items():
             selected_count = len(class_type_values.keys())
             total_number += selected_count
+
             if market_name == Common.CONST_SZ_MARKET:
                 sz_number += selected_count
             if market_name == Common.CONST_SH_MARKET:
@@ -51,11 +52,16 @@ def _generate_box_mail_message(data):
                 zx_number += selected_count
             if market_name == Common.CONST_CY_MARKET:
                 cy_number += selected_count
+
             table.add_row([
-                Common.MARKET_NAME_MAPPING[market_name],  # 股票大盘的名字
-                Common.STOCK_TYPE_NAME_MAPPING[stock_class_type],  # 股票所属分类
-                selected_count,  # 选中股票数量
-                u",".join(class_type_values.keys()) if selected_count > 0 else u"无"  # 选中股票列表
+                # 股票大盘的名字
+                Common.MARKET_NAME_MAPPING[market_name],
+                # 股票所属分类
+                Common.STOCK_TYPE_NAME_MAPPING[stock_class_type],
+                # 选中股票数量
+                selected_count,
+                # 选中股票列表
+                u",".join(class_type_values.keys()) if selected_count > Common.CONST_DATA_LIST_LEN_ZERO else u"无"
             ])
 
     return table.get_html_string() + u"<p>总共选取股票数量: %d --> 上海: %d, 深圳: %d, 中小: %d, 创业: %d </p>" % (
@@ -137,7 +143,7 @@ class GenerateBox(object):
                 stock_t_list.extend([(key, data["desc"], v["code"], v["name"]) for v in data["values"]])
             except KeyError:
                 continue
-        if len(stock_t_list) == 0:
+        if len(stock_t_list) == Common.CONST_DATA_LIST_LEN_ZERO:
             self.log.logger.error(u"转换后的股票清单为空, 检查源数据")
             return None
         else:
@@ -223,7 +229,7 @@ class GenerateBox(object):
         # 不能出现小时内涨幅超过 5%的
         bool_more_than_spec_raise = max_pct_change_value > MIN_60M_PRICE_RISE
         # 判断 KDJ的J值
-        if len(kdj_cross_express_list) > 0:
+        if len(kdj_cross_express_list) > Common.CONST_DATA_LIST_LEN_ZERO:
             try:
                 up_index_id = kdj_cross_list.index("up_cross")
                 bool_up_cross_kdj = kdj_cross_express_list[0] == "up_cross" and up_index_id >= MIN_DATA_CHECK_HOURS

@@ -18,7 +18,7 @@ def create_connect_instance(config):
         while True:  # 需要利用config配置项目保存一个临时数据，这个数据只在运行过程中有效
             current_selected_server = random.choice(config["order_servers"])
             if current_selected_server == config.get(temp_last_selected_server_key) and \
-                    len(config["order_servers"]) > 1:
+                    len(config["order_servers"]) > Common.CONST_MIN_ACTIVATE_SELECT_SERVERS:
                 time.sleep(Common.CONST_SELECT_SERVER_INTERVAL)
                 continue
             else:

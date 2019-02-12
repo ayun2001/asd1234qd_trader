@@ -29,7 +29,7 @@ MIN_SELL_RAISE_RATIO = 3.0  # 涨幅3%
 MAX_VALID_BOX_INTERVAL_HOURS = 4  # 票箱会在每天的早上8：30，和中午12：00 左右开始选取，所以不会有操过4个小时
 MAX_SELL_TOTAL_RATIO = 0.6  # 最大能够一次性卖出的百分比
 MIN_TASK_WAITING_TIME = 20  # 单位：秒
-MIN_TRADE_TIME_INTERVAL = 5 * 60 * 60  # 单位：秒
+MIN_TRADE_VALID_TIME_INTERVAL = 5 * 60 * 60  # 单位：秒
 MAX_TRADER_THREAD_RUNNING_TIME = 20 * 60  # 20分钟内必须要完成所有交易，要不然自动停止
 
 ZERO_KDJ_J_VALUE = 0
@@ -99,12 +99,12 @@ def _save_position_db_file(db_dataset):
 def _generate_trade_mail_message(data):
     mail_message = ""
 
-    if len(data) <= 0:
+    if len(data) <= Common.CONST_DATA_LIST_LEN_ZERO:
         return mail_message
 
     for trade_type_id, trade_record_data in data.items():
         # 生成买入信息列表
-        if trade_type_id == Common.CONST_STOCK_BUY and len(trade_record_data) > 0:
+        if trade_type_id == Common.CONST_STOCK_BUY and len(trade_record_data) > Common.CONST_DATA_LIST_LEN_ZERO:
             table = PrettyTable([u"股票大盘", u"股票代码", u"股票名称", u"价格(元)", u"数量(股)", u"总价(元)"])
 
             for record_item in trade_record_data:
@@ -123,7 +123,7 @@ def _generate_trade_mail_message(data):
             mail_message += u"<p>%s:</p>%s<br>" % (Common.CONST_STOCK_BUY_DESC, table.get_html_string())
 
         # 生成卖出信息列表
-        if trade_type_id == Common.CONST_STOCK_SELL and len(trade_record_data) > 0:
+        if trade_type_id == Common.CONST_STOCK_SELL and len(trade_record_data) > Common.CONST_DATA_LIST_LEN_ZERO:
             table = PrettyTable([u"股票大盘", u"股票代码", u"股票名称", u"价格(元)", u"数量(股)", u"总价(元)", u"营收(元)", u"营收率(百分率)"])
 
             for record_item in trade_record_data:
@@ -304,7 +304,7 @@ class TradeExecutor(object):
         bool_more_than_spec_raise = max_pct_change_value > MIN_SELL_RAISE_RATIO
 
         # 判断 KDJ的J值 死叉
-        if len(kdj_cross_express_list) > 0:
+        if len(kdj_cross_express_list) > Common.CONST_DATA_LIST_LEN_ZERO:
             try:
                 down_index_id = kdj_cross_list.index("down_cross")
                 bool_down_cross_kdj = kdj_cross_express_list[0] == "down_cross" and down_index_id < MIN_DATA_CHECK_HOURS
@@ -360,7 +360,7 @@ class TradeExecutor(object):
         ma10_values_list = sorted(list(history_data_frame['ma10'].values[:MIN_DATA_CHECK_HOURS]), reverse=True)
 
         # 判断 KDJ的J值 金叉
-        if len(kdj_cross_express_list) > 0:
+        if len(kdj_cross_express_list) > Common.CONST_DATA_LIST_LEN_ZERO:
             try:
                 down_index_id = kdj_cross_list.index("up_cross")
                 bool_up_cross_kdj = kdj_cross_express_list[0] == "up_cross" and down_index_id < MIN_DATA_CHECK_HOURS
@@ -450,7 +450,7 @@ class TradeExecutor(object):
         for stock_code, position_own_value in position_data.items():
             try:
                 # 判断股票是否当天够买的，如果是跳过 (满足最小交易时间)
-                if Common.get_current_timestamp() - position_own_value["timestamp"] < MIN_TRADE_TIME_INTERVAL:
+                if Common.get_current_timestamp() - position_own_value["timestamp"] < MIN_TRADE_VALID_TIME_INTERVAL:
                     last_have_bought_count += 1
                     last_have_bought_list.append(stock_code)
             except KeyError:
@@ -513,9 +513,11 @@ class TradeExecutor(object):
                                 (level5_quote_value["buy5_step_count"] / 100) * MAX_SELL_TOTAL_RATIO) * 100
 
                             # 执行下订单动作, 4 市价委托(上海五档即成剩撤/ 深圳五档即成剩撤) -- 此时价格没有用处，用 0 传入即可
-                            err_info = OrderAdapter.send_stock_order(self.order_connect_instance, stock_code,
-                                                                     current_trade_account_id, Common.CONST_STOCK_BUY,
-                                                                     0, max_can_buy_count)
+                            err_info = OrderAdapter.send_stock_order(
+                                self.order_connect_instance, stock_code,
+                                current_trade_account_id, Common.CONST_STOCK_BUY,
+                                0, max_can_buy_count)
+
                             # 记录交易数据
                             if err_info is None:
                                 sell_total_value = avg_level5_price * max_can_buy_count
@@ -557,7 +559,7 @@ class TradeExecutor(object):
                         self.log.logger.error(u"对股票箱中股票：%s 扫描出现错误: %s" % (stock_code, err.message))
                         continue
 
-            if len(records_set) > 0:
+            if len(records_set) > Common.CONST_DATA_LIST_LEN_ZERO:
                 # 保存交易数据倒本地z
                 self._save_trader_records(records_set)
                 # 保存数据到全局交易数据集，准备发送邮件
@@ -590,7 +592,7 @@ class TradeExecutor(object):
 
                     # 判断股票是否当天够买的，如果是跳过 (满足最小交易时间)
                     current_own_time_interval = Common.get_current_timestamp() - last_trade_timestamp
-                    if current_own_time_interval < MIN_TRADE_TIME_INTERVAL:
+                    if current_own_time_interval < MIN_TRADE_VALID_TIME_INTERVAL:
                         self.log.logger.info(u"执行动作 市场: %s, 股票: %s, 名称：%s, 信号: %s, 持有时间: %s 不满足最小持仓时间" % (
                             market_desc, stock_code, stock_name, Common.CONST_STOCK_SELL_DESC,
                             Common.change_seconds_to_time(current_own_time_interval)))
@@ -607,7 +609,11 @@ class TradeExecutor(object):
 
                     # 执行卖出动做
                     while True:
-                        if current_own_count <= 0:  # 直到当前没有任何股票可以卖了，跳出循环
+                        # 等待订单消化时间
+                        time.sleep(MIN_TASK_WAITING_TIME)
+
+                        # 直到当前没有任何股票可以卖了，跳出循环
+                        if current_own_count <= 0:
                             # 删除持仓记录
                             del position_data[stock_code]
                             # 记录日志
@@ -629,6 +635,11 @@ class TradeExecutor(object):
 
                         # 按照交易总数固定比例投放交易股票数量, 1手 = 100股
                         max_can_sell_count = int((buy_level5_step_count / 100.0) * MAX_SELL_TOTAL_RATIO) * 100
+
+                        if max_can_sell_count <= 0:
+                            self.log.logger.warning(u"执行动作 市场: %s, 股票: %s, 名称：%s, 信号: %s 空订单, 跳过" % (
+                                market_desc, stock_code, stock_name, Common.CONST_STOCK_SELL_DESC))
+                            continue
 
                         # 发送卖出订单
                         order_ok = self._send_safe_order(
@@ -674,14 +685,11 @@ class TradeExecutor(object):
                         # 减去当前的交易的投放量
                         current_own_count -= max_can_sell_count
 
-                        # 等待订单消化时间
-                        time.sleep(MIN_TASK_WAITING_TIME)
-
                 except Exception as err:
                     self.log.logger.error(u"执行持仓股票: %s 扫描出现出错: %s" % (stock_code, err.message))
                     continue
 
-            if len(records_set) > 0:
+            if len(records_set) > Common.CONST_DATA_LIST_LEN_ZERO:
                 # 保存交易数据倒本地z
                 self._save_trader_records(records_set)
                 # 保存数据到全局交易数据集，准备发送邮件
