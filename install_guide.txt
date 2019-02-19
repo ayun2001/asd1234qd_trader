@@ -11,8 +11,11 @@ ta-lib 0.4.17
 pycrypto 2.6.1
 schedule 0.6.0
 
+# 升级系统的底层安装包
+python -m pip install --upgrade pip setuptools -i https://pypi.douban.com/simple
+
 # 安装软件包
-pip install numpy==1.16.1 pandas==0.23.1 matplotlib==2.2.3 prettytable pycrypto ta-lib -i https://pypi.douban.com/simple
+python -m pip install numpy==1.16.1 pandas==0.23.1 matplotlib==2.2.3 prettytable pycrypto ta-lib -i https://pypi.douban.com/simple
 
 # 手动修正 crpyto 软件包的bug
 C:\Python27\Lib\site-packages在这个路径下面有一个文件夹叫做crypto,把它的首字母改成大写，即是Crypto
