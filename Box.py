@@ -3,7 +3,7 @@
 import threading
 import time
 
-from prettytable import PrettyTable
+from prettytable import PrettyTable, ALL
 
 import Common
 import HQAdapter
@@ -38,7 +38,16 @@ def _generate_box_mail_message(data):
     sh_number = 0
     sz_number = 0
 
+    # 创建表格
     table = PrettyTable([u"股票大盘", u"股票分类", u"数量(个)", u"待选股票"])
+
+    # 设置表格样式
+    table.align = "l"  # 使用内容左对齐
+    table.format = True  # 使用格式化
+    table.vrules = ALL  # 垂直线
+    table.hrules = ALL  # 水平线
+
+    # 填充数据
     for market_name, market_values in data.items():
         for stock_class_type, class_type_values in market_values.items():
             selected_count = len(class_type_values.keys())
