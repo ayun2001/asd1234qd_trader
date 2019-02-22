@@ -55,18 +55,17 @@ def send_stock_order(instance, code, account_id, action_id, uprice, count):
     # 使用  4 市价委托(上海五档即成剩撤/ 深圳五档即成剩撤) 这样的交易模式
     pass
 
-
-def cancel_stock_order():
-    pass
-
-
-def send_new_ipo_stocks():
-    pass
-
-
-def get_history_trade_data():
-    pass
-
-
-def get_current_orders():
-    pass
+# def cancel_stock_order():
+#     pass
+#
+#
+# def send_new_ipo_stocks():
+#     pass
+#
+#
+# def get_history_trade_data():
+#     pass
+#
+#
+# def get_current_orders():
+#     pass
