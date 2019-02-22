@@ -3,6 +3,7 @@
 import codecs
 import datetime
 import json
+import random
 import threading
 import time
 
@@ -27,7 +28,8 @@ MIN_DATA_CHECK_HOURS = 4
 MIN_STOP_LOSS_RATIO = -3.0  # 负数，下跌3%
 MIN_SELL_RAISE_RATIO = 3.0  # 涨幅3%
 MAX_VALID_BOX_INTERVAL_HOURS = 4  # 票箱会在每天的早上8：30，和中午12：00 左右开始选取，所以不会有操过4个小时
-MAX_SELL_TOTAL_RATIO = 0.6  # 最大能够一次性卖出的百分比
+MAX_SELLING_RATIO = 0.6  # 最大能够一次性卖出的百分比
+MIN_SELLING_RATIO = 0.3  # 最小能够一次性卖出的百分比
 MIN_TASK_WAITING_TIME = 20  # 单位：秒
 MIN_TRADE_VALID_TIME_INTERVAL = 5 * 60 * 60  # 单位：秒
 MAX_TRADER_THREAD_RUNNING_TIME = 20 * 60  # 20分钟内必须要完成所有交易，要不然自动停止
@@ -39,6 +41,13 @@ MAX_KDJ_J_VALUE = 99.9
 
 # ============================================
 # 函数定义
+
+# 生成随机卖出比率
+def _generate_random_selling_ratio():
+    return round(random.uniform(MIN_SELLING_RATIO, MAX_SELLING_RATIO), 2)
+
+
+# 加载股票箱文件
 def _load_box_db_file():
     if not Common.file_exist(trader_db_box_filename):
         return None, u"股票箱文件: %s 不存在." % trader_db_box_filename
@@ -60,6 +69,7 @@ def _load_box_db_file():
     return box_value, None
 
 
+# 加载持仓文件
 def _load_position_db_file():
     """
     {"stock_code":{
@@ -107,7 +117,7 @@ def _generate_trade_mail_message(data):
     buy_number = 0
 
     for trade_type_id, trade_record_data in data.items():
-        # 生成买入信息列表
+        # 生成买入信息列表, 买入没有营收数据
         if trade_type_id == Common.CONST_STOCK_BUY and len(trade_record_data) > Common.CONST_DATA_LIST_LEN_ZERO:
 
             # 创建表格
@@ -159,8 +169,8 @@ def _generate_trade_mail_message(data):
                         record_item["price"],
                         record_item["count"],
                         record_item["total"],
-                        record_item["revenue_value"],
-                        record_item["revenue_change"]
+                        record_item["revenue_value"],  # 营收(元)
+                        record_item["revenue_change"]  # 营收率(百分率)
                     ])
                     sell_number += 1
                 except KeyError:
@@ -539,7 +549,7 @@ class TradeExecutor(object):
                             avg_level5_price = level5_quote_value["sell5_avg_price"]
                             # 按照交易总数固定比例投放交易股票数量, 1手 = 100股
                             max_can_buy_count = int(
-                                (level5_quote_value["buy5_step_count"] / 100) * MAX_SELL_TOTAL_RATIO) * 100
+                                (level5_quote_value["buy5_step_count"] / 100) * MAX_SELLING_RATIO) * 100
 
                             # 执行下订单动作, 4 市价委托(上海五档即成剩撤/ 深圳五档即成剩撤) -- 此时价格没有用处，用 0 传入即可
                             err_info = OrderAdapter.send_stock_order(
@@ -655,11 +665,11 @@ class TradeExecutor(object):
                     avg_level5_price = level5_quote_value["buy5_avg_price"]
                     buy_level5_step_count = level5_quote_value["buy5_step_count"]
 
-                    # 按照交易总数固定比例投放交易股票数量, 1手 = 100股
-                    once_can_sell_count = int((buy_level5_step_count / 100.0) * MAX_SELL_TOTAL_RATIO) * 100
+                    # 按照交易总数 [随机] 比例投放交易股票数量, 1手 = 100股
+                    once_can_sell_count = int((buy_level5_step_count / 100.0) * _generate_random_selling_ratio()) * 100
 
                     if once_can_sell_count <= 0:
-                        self.log.logger.warning(u"执行动作 市场: %s, 股票: %s, 名称：%s, 信号: %s 空订单, 跳过" % (
+                        self.log.logger.warning(u"执行动作 市场: %s, 股票: %s, 名称：%s, 信号: %s 市场买单队列不能安全交易, 跳过" % (
                             market_desc, stock_code, stock_name, Common.CONST_STOCK_SELL_DESC))
                         continue
 
