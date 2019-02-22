@@ -1,5 +1,5 @@
 {
-  "max_stock_number": 5,
+  "max_stock_quantity": 5,
   "max_capital_value": 50000,
   "order_servers": [],
   "hq_servers": [

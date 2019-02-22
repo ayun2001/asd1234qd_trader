@@ -491,9 +491,18 @@ class TradeExecutor(object):
             self.log.logger.error(u"读取选股数据文件错误: %s" % err_info)
             return
 
+        # 相关配置信息
+        try:
+            cfg_max_stock_count = self.config["max_stock_quantity"]
+            cfg_max_capital_value = self.config["max_capital_value"]
+        except Exception as err:
+            self.log.logger.error(u"调用配置文件数据错误: %s" % err.message)
+            return
+
         # 检查持仓已经够买的数量
         last_have_bought_count = 0
         last_have_bought_list = []
+        last_have_values = 0
 
         # 执行持仓扫描逻辑
         for stock_code, position_own_value in position_data.items():
@@ -502,10 +511,16 @@ class TradeExecutor(object):
                 if Common.get_current_timestamp() - position_own_value["timestamp"] < MIN_TRADE_VALID_TIME_INTERVAL:
                     last_have_bought_count += 1
                     last_have_bought_list.append(stock_code)
+                    last_have_values += position_own_value["total"]
             except KeyError:
                 continue
 
-        # 设置够买变量参数
+        # 超过了设定最大允许购买股票的价值，不允许买入了
+        if last_have_values >= cfg_max_capital_value:
+            self.log.logger.warning(u"当前股票价值已经超过最大设定的股票价值: %d，不能够在交易" % cfg_max_capital_value)
+            return
+
+            # 设置够买变量参数
         current_have_bought_count = 0
 
         # 执行股票箱扫描逻辑
@@ -514,8 +529,8 @@ class TradeExecutor(object):
                 class_type_values = market_values[stock_class_type]
                 for stock_code, stock_meta_data in class_type_values.items():
                     try:
-                        if last_have_bought_count + current_have_bought_count > self.config["max_stock_number"]:
-                            self.log.logger.warning(u"当前够买股票数量超过了配置限制的数量: %d" % self.config["max_stock_number"])
+                        if last_have_bought_count + current_have_bought_count > cfg_max_stock_count:  # 这里有逻辑问题，如果成立就是每一天成交量，而不是总成交量
+                            self.log.logger.warning(u"当前够买股票数量超过了配置限制的数量: %d" % cfg_max_stock_count)
                             break
 
                         market_code = Common.MARKET_CODE_MAPPING[market_name]
