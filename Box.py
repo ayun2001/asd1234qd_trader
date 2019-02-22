@@ -24,7 +24,7 @@ MAX_KDJ_J_VALUE = 99.9
 
 
 # 保存股票盒到硬盘
-def _storage_box_data(data):
+def _save_box_data(data):
     if not Common.file_exist(Common.CONST_DIR_DATABASE):
         Common.create_directory(Common.CONST_DIR_DATABASE)
     Common.dict_to_file(data, box_db_filename)
@@ -462,6 +462,7 @@ def gen_box_main():
         gen_box.log.logger.warning(u"节假日休假, 股票市场不交易, 跳过")
         exit(0)
 
+    # 计算股数据，并记录时间锚点
     gen_box.log.logger.info(u"============== [开始计算票箱] ==============")
     start_timestamp = time.time()
     valid_stock_box = gen_box.generate()
@@ -475,6 +476,7 @@ def gen_box_main():
         Mail.send_mail(title=u"[%s] 股票箱计算错误" % current_datetime, msg="[ERROR]")
         exit(0)
 
+    # 生成邮件数据，并发送结果邮件
     total_compute_time = Common.change_seconds_to_time(int(end_timestamp - start_timestamp))
     mail_message, summary_message = _generate_box_mail_message(valid_stock_box)
     sendmail_message = mail_message + u"<p>计算总费时: %s</p>" % total_compute_time
@@ -482,7 +484,7 @@ def gen_box_main():
     gen_box.log.logger.info(u"计算总费时: %s" % total_compute_time)
 
     # 保存股票盒
-    _storage_box_data(data={"timestamp": Common.get_current_timestamp(), "value": valid_stock_box})
+    _save_box_data(data={"timestamp": Common.get_current_timestamp(), "value": valid_stock_box})
     # 发送已经选的股票结果
     Mail.send_mail(title=u"日期:%s, 选中的股票箱" % current_datetime, msg=sendmail_message)
 

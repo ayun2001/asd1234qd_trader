@@ -83,6 +83,7 @@ def _load_position_db_file():
         return None, err.message
 
 
+# 保存持仓数据
 def _save_position_db_file(db_dataset):
     if Common.file_exist(trader_db_position_filename):
         Common.delete_file(trader_db_position_filename)
@@ -188,7 +189,6 @@ class TradeExecutor(object):
         self.config = None
         self.order_connect_instance = None
         self.hq_connect_instance = None
-        self.trade_records_data_set = {}
 
     # 创建交易连接，拥有自动重试功能
     def _create_safe_order_connect(self):
@@ -428,9 +428,8 @@ class TradeExecutor(object):
             market_desc, stock_code, class_type, stock_name))
         return False
 
-    # 记录交易记录
-    # 交易记录的格式
-    def _save_trader_records(self, dataset):
+    # 记录交易记录, 注意交易记录的格式
+    def _save_records_data(self, data):
         """
         {
             "timestamp": 0,  #时间戳
@@ -450,15 +449,22 @@ class TradeExecutor(object):
             "revenue_value": 0.0     # 易后比之前投入增加多少营收，正为赚，负为亏
         }
         """
+        # 判断数据集是否为空
+        if data is None or len(data) == Common.CONST_DATA_LIST_LEN_ZERO:
+            self.log.logger.info(u"交易数据集为空，跳过")
+            return
+
+            # 执行数据写入
         with codecs.open(trader_db_records_filename, 'a', 'utf-8') as _file:
             try:
-                _file.writelines(map(lambda x: json.dumps(x) + '\n', dataset))  # 在写入参数str后加“\n”则会在每次完成写入后，自动换行到下一行
+                # 在写入参数str后加“\n”则会在每次完成写入后，自动换行到下一行
+                _file.writelines(map(lambda x: json.dumps(x) + '\n', data))
             except Exception as err:
                 self.log.logger.error(u"保存交易记录数据出错: %s" % err.message)
 
     # 对加载得BOX进行初始筛选和排序，选择最合适得前几个（默认type1>type2>type3>type4）
     # 检查当前的股票箱内的股票是否倒了可以出发买点
-    def _box_scanner(self):
+    def _box_scanner(self, trader_records_set):
         # 读取持仓数据文件
         position_data, err_info = _load_position_db_file()
         if err_info is not None:
@@ -484,7 +490,6 @@ class TradeExecutor(object):
                 continue
 
         # 设置够买变量参数
-        records_set = []
         current_have_bought_count = 0
 
         # 执行股票箱扫描逻辑
@@ -564,7 +569,7 @@ class TradeExecutor(object):
                                     "revenue_change": revenue_change,
                                     "revenue_value": revenue_value
                                 }
-                                records_set.append(trader_record)
+                                trader_records_set.append(trader_record)
                                 self.log.logger.info(
                                     u"执行动作 市场: %s, 股票: %s, 名称：%s, 类型: %s, 信号: %s, 价格: %.2f, 数量: %d, 总价: %.2f, 营收(元): %.2f, 营收率(%%): %.2f" % (
                                         market_desc, stock_code, stock_name, stock_class_type,
@@ -579,148 +584,135 @@ class TradeExecutor(object):
                             # 等待订单消化时间
                             time.sleep(MIN_TASK_WAITING_TIME)
 
+                    # 捕捉执行过程中的任何异常
                     except Exception as err:
                         self.log.logger.error(u"对股票箱中股票：%s 扫描出现错误: %s" % (stock_code, err.message))
                         continue
-
-            if len(records_set) > Common.CONST_DATA_LIST_LEN_ZERO:
-                # 保存交易数据倒本地z
-                self._save_trader_records(records_set)
-                # 保存数据到全局交易数据集，准备发送邮件
-                self.trade_records_data_set[Common.CONST_STOCK_BUY] = records_set
 
         # 保存持仓文件
         _save_position_db_file(position_data)
 
     # 计算当前持仓的状态，判定是否有股票出发可以卖点
-    def _position_scanner(self):
+    def _position_scanner(self, trader_records_set):
         # 读取持仓数据文件
         position_data, err_info = _load_position_db_file()
-
-        # 执行持仓扫描逻辑
         if err_info is not None:
             self.log.logger.error(u"读取持仓股票数据文件错误: %s" % err_info)
             return
-        else:
-            trader_records_set = []
-            for stock_code, stock_values in position_data.items():
-                try:
-                    market_code = stock_values["market_code"]
-                    market_desc = stock_values["market_desc"]
-                    stock_name = stock_values["stock_name"]
-                    stock_class_type = stock_values["class_type"]
-                    last_trade_timestamp = stock_values["timestamp"]
-                    current_own_count = stock_values["count"]
-                    current_trade_account_id = stock_values["trade_account_id"]
-                    current_position_price = stock_values["price"]
 
-                    # 判断股票是否当天够买的，如果是跳过 (满足最小交易时间)
-                    current_own_time_interval = Common.get_current_timestamp() - last_trade_timestamp
-                    if current_own_time_interval < MIN_TRADE_VALID_TIME_INTERVAL:
-                        self.log.logger.info(u"执行动作 市场: %s, 股票: %s, 名称：%s, 信号: %s, 持有时间: %s 不满足最小持仓时间" % (
-                            market_desc, stock_code, stock_name, Common.CONST_STOCK_SELL_DESC,
-                            Common.change_seconds_to_time(current_own_time_interval)))
-                        continue
+        # 执行持仓扫描逻辑
+        for stock_code, stock_values in position_data.items():
+            try:
+                market_code = stock_values["market_code"]
+                market_desc = stock_values["market_desc"]
+                stock_name = stock_values["stock_name"]
+                stock_class_type = stock_values["class_type"]
+                last_trade_timestamp = stock_values["timestamp"]
+                current_own_count = stock_values["count"]
+                current_trade_account_id = stock_values["trade_account_id"]
+                current_position_price = stock_values["price"]
 
-                    # 检查股票交易卖点, 如果没有卖出信号, 跳过后端的代码
-                    if not self._check_stock_sell_point(
-                            stock_code=stock_code, stock_name=stock_name, market_code=market_code,
-                            market_desc=market_desc, class_type=stock_class_type):
-                        continue
-
-                    # 执行卖出动做, 如果第一次没有出现交易得时候，不执行等待。
-                    # 避免第一次等待错过下单的时间
-                    once_can_sell_count = 0
-                    while True:
-                        # 等待订单消化时间, 只有交易过程中的才出现等待，其他的实践不出现
-                        if once_can_sell_count > 0 and current_own_count > 0:
-                            time.sleep(MIN_TASK_WAITING_TIME)
-
-                        # 直到当前没有任何股票可以卖了，跳出循环
-                        if current_own_count <= 0:
-                            # 删除持仓记录
-                            del position_data[stock_code]
-                            # 记录日志
-                            self.log.logger.info(u"执行动作 市场: %s, 股票: %s, 名称：%s, 信号: %s 交易完成" % (
-                                market_desc, stock_code, stock_name, Common.CONST_STOCK_SELL_DESC))
-                            break
-
-                        # 获得5档数据
-                        level5_quotes_data_set = self._get_safe_stock_quotes(
-                            stock_code=stock_code, stock_name=stock_name, market_code=market_code,
-                            market_desc=market_desc, class_type=stock_class_type)
-
-                        if level5_quotes_data_set is None:
-                            continue
-
-                        level5_quote_value = level5_quotes_data_set[stock_code]
-                        avg_level5_price = level5_quote_value["buy5_avg_price"]
-                        buy_level5_step_count = level5_quote_value["buy5_step_count"]
-
-                        # 按照交易总数固定比例投放交易股票数量, 1手 = 100股
-                        once_can_sell_count = int((buy_level5_step_count / 100.0) * MAX_SELL_TOTAL_RATIO) * 100
-
-                        if once_can_sell_count <= 0:
-                            self.log.logger.warning(u"执行动作 市场: %s, 股票: %s, 名称：%s, 信号: %s 空订单, 跳过" % (
-                                market_desc, stock_code, stock_name, Common.CONST_STOCK_SELL_DESC))
-                            continue
-
-                        # 判断当前持仓是否超过一次下单，避免如果数量不够，或者尾单不能交易
-                        if once_can_sell_count > current_own_count:
-                            once_can_sell_count = current_own_count
-
-                        # 发送卖出订单
-                        if not self._send_safe_order(
-                                market_desc=market_desc, stock_code=stock_code, stock_name=stock_name,
-                                class_type=stock_class_type, account_id=current_trade_account_id,
-                                action_id=Common.CONST_STOCK_SELL, trade_price=avg_level5_price,
-                                trade_count=once_can_sell_count):
-                            continue
-
-                        # 计算相关数据
-                        sell_total_value = avg_level5_price * once_can_sell_count
-                        revenue_value = (avg_level5_price - current_position_price) * once_can_sell_count
-                        revenue_change = revenue_value / (current_position_price * once_can_sell_count)
-
-                        # 添加交集记录数据
-                        trader_records_set.append({
-                            "timestamp": Common.get_current_timestamp(),
-                            "datetime": Common.get_current_datetime(),
-                            "trade_account_id": current_trade_account_id,
-                            "order_type": Common.CONST_STOCK_SELL_DESC,
-                            "order_type_id": Common.CONST_STOCK_SELL,
-                            "market_code": market_code,
-                            "market_desc": market_desc,
-                            "stock_code": stock_code,
-                            "stock_name": stock_name,
-                            "class_type": stock_class_type,
-                            "price": avg_level5_price,
-                            "count": once_can_sell_count,
-                            "total": sell_total_value,
-                            "revenue_change": revenue_change,
-                            "revenue_value": revenue_value
-                        })
-
-                        # 记录交易日志
-                        self.log.logger.info(
-                            u"执行动作 市场: %s, 股票: %s, 名称：%s, 类型: %s, 信号: %s, 价格: %.2f, 数量: %d, 总价: %.2f, 营收(元): %.2f, 营收率(%%): %.2f" % (
-                                market_desc, stock_code, stock_name, stock_class_type,
-                                Common.CONST_STOCK_SELL_DESC, avg_level5_price, once_can_sell_count,
-                                sell_total_value, revenue_value, revenue_change))
-
-                        # 减去当前的交易的投放量
-                        current_own_count -= once_can_sell_count
-
-                # 捕捉执行过程中的任何异常
-                except Exception as err:
-                    self.log.logger.error(u"执行持仓股票: %s 扫描出现出错: %s" % (stock_code, err.message))
+                # 判断股票是否当天够买的，如果是跳过 (满足最小交易时间)
+                current_own_time_interval = Common.get_current_timestamp() - last_trade_timestamp
+                if current_own_time_interval < MIN_TRADE_VALID_TIME_INTERVAL:
+                    self.log.logger.info(u"执行动作 市场: %s, 股票: %s, 名称：%s, 信号: %s, 持有时间: %s 不满足最小持仓时间" % (
+                        market_desc, stock_code, stock_name, Common.CONST_STOCK_SELL_DESC,
+                        Common.change_seconds_to_time(current_own_time_interval)))
                     continue
 
-            if len(trader_records_set) > Common.CONST_DATA_LIST_LEN_ZERO:
-                # 保存交易数据倒本地z
-                self._save_trader_records(trader_records_set)
-                # 保存数据到全局交易数据集，准备发送邮件
-                self.trade_records_data_set[Common.CONST_STOCK_SELL] = trader_records_set
+                # 检查股票交易卖点, 如果没有卖出信号, 跳过后端的代码
+                if not self._check_stock_sell_point(
+                        stock_code=stock_code, stock_name=stock_name, market_code=market_code,
+                        market_desc=market_desc, class_type=stock_class_type):
+                    continue
+
+                # 执行卖出动做, 如果第一次没有出现交易得时候，不执行等待。
+                # 避免第一次等待错过下单的时间
+                once_can_sell_count = 0
+                while True:
+                    # 等待订单消化时间, 只有交易过程中的才出现等待，其他的实践不出现
+                    if once_can_sell_count > 0 and current_own_count > 0:
+                        time.sleep(MIN_TASK_WAITING_TIME)
+
+                    # 直到当前没有任何股票可以卖了，跳出循环
+                    if current_own_count <= 0:
+                        # 删除持仓记录
+                        del position_data[stock_code]
+                        # 记录日志
+                        self.log.logger.info(u"执行动作 市场: %s, 股票: %s, 名称：%s, 信号: %s 交易完成" % (
+                            market_desc, stock_code, stock_name, Common.CONST_STOCK_SELL_DESC))
+                        break
+
+                    # 获得5档数据
+                    level5_quotes_data_set = self._get_safe_stock_quotes(
+                        stock_code=stock_code, stock_name=stock_name, market_code=market_code,
+                        market_desc=market_desc, class_type=stock_class_type)
+
+                    if level5_quotes_data_set is None:
+                        continue
+
+                    level5_quote_value = level5_quotes_data_set[stock_code]
+                    avg_level5_price = level5_quote_value["buy5_avg_price"]
+                    buy_level5_step_count = level5_quote_value["buy5_step_count"]
+
+                    # 按照交易总数固定比例投放交易股票数量, 1手 = 100股
+                    once_can_sell_count = int((buy_level5_step_count / 100.0) * MAX_SELL_TOTAL_RATIO) * 100
+
+                    if once_can_sell_count <= 0:
+                        self.log.logger.warning(u"执行动作 市场: %s, 股票: %s, 名称：%s, 信号: %s 空订单, 跳过" % (
+                            market_desc, stock_code, stock_name, Common.CONST_STOCK_SELL_DESC))
+                        continue
+
+                    # 判断当前持仓是否超过一次下单，避免如果数量不够，或者尾单不能交易
+                    if once_can_sell_count > current_own_count:
+                        once_can_sell_count = current_own_count
+
+                    # 发送卖出订单
+                    if not self._send_safe_order(
+                            market_desc=market_desc, stock_code=stock_code, stock_name=stock_name,
+                            class_type=stock_class_type, account_id=current_trade_account_id,
+                            action_id=Common.CONST_STOCK_SELL, trade_price=avg_level5_price,
+                            trade_count=once_can_sell_count):
+                        continue
+
+                    # 计算相关数据
+                    sell_total_value = avg_level5_price * once_can_sell_count
+                    revenue_value = (avg_level5_price - current_position_price) * once_can_sell_count
+                    revenue_change = revenue_value / (current_position_price * once_can_sell_count)
+
+                    # 添加交集记录数据
+                    trader_records_set.append({
+                        "timestamp": Common.get_current_timestamp(),
+                        "datetime": Common.get_current_datetime(),
+                        "trade_account_id": current_trade_account_id,
+                        "order_type": Common.CONST_STOCK_SELL_DESC,
+                        "order_type_id": Common.CONST_STOCK_SELL,
+                        "market_code": market_code,
+                        "market_desc": market_desc,
+                        "stock_code": stock_code,
+                        "stock_name": stock_name,
+                        "class_type": stock_class_type,
+                        "price": avg_level5_price,
+                        "count": once_can_sell_count,
+                        "total": sell_total_value,
+                        "revenue_change": revenue_change,
+                        "revenue_value": revenue_value
+                    })
+
+                    # 记录交易日志
+                    self.log.logger.info(
+                        u"执行动作 市场: %s, 股票: %s, 名称：%s, 类型: %s, 信号: %s, 价格: %.2f, 数量: %d, 总价: %.2f, 营收(元): %.2f, 营收率(%%): %.2f" % (
+                            market_desc, stock_code, stock_name, stock_class_type,
+                            Common.CONST_STOCK_SELL_DESC, avg_level5_price, once_can_sell_count,
+                            sell_total_value, revenue_value, revenue_change))
+
+                    # 减去当前的交易的投放量
+                    current_own_count -= once_can_sell_count
+
+            # 捕捉执行过程中的任何异常
+            except Exception as err:
+                self.log.logger.error(u"执行持仓股票: %s 扫描出现出错: %s" % (stock_code, err.message))
+                continue
 
         # 保存持仓文件
         _save_position_db_file(position_data)
@@ -736,12 +728,16 @@ class TradeExecutor(object):
         self._create_safe_hq_connect()
         self._create_safe_order_connect()
 
-        # 清空交易记录
-        self.trade_records_data_set = {}
+        # 创建交易数据集
+        trade_records_data_set = {Common.CONST_STOCK_BUY: [], Common.CONST_STOCK_SELL: []}
 
         # 执行数据扫描, 先卖出, 再买入
-        self._position_scanner()
-        self._box_scanner()
+        self._position_scanner(trade_records_data_set[Common.CONST_STOCK_SELL])
+        self._box_scanner(trade_records_data_set[Common.CONST_STOCK_BUY])
+
+        # 保存交易数据
+        self._save_records_data(trade_records_data_set[Common.CONST_STOCK_SELL])
+        self._save_records_data(trade_records_data_set[Common.CONST_STOCK_BUY])
 
         # 关闭数据连接
         HQAdapter.destroy_connect_instance(self.hq_connect_instance)
@@ -750,7 +746,7 @@ class TradeExecutor(object):
         self.order_connect_instance = None
 
         # 返回正确的交易记录数据
-        return self.trade_records_data_set
+        return trade_records_data_set
 
 
 def trade_exec_main():
@@ -760,22 +756,24 @@ def trade_exec_main():
         trade_exec.log.logger.warning(u"节假日休假, 股票市场不交易, 跳过")
         exit(0)
 
+    # 执行股票交易，并记录时间锚点
     trade_exec.log.logger.info(u"============== [开始自动交易] ==============")
     start_timestamp = time.time()
-    valid_trade_records = trade_exec.execute()
+    valid_trader_records = trade_exec.execute()
     end_timestamp = time.time()
     trade_exec.log.logger.info(u"============== [结束自动交易] ==============")
 
     current_datetime = Common.get_current_datetime()
 
-    if valid_trade_records is None:
+    if valid_trader_records is None:
         trade_exec.log.logger.error(u"执行交易记录为空")
         Mail.send_mail(title=u"[%s] 交易执行错误" % current_datetime, msg="[ERROR]")
         exit(0)
 
+    # 生成邮件数据，并发送结果邮件
     current_datetime = Common.get_current_datetime()
     total_compute_time = Common.change_seconds_to_time(int(end_timestamp - start_timestamp))
-    mail_message, summary_message = _generate_trade_mail_message(valid_trade_records)
+    mail_message, summary_message = _generate_trade_mail_message(valid_trader_records)
     trade_exec.log.logger.info(u"计算总费时: %s" % total_compute_time)
     trade_exec.log.logger.info(summary_message)
     sendmail_message = mail_message + u"<p>计算总费时: %s</p>" % total_compute_time
