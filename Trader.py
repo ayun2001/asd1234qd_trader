@@ -6,7 +6,7 @@ import json
 import threading
 import time
 
-from prettytable import PrettyTable
+from prettytable import PrettyTable, ALL
 
 import Box
 import Common
@@ -102,11 +102,23 @@ def _generate_trade_mail_message(data):
     if len(data) <= Common.CONST_DATA_LIST_LEN_ZERO:
         return mail_message
 
+    sell_number = 0
+    buy_number = 0
+
     for trade_type_id, trade_record_data in data.items():
         # 生成买入信息列表
         if trade_type_id == Common.CONST_STOCK_BUY and len(trade_record_data) > Common.CONST_DATA_LIST_LEN_ZERO:
+
+            # 创建表格
             table = PrettyTable([u"股票大盘", u"股票代码", u"股票名称", u"价格(元)", u"数量(股)", u"总价(元)"])
 
+            # 设置表格样式
+            table.align = "l"  # 使用内容左对齐
+            table.format = True  # 使用格式化
+            table.vrules = ALL  # 垂直线
+            table.hrules = ALL  # 水平线
+
+            # 填充数据
             for record_item in trade_record_data:
                 try:
                     table.add_row([
@@ -117,15 +129,26 @@ def _generate_trade_mail_message(data):
                         record_item["count"],
                         record_item["total"],
                     ])
+                    buy_number += 1  # 计数器累加
                 except KeyError:
                     continue
 
-            mail_message += u"<p>%s:</p>%s<br>" % (Common.CONST_STOCK_BUY_DESC, table.get_html_string())
+            # 生成邮件内容
+            mail_message += u"<p>%s:</p>%s" % (Common.CONST_STOCK_BUY_DESC, table.get_html_string())
 
         # 生成卖出信息列表
         if trade_type_id == Common.CONST_STOCK_SELL and len(trade_record_data) > Common.CONST_DATA_LIST_LEN_ZERO:
+
+            # 创建表格
             table = PrettyTable([u"股票大盘", u"股票代码", u"股票名称", u"价格(元)", u"数量(股)", u"总价(元)", u"营收(元)", u"营收率(百分率)"])
 
+            # 设置表格样式
+            table.align = "l"  # 使用内容左对齐
+            table.format = True  # 使用格式化
+            table.vrules = ALL  # 垂直线
+            table.hrules = ALL  # 水平线
+
+            # 填充数据
             for record_item in trade_record_data:
                 try:
                     table.add_row([
@@ -138,12 +161,16 @@ def _generate_trade_mail_message(data):
                         record_item["revenue_value"],
                         record_item["revenue_change"]
                     ])
+                    sell_number += 1
                 except KeyError:
                     continue
 
-            mail_message += u"<p>%s:</p>%s<br>" % (Common.CONST_STOCK_SELL_DESC, table.get_html_string())
+            # 生成邮件内容
+            mail_message += u"<p>%s:</p>%s" % (Common.CONST_STOCK_SELL_DESC, table.get_html_string())
 
-    return mail_message
+    summary_message = u"总共交易股票数量: %d --> %s: %d, %s: %d" % (
+        buy_number + sell_number, Common.CONST_STOCK_BUY_DESC, buy_number, Common.CONST_STOCK_SELL_DESC, sell_number)
+    return mail_message + u"<p>%s</p>" % summary_message, summary_message
 
 
 class TradeExecutor(object):
@@ -477,13 +504,10 @@ class TradeExecutor(object):
                         # 0: 深圳账号， 1: 上海账号
                         current_trade_account_id = Common.get_decrypted_string(self.config["trade_id"][market_code])
 
-                        # 检查股票交易卖点
-                        bool_buy = self._check_stock_buy_point(
-                            stock_code=stock_code, stock_name=stock_name, market_code=market_code,
-                            market_desc=market_desc, class_type=stock_class_type)
-
-                        # 如果没有买入信号，跳过后端的代码
-                        if not bool_buy:
+                        # 检查股票交易卖点, 如果没有买入信号, 跳过后端的代码
+                        if not self._check_stock_buy_point(
+                                stock_code=stock_code, stock_name=stock_name, market_code=market_code,
+                                market_desc=market_desc, class_type=stock_class_type):
                             continue
 
                         while True:
@@ -578,7 +602,7 @@ class TradeExecutor(object):
             self.log.logger.error(u"读取持仓股票数据文件错误: %s" % err_info)
             return
         else:
-            records_set = []
+            trader_records_set = []
             for stock_code, stock_values in position_data.items():
                 try:
                     market_code = stock_values["market_code"]
@@ -598,26 +622,26 @@ class TradeExecutor(object):
                             Common.change_seconds_to_time(current_own_time_interval)))
                         continue
 
-                    # 检查股票交易卖点
-                    bool_sell = self._check_stock_sell_point(
-                        stock_code=stock_code, stock_name=stock_name, market_code=market_code, market_desc=market_desc,
-                        class_type=stock_class_type)
-
-                    # 如果没有卖出信号，跳过后端的代码
-                    if not bool_sell:
+                    # 检查股票交易卖点, 如果没有卖出信号, 跳过后端的代码
+                    if not self._check_stock_sell_point(
+                            stock_code=stock_code, stock_name=stock_name, market_code=market_code,
+                            market_desc=market_desc, class_type=stock_class_type):
                         continue
 
-                    # 执行卖出动做
+                    # 执行卖出动做, 如果第一次没有出现交易得时候，不执行等待。
+                    # 避免第一次等待错过下单的时间
+                    once_can_sell_count = 0
                     while True:
-                        # 等待订单消化时间
-                        time.sleep(MIN_TASK_WAITING_TIME)
+                        # 等待订单消化时间, 只有交易过程中的才出现等待，其他的实践不出现
+                        if once_can_sell_count > 0 and current_own_count > 0:
+                            time.sleep(MIN_TASK_WAITING_TIME)
 
                         # 直到当前没有任何股票可以卖了，跳出循环
                         if current_own_count <= 0:
                             # 删除持仓记录
                             del position_data[stock_code]
                             # 记录日志
-                            self.log.logger.info(u"执行动作 市场: %s, 股票: %s, 名称：%s, 信号: %s 完成!" % (
+                            self.log.logger.info(u"执行动作 市场: %s, 股票: %s, 名称：%s, 信号: %s 交易完成" % (
                                 market_desc, stock_code, stock_name, Common.CONST_STOCK_SELL_DESC))
                             break
 
@@ -634,30 +658,32 @@ class TradeExecutor(object):
                         buy_level5_step_count = level5_quote_value["buy5_step_count"]
 
                         # 按照交易总数固定比例投放交易股票数量, 1手 = 100股
-                        max_can_sell_count = int((buy_level5_step_count / 100.0) * MAX_SELL_TOTAL_RATIO) * 100
+                        once_can_sell_count = int((buy_level5_step_count / 100.0) * MAX_SELL_TOTAL_RATIO) * 100
 
-                        if max_can_sell_count <= 0:
+                        if once_can_sell_count <= 0:
                             self.log.logger.warning(u"执行动作 市场: %s, 股票: %s, 名称：%s, 信号: %s 空订单, 跳过" % (
                                 market_desc, stock_code, stock_name, Common.CONST_STOCK_SELL_DESC))
                             continue
 
-                        # 发送卖出订单
-                        order_ok = self._send_safe_order(
-                            market_desc=market_desc, stock_code=stock_code, stock_name=stock_name,
-                            class_type=stock_class_type, account_id=current_trade_account_id,
-                            action_id=Common.CONST_STOCK_SELL, trade_price=avg_level5_price,
-                            trade_count=max_can_sell_count)
+                        # 判断当前持仓是否超过一次下单，避免如果数量不够，或者尾单不能交易
+                        if once_can_sell_count > current_own_count:
+                            once_can_sell_count = current_own_count
 
-                        if not order_ok:
+                        # 发送卖出订单
+                        if not self._send_safe_order(
+                                market_desc=market_desc, stock_code=stock_code, stock_name=stock_name,
+                                class_type=stock_class_type, account_id=current_trade_account_id,
+                                action_id=Common.CONST_STOCK_SELL, trade_price=avg_level5_price,
+                                trade_count=once_can_sell_count):
                             continue
 
                         # 计算相关数据
-                        sell_total_value = avg_level5_price * max_can_sell_count
-                        revenue_value = (avg_level5_price - current_position_price) * max_can_sell_count
-                        revenue_change = revenue_value / (current_position_price * max_can_sell_count)
+                        sell_total_value = avg_level5_price * once_can_sell_count
+                        revenue_value = (avg_level5_price - current_position_price) * once_can_sell_count
+                        revenue_change = revenue_value / (current_position_price * once_can_sell_count)
 
                         # 添加交集记录数据
-                        records_set.append({
+                        trader_records_set.append({
                             "timestamp": Common.get_current_timestamp(),
                             "datetime": Common.get_current_datetime(),
                             "trade_account_id": current_trade_account_id,
@@ -669,31 +695,32 @@ class TradeExecutor(object):
                             "stock_name": stock_name,
                             "class_type": stock_class_type,
                             "price": avg_level5_price,
-                            "count": max_can_sell_count,
+                            "count": once_can_sell_count,
                             "total": sell_total_value,
                             "revenue_change": revenue_change,
                             "revenue_value": revenue_value
                         })
 
-                        # 日志记录
+                        # 记录交易日志
                         self.log.logger.info(
                             u"执行动作 市场: %s, 股票: %s, 名称：%s, 类型: %s, 信号: %s, 价格: %.2f, 数量: %d, 总价: %.2f, 营收(元): %.2f, 营收率(%%): %.2f" % (
                                 market_desc, stock_code, stock_name, stock_class_type,
-                                Common.CONST_STOCK_SELL_DESC, avg_level5_price, max_can_sell_count,
+                                Common.CONST_STOCK_SELL_DESC, avg_level5_price, once_can_sell_count,
                                 sell_total_value, revenue_value, revenue_change))
 
                         # 减去当前的交易的投放量
-                        current_own_count -= max_can_sell_count
+                        current_own_count -= once_can_sell_count
 
+                # 捕捉执行过程中的任何异常
                 except Exception as err:
                     self.log.logger.error(u"执行持仓股票: %s 扫描出现出错: %s" % (stock_code, err.message))
                     continue
 
-            if len(records_set) > Common.CONST_DATA_LIST_LEN_ZERO:
+            if len(trader_records_set) > Common.CONST_DATA_LIST_LEN_ZERO:
                 # 保存交易数据倒本地z
-                self._save_trader_records(records_set)
+                self._save_trader_records(trader_records_set)
                 # 保存数据到全局交易数据集，准备发送邮件
-                self.trade_records_data_set[Common.CONST_STOCK_SELL] = records_set
+                self.trade_records_data_set[Common.CONST_STOCK_SELL] = trader_records_set
 
         # 保存持仓文件
         _save_position_db_file(position_data)
@@ -715,6 +742,12 @@ class TradeExecutor(object):
         # 执行数据扫描, 先卖出, 再买入
         self._position_scanner()
         self._box_scanner()
+
+        # 关闭数据连接
+        HQAdapter.destroy_connect_instance(self.hq_connect_instance)
+        self.hq_connect_instance = None
+        OrderAdapter.destroy_connect_instance(self.order_connect_instance)
+        self.order_connect_instance = None
 
         # 返回正确的交易记录数据
         return self.trade_records_data_set
@@ -742,8 +775,10 @@ def trade_exec_main():
 
     current_datetime = Common.get_current_datetime()
     total_compute_time = Common.change_seconds_to_time(int(end_timestamp - start_timestamp))
+    mail_message, summary_message = _generate_trade_mail_message(valid_trade_records)
     trade_exec.log.logger.info(u"计算总费时: %s" % total_compute_time)
-    sendmail_message = _generate_trade_mail_message(valid_trade_records) + u"<p>计算总费时: %s</p>" % total_compute_time
+    trade_exec.log.logger.info(summary_message)
+    sendmail_message = mail_message + u"<p>计算总费时: %s</p>" % total_compute_time
 
     # 发送交易记录结果
     Mail.send_mail(title=u"日期:%s, 执行交易记录" % current_datetime, msg=sendmail_message)

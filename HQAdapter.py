@@ -13,7 +13,7 @@ from Algorithm import TA
 # ============================================
 # 行情接口函数
 
-def _make_hq_query_index_list(count, step):
+def _generate_hq_query_index_list(count, step):
     numbers = int(count / step)
     if count - int(count / step) * step > 0:
         numbers += 1
@@ -121,7 +121,7 @@ def get_stock_codes(instance):
                     {"code": fields[0], "name": fields[2].decode("gbk")})  # 这里一定要decode(gbk), 要不然后面报错
 
     # 不用再拉第一份数据了, 已经有了
-    for start in _make_hq_query_index_list(sh_stock_count, sh_step)[1:]:
+    for start in _generate_hq_query_index_list(sh_stock_count, sh_step)[1:]:
         index += 1
         err_info, sh_step, stock_code_content = instance.GetSecurityList(sh_market, start)
         if err_info != "":
@@ -155,7 +155,7 @@ def get_stock_codes(instance):
                         {"code": fields[0], "name": fields[2].decode("gbk")})
 
     # 不用再拉第一份数据了, 已经有了
-    for start in _make_hq_query_index_list(sz_stock_count, sz_step)[1:]:  # 循环中去掉第一行标题
+    for start in _generate_hq_query_index_list(sz_stock_count, sz_step)[1:]:  # 循环中去掉第一行标题
         index += 1
         err_info, sz_step, stock_code_content = instance.GetSecurityList(sz_market, start)
         if err_info != "":

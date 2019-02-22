@@ -44,6 +44,13 @@ def create_connect_instance(config):
         return None, u"连接交易服务器错误: %s" % err.message
 
 
+def destroy_connect_instance(instance):
+    if instance is None:
+        return
+    else:
+        del instance
+
+
 def send_stock_order(instance, code, account_id, action_id, uprice, count):
     # 使用  4 市价委托(上海五档即成剩撤/ 深圳五档即成剩撤) 这样的交易模式
     pass
