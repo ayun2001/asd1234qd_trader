@@ -41,6 +41,17 @@ def _save_box_data(data):
 
 # 发送股票盒邮件
 def _generate_box_mail_message(data):
+    # 按照距离涨停事件最近事件排序, 默认从小到大
+    def _sort_by_interval_days(stock_class_type_values, reverse=False):
+        sort_dataset = {}
+        for stock_code, meta_values in stock_class_type_values.items():
+            try:
+                sort_dataset[stock_code] = meta_values["days"]
+            except KeyError:
+                continue
+        return map(lambda x: x[0], sorted(sort_dataset.items(), key=lambda x: x[1], reverse=reverse))
+
+    # 初始化参数
     total_number = 0
     cy_number = 0
     zx_number = 0
@@ -62,6 +73,7 @@ def _generate_box_mail_message(data):
             selected_count = len(class_type_values.keys())
             total_number += selected_count
 
+            # 统计
             if market_name == Common.CONST_SZ_MARKET:
                 sz_number += selected_count
             if market_name == Common.CONST_SH_MARKET:
@@ -71,6 +83,10 @@ def _generate_box_mail_message(data):
             if market_name == Common.CONST_CY_MARKET:
                 cy_number += selected_count
 
+            # 排序
+            selected_stock_list = _sort_by_interval_days(class_type_values.keys())
+
+            # 生成表格
             table.add_row([
                 # 股票大盘的名字
                 Common.MARKET_NAME_MAPPING[market_name],
@@ -79,7 +95,7 @@ def _generate_box_mail_message(data):
                 # 选中股票数量
                 selected_count,
                 # 选中股票列表
-                u",".join(class_type_values.keys()) if selected_count > Common.CONST_DATA_LIST_LEN_ZERO else u"无"
+                u",".join(selected_stock_list) if selected_count > Common.CONST_DATA_LIST_LEN_ZERO else u"无"
             ])
 
     summary_message = u"总共选取股票数量: %d --> 上海: %d, 深圳: %d, 中小: %d, 创业: %d" % (
@@ -380,6 +396,7 @@ class GenerateBox(object):
 
                     # print min_close_price, meta_close_price, meta_low_price
 
+                    # 根据条件聚合分类出(一，三类股票)
                     if min_close_price >= meta_close_price:
                         # Type1 一类
                         if market_name == Common.CONST_SH_MARKET and max_turn_over <= Common.CONST_SH_STOCK_TURNOVER and not bool_filter_result:
@@ -394,33 +411,34 @@ class GenerateBox(object):
                         if market_name == Common.CONST_CY_MARKET and max_turn_over <= 18 and not bool_filter_result:
                             valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_1][stock_code] = stock_meta_data
                             continue
-                        # Type2 二类
+                        # Type3 三类
                         if market_name == Common.CONST_SH_MARKET and max_turn_over > Common.CONST_SH_STOCK_TURNOVER and not bool_filter_result:
-                            valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_2][stock_code] = stock_meta_data
+                            valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_3][stock_code] = stock_meta_data
                             continue
                         if market_name == Common.CONST_SZ_MARKET and max_turn_over > Common.CONST_SZ_STOCK_TURNOVER and not bool_filter_result:
-                            valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_2][stock_code] = stock_meta_data
+                            valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_3][stock_code] = stock_meta_data
                             continue
                         if market_name == Common.CONST_ZX_MARKET and max_turn_over > Common.CONST_ZX_STOCK_TURNOVER and not bool_filter_result:
-                            valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_2][stock_code] = stock_meta_data
+                            valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_3][stock_code] = stock_meta_data
                             continue
                         if market_name == Common.CONST_CY_MARKET and max_turn_over > Common.CONST_CY_STOCK_TURNOVER and not bool_filter_result:
-                            valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_2][stock_code] = stock_meta_data
+                            valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_3][stock_code] = stock_meta_data
                             continue
 
+                    # 根据条件聚合分类出(二，四类股票)
                     if meta_close_price > min_close_price >= meta_low_price:
-                        # Type3 三类
+                        # Type2 二类
                         if market_name == Common.CONST_SH_MARKET and max_turn_over <= Common.CONST_SH_STOCK_TURNOVER and not bool_filter_result:
-                            valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_3][stock_code] = stock_meta_data
+                            valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_2][stock_code] = stock_meta_data
                             continue
                         if market_name == Common.CONST_SZ_MARKET and max_turn_over <= Common.CONST_SZ_STOCK_TURNOVER and not bool_filter_result:
-                            valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_3][stock_code] = stock_meta_data
+                            valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_2][stock_code] = stock_meta_data
                             continue
                         if market_name == Common.CONST_ZX_MARKET and max_turn_over <= Common.CONST_ZX_STOCK_TURNOVER and not bool_filter_result:
-                            valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_3][stock_code] = stock_meta_data
+                            valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_2][stock_code] = stock_meta_data
                             continue
                         if market_name == Common.CONST_CY_MARKET and max_turn_over <= Common.CONST_CY_STOCK_TURNOVER and not bool_filter_result:
-                            valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_3][stock_code] = stock_meta_data
+                            valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_2][stock_code] = stock_meta_data
                             continue
                         # Type4 四类
                         if market_name == Common.CONST_SH_MARKET and max_turn_over > Common.CONST_SH_STOCK_TURNOVER and not bool_filter_result:

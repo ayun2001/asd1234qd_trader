@@ -27,7 +27,7 @@ trader_db_box_filename = Box.box_db_filename
 # ============================================
 # 预设值
 
-MIN_DATA_CHECK_HOURS = 4
+MIN_DATA_CHECK_HOURS = 4  # 观测数据的时间长度
 MIN_STOP_LOSS_RATIO = -3.0  # 负数，下跌3%
 MIN_SELL_RAISE_RATIO = 3.0  # 涨幅3%
 MAX_VALID_BOX_INTERVAL_HOURS = 4  # 票箱会在每天的早上8：30，和中午12：00 左右开始选取，所以不会有操过4个小时
@@ -320,7 +320,7 @@ class TradeExecutor(object):
 
     # 检查是否存在卖点
     def _check_stock_sell_point(self, market_code, market_desc, stock_code, stock_name, class_type):
-        # 获得60分钟的历史数据
+        # 获得60分钟的历史数据, 根据60分钟的数据作为判断
         history_data_frame = self._get_safe_history_data_frame(
             market_code=market_code, stock_code=stock_code, market_desc=market_desc, stock_name=stock_name,
             ktype=Common.CONST_K_60M, kcount=Common.CONST_K_LENGTH)
