@@ -9,6 +9,10 @@ import pandas as pd
 import Common
 from Algorithm import TA
 
+# ============================================
+# 挂载交易模块
+Common.V_TRADE_X_MOD = Common.load_v_trade_x_mod()
+
 
 # ============================================
 # 行情接口函数

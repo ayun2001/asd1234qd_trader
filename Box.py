@@ -14,6 +14,10 @@ box_log_filename = "%s/%s" % (Common.CONST_DIR_LOG, Common.CONST_LOG_BOX_FILENAM
 box_db_filename = "%s/%s" % (Common.CONST_DIR_DATABASE, Common.CONST_DB_BOX_FILENAME)
 box_config_filename = "%s/%s" % (Common.CONST_DIR_CONF, Common.CONST_CONFIG_ADAPTER_FILENAME)
 
+# ============================================
+# 预设值
+
+Common.V_TRADE_X_MOD = Common.load_v_trade_x_mod()
 MIN_DATA_CHECK_HOURS = 4
 MIN_DATA_CHECK_DAYS = 4
 MIN_60M_TIMEDELTA = MIN_DATA_CHECK_HOURS * 4
@@ -22,7 +26,12 @@ MAX_BOX_THREAD_RUNNING_TIME = 45 * 60  # 45分钟内必须要完成所有分析�
 MIN_CHANGE_STOP_RAISE_RATIO = 9.9
 MAX_KDJ_J_VALUE = 99.9
 
+# ============================================
+# 挂载交易模块
+Common.V_TRADE_X_MOD = Common.load_v_trade_x_mod()
 
+
+# ============================================
 # 保存股票盒到硬盘
 def _save_box_data(data):
     if not Common.file_exist(Common.CONST_DIR_DATABASE):
@@ -79,6 +88,7 @@ def _generate_box_mail_message(data):
     return mail_message, summary_message
 
 
+# ============================================
 # 生成股票盒
 class GenerateBox(object):
     def __init__(self):

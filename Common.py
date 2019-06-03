@@ -83,7 +83,7 @@ TYPE_NAME_MAPPING = {CONST_STOCK_TYPE_1: u"一类", CONST_STOCK_TYPE_2: u"二类
 
 # ============================================
 # 全局变量
-V_TRADE_X_MOD = __import__("TradeX2")  # 动态加载模块
+V_TRADE_X_MOD = None
 
 
 # ============================================
