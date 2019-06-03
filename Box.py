@@ -174,7 +174,7 @@ class GenerateBox(object):
                 return history_data_frame
 
     # 扩展股票数据
-    def _get_stock_temp_list(self, stock_list=None):
+    def _adjusting_stock_data_structures(self, stock_list=None):
         if stock_list is None:
             self.log.logger.error(u"股票清单为空, 检查源数据")
             return None
@@ -191,7 +191,7 @@ class GenerateBox(object):
             return stock_t_list
 
     # 挑出涨停盘的股票
-    def _compute_task_handler(self, input_dataset=None, output_dataset=None):
+    def _stock_change_stop_raise_ratio_filter(self, input_dataset=None, output_dataset=None):
         # 内联函数，修正处理数据 20190212
         def _delete_old_data(origin_data, days):
             return origin_data.drop(origin_data[:(len(origin_data.index) - days)].index)
@@ -229,10 +229,11 @@ class GenerateBox(object):
             try:
                 close_value, low_value, open_value, pct_change_value = express_stock_hist_data_frame.loc[
                     item_date_time].values
-                if pct_change_value > MIN_CHANGE_STOP_RAISE_RATIO and close_value > open_value:  # 只要涨停的,排除1字板, 涨幅必须大于99%的
+                # 只要涨停的, 涨幅必须大于99%的, 有可能1字涨停后，后面有连续高开不封涨停的情况
+                if pct_change_value > MIN_CHANGE_STOP_RAISE_RATIO and close_value >= open_value:
                     interval_days = history_data_count - list(history_data_frame_index_list).index(item_date_time)
                     if MIN_DATA_CHECK_DAYS <= interval_days < history_data_count:  # 这里是老薛的要求，涨停后必须还有3天的数据观察期
-                        # 生成股票数据
+                        # 生成对应股票待机算的数据
                         stock_content_info = {
                             "meta_data": {"days": interval_days, "datetime": item_date_time, "close": close_value,
                                           "low": low_value, "stock_code": stock_code, "stock_name": stock_name,
@@ -306,7 +307,8 @@ class GenerateBox(object):
         else:
             return False
 
-    def stage1_compute_data(self):
+    # 第一阶段把涨停得股票都撸出来
+    def stage1_filter_data(self):
         valid_stock_data_set = {Common.CONST_SH_MARKET: {}, Common.CONST_SZ_MARKET: {}, Common.CONST_ZX_MARKET: {},
                                 Common.CONST_CY_MARKET: {}}
 
@@ -322,18 +324,19 @@ class GenerateBox(object):
         # }
 
         # 转换当前数据结果集，方便后续分析
-        valid_stock_info_list = self._get_stock_temp_list(stock_codes)
+        valid_stock_info_list = self._adjusting_stock_data_structures(stock_codes)
         if valid_stock_info_list is None:
             return None
 
         # 获取当前股票池内股票的数据
         for stock_item in valid_stock_info_list:
-            self._compute_task_handler(stock_item, valid_stock_data_set)
+            self._stock_change_stop_raise_ratio_filter(stock_item, valid_stock_data_set)
             # 延迟休息，防止被封
             time.sleep(Common.CONST_TASK_WAITING_TIME / 1000.0)
 
         return valid_stock_data_set
 
+    # 股票按要求分类聚合
     def stage2_filter_data(self, stock_pool):
         if stock_pool is None:
             return None
@@ -450,7 +453,7 @@ class GenerateBox(object):
         self._create_safe_connect()
 
         # 执行数据获取和分析
-        valid_stock_pool = self.stage1_compute_data()
+        valid_stock_pool = self.stage1_filter_data()
         if valid_stock_pool is None:
             return None
 
