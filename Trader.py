@@ -24,6 +24,9 @@ trader_db_records_filename = "%s/%s_%s_%s" % (Common.CONST_DIR_DATABASE, _curren
 trader_db_position_filename = "%s/%s" % (Common.CONST_DIR_DATABASE, Common.CONST_DB_POSITION_FILENAME)
 trader_db_box_filename = Box.box_db_filename
 
+# ============================================
+# 预设值
+
 MIN_DATA_CHECK_HOURS = 4
 MIN_STOP_LOSS_RATIO = -3.0  # 负数，下跌3%
 MIN_SELL_RAISE_RATIO = 3.0  # 涨幅3%
@@ -106,7 +109,7 @@ def _save_position_db_file(db_dataset):
     return None
 
 
-# 发送股票盒邮件
+# 发送交易结果邮件
 def _generate_trade_mail_message(data):
     mail_message = ""
 
@@ -315,6 +318,7 @@ class TradeExecutor(object):
             else:  # 正常就直接跳出循环，退出
                 return True
 
+    # 检查是否存在卖点
     def _check_stock_sell_point(self, market_code, market_desc, stock_code, stock_name, class_type):
         # 获得60分钟的历史数据
         history_data_frame = self._get_safe_history_data_frame(
@@ -366,6 +370,7 @@ class TradeExecutor(object):
             market_desc, stock_code, stock_name, class_type))
         return False
 
+    # 检查是否存在买点
     def _check_stock_buy_point(self, market_code, market_desc, stock_code, stock_name, class_type):
         # 获得60分钟的历史数据
         history_data_frame = self._get_safe_history_data_frame(
