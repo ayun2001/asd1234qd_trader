@@ -17,9 +17,12 @@ class TA(object):
     def make_macd_cross(dataset):
         try:
             dataset["macd_cross"] = ""
-            macd_pos = dataset["macd_dif"] > dataset["macd_dea"]  # 以K值小于D值为参考, 注意这里数据是最后一天在最后面
-            dataset.loc[macd_pos[(macd_pos == True) & (macd_pos.shift(1) == False)].index, "macd_cross"] = "up_cross"  # 金叉
-            dataset.loc[macd_pos[(macd_pos == False) & (macd_pos.shift(1) == True)].index, "macd_cross"] = "down_cross"  # 死叉
+            # 注意这里数据是最后一天在最后面
+            macd_pos = dataset["macd_dif"] > dataset["macd_dea"]
+            # 金叉
+            dataset.loc[macd_pos[(macd_pos == True) & (macd_pos.shift(1) == False)].index, "macd_cross"] = "up_cross"
+            # 死叉ƒ
+            dataset.loc[macd_pos[(macd_pos == False) & (macd_pos.shift(1) == True)].index, "macd_cross"] = "down_cross"
         except Exception as err:
             raise Exception, u"添加 MACD 交叉指标数据错误: %s" % err.message
 
@@ -41,9 +44,12 @@ class TA(object):
     def make_kdj_cross(dataset):
         try:
             dataset["kdj_cross"] = ""
-            kdj_pos = dataset["kdj_k"] > dataset["kdj_d"]  # 以K值小于D值为参考, 注意这里数据是最后一天在最后面
-            dataset.loc[kdj_pos[(kdj_pos == True) & (kdj_pos.shift(1) == False)].index, "kdj_cross"] = "up_cross"  # 金叉
-            dataset.loc[kdj_pos[(kdj_pos == False) & (kdj_pos.shift(1) == True)].index, "kdj_cross"] = "down_cross"  # 死叉
+            # 以K值小于D值为参考, 注意这里数据是最后一天在最后面
+            kdj_pos = dataset["kdj_k"] > dataset["kdj_d"]
+            # 金叉
+            dataset.loc[kdj_pos[(kdj_pos == True) & (kdj_pos.shift(1) == False)].index, "kdj_cross"] = "up_cross"
+            # 死叉ƒ
+            dataset.loc[kdj_pos[(kdj_pos == False) & (kdj_pos.shift(1) == True)].index, "kdj_cross"] = "down_cross"
         except Exception as err:
             raise Exception, u"添加 KDJ 交叉指标数据错误: %s" % err.message
 
@@ -79,9 +85,12 @@ class TA(object):
     def make_rsi_cross(dataset):
         try:
             dataset["rsi_cross"] = ""
-            rsi_pos = dataset["rsi12"] > dataset["rsi24"]  # 以K值小于D值为参考, 注意这里数据是最后一天在最后面
-            dataset.loc[rsi_pos[(rsi_pos == True) & (rsi_pos.shift(1) == False)].index, "rsi_cross"] = "up_cross"  # 金叉
-            dataset.loc[rsi_pos[(rsi_pos == False) & (rsi_pos.shift(1) == True)].index, "rsi_cross"] = "down_cross"  # 死叉
+            # 注意这里数据是最后一天在最后面
+            rsi_pos = dataset["rsi12"] > dataset["rsi24"]
+            # 金叉
+            dataset.loc[rsi_pos[(rsi_pos == True) & (rsi_pos.shift(1) == False)].index, "rsi_cross"] = "up_cross"
+            # 死叉
+            dataset.loc[rsi_pos[(rsi_pos == False) & (rsi_pos.shift(1) == True)].index, "rsi_cross"] = "down_cross"
         except Exception as err:
             raise Exception, u"添加 RSI 交叉指标数据错误: %s" % err.message
 
