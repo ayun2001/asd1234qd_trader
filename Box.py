@@ -23,7 +23,8 @@ MIN_60M_PRICE_RISE = 5.0
 MAX_BOX_THREAD_RUNNING_TIME = 45 * 60  # 45分钟内必须要完成所有分析，要不然自动停止
 MIN_CHANGE_STOP_RAISE_RATIO = 9.9
 MAX_KDJ_J_VALUE = 99.9
-
+MAX_MACD_DEA_VALUE = 75
+MIN_MACD_DEA_VALUE = 0
 # ============================================
 # 挂载交易模块
 Common.V_TRADE_X_MOD = Common.load_v_trade_x_mod()
@@ -82,7 +83,7 @@ def _generate_box_mail_message(data):
                 cy_number += selected_count
 
             # 排序
-            selected_stock_list = _sort_by_interval_days(class_type_values.keys())
+            selected_stock_list = _sort_by_interval_days(class_type_values)
 
             # 生成表格
             table.add_row([
@@ -216,7 +217,7 @@ class GenerateBox(object):
             return
 
         market_name, market_desc, stock_code, stock_name = input_dataset
-        self.log.logger.info(u"[第1阶段] 正在获得并处理 市场: %s, 股票: %s, 名称：%s 的数据" % (market_desc, stock_code, stock_name))
+        self.log.logger.info(u"[第1阶段] 正在获得 市场: %s, 股票: %s, 名称：%s 的数据" % (market_desc, stock_code, stock_name))
         try:
             market_code = Common.MARKET_CODE_MAPPING[market_name]
         except KeyError:
@@ -284,39 +285,64 @@ class GenerateBox(object):
         # 获得必须要的数据 [:days * 4] 修正值，关注到涨停的那天, 老薛只关注涨停后的3天的数据作为判断
         pct_change_list = list(history_data_frame["pct_change"].values[:days * MIN_DATA_CHECK_HOURS])
         turnover_list = list(history_data_frame["turnover"].values[:days * MIN_DATA_CHECK_HOURS])
+        macd_dea_list = list(history_data_frame["macd_dea"].values[:days * MIN_DATA_CHECK_HOURS])
         kdj_values_list = list(history_data_frame["kdj_j"].values[:days * MIN_DATA_CHECK_HOURS])
         kdj_cross_list = list(history_data_frame["kdj_cross"].values[:days * MIN_DATA_CHECK_HOURS])
-        kdj_cross_express_list = filter(lambda _item: _item != "", kdj_cross_list)  # 去掉之间没有值的空格
+        kdj_cross_express_list = filter(lambda x: x != "", kdj_cross_list)  # 去掉之间没有值的空格
         # 20190212 J值修正，只看当前天数往前的4天时间内的J值最大值
         max_j_value = max(kdj_values_list[:MIN_DATA_CHECK_DAYS * MIN_DATA_CHECK_HOURS])
         max_pct_change_value = max(pct_change_list)
         # j值在最近4天内不能出现大于等于100
         bool_max_j_value = max_j_value >= MAX_KDJ_J_VALUE
-        # 20190212 不能出现小时内涨幅超过 5%的, 同时换手率不能超过指定的市场类型的保留换手率
+        # 20190603 macd 股票在60分钟内必须是金叉的
+        macd_cross_list = list(history_data_frame["macd_cross"].values[:days * MIN_DATA_CHECK_HOURS])
+        macd_cross_express_list = filter(lambda x: x != "", macd_cross_list)  # 去掉之间没有值的空格
+        # 20190212 不能出现小时内涨幅超过 5%的, 同时换手率超过指定的市场类型的保留换手率
         max_pct_change_index = pct_change_list.index(max_pct_change_value)
-        bool_more_than_spec_raise = max_pct_change_value > MIN_60M_PRICE_RISE and \
-                                    turnover_list[max_pct_change_index] < market_turnover_ratio
-        # 判断 KDJ的J值
+        bool_current_hour_pct_change = turnover_list[max_pct_change_index] > market_turnover_ratio
+        bool_more_than_spec_raise = max_pct_change_value > MIN_60M_PRICE_RISE and bool_current_hour_pct_change
+
+        # 判断 kdj 的 j 值
         if len(kdj_cross_express_list) > Common.CONST_DATA_LIST_LEN_ZERO:
             try:
                 up_index_id = kdj_cross_list.index("up_cross")
-                bool_up_cross_kdj = kdj_cross_express_list[0] == "up_cross" and up_index_id >= MIN_DATA_CHECK_HOURS
-            except ValueError:
-                bool_up_cross_kdj = False
+                bool_kdj_up_cross = kdj_cross_express_list[0] == "up_cross" and up_index_id >= MIN_DATA_CHECK_HOURS
+            except ValueError or IndexError:
+                bool_kdj_up_cross = False
             try:
                 down_index_id = kdj_cross_list.index("down_cross")
-                bool_down_cross_kdj = kdj_cross_express_list[0] == "down_cross" and down_index_id < MIN_60M_TIMEDELTA
-            except ValueError:
-                bool_down_cross_kdj = False
+                bool_kdj_down_cross = kdj_cross_express_list[0] == "down_cross" and down_index_id < MIN_60M_TIMEDELTA
+            except ValueError or IndexError:
+                bool_kdj_down_cross = False
         else:
-            bool_up_cross_kdj = False
-            bool_down_cross_kdj = False
+            bool_kdj_up_cross = False
+            bool_kdj_down_cross = False
+
+        # 判断 macd 上涨趋势
+        if len(macd_cross_express_list) > Common.CONST_DATA_LIST_LEN_ZERO:
+            try:
+                up_index_id = macd_cross_list.index("up_cross")
+                bool_dea_value = macd_dea_list[up_index_id] >= MIN_MACD_DEA_VALUE
+                bool_macd_up_cross = macd_cross_express_list[0] == "up_cross" and bool_dea_value
+            except ValueError or IndexError:
+                bool_macd_up_cross = False
+            try:
+                bool_macd_down_cross = macd_cross_express_list[0] == "down_cross"
+            except ValueError or IndexError:
+                bool_macd_down_cross = False
+        else:
+            bool_macd_up_cross = False
+            bool_macd_down_cross = False
+
+        # 日志输出
         self.log.logger.info(
-            u"[第2阶段] 正在判断 市场: %s, 股票: %s, 名称：%s, KDJ_J值>=100: %s, KDJ死叉: %s, KDJ金叉(错过买点1天): %s, 涨幅超过%.2f%%: %s" % (
-                market_desc, stock_code, stock_name, str(bool_max_j_value), str(bool_down_cross_kdj),
-                str(bool_up_cross_kdj), MIN_60M_PRICE_RISE, str(bool_more_than_spec_raise)))
+            u"[第2阶段] 正在判断 [60分钟数据] 市场: %s, 股票: %s, 名称：%s, KDJ_J值>=100: %s, KDJ死叉: %s, KDJ金叉(错过买点1天): %s, MACD死叉: %s, MACD金叉(DEA值未超过0轴): %s, 涨幅超过%.2f%%(换手率超过%d%%): %s" % (
+                market_desc, stock_code, stock_name, str(bool_max_j_value), str(bool_kdj_down_cross),
+                str(bool_kdj_up_cross), str(bool_macd_down_cross), str(not bool_macd_up_cross), MIN_60M_PRICE_RISE,
+                market_turnover_ratio, str(bool_more_than_spec_raise)))
+
         # KDJ的j值大于100，KDJ死叉，出现过金叉，但是某天涨幅超过5%
-        if bool_max_j_value or bool_up_cross_kdj or bool_down_cross_kdj or bool_more_than_spec_raise:
+        if bool_max_j_value or bool_kdj_up_cross or bool_kdj_down_cross or bool_more_than_spec_raise or bool_macd_down_cross or not bool_macd_up_cross:
             return True
         else:
             return False
@@ -492,11 +518,11 @@ def gen_box_main():
         exit(0)
 
     # 计算股数据，并记录时间锚点
-    gen_box.log.logger.info(u"============== [开始计算票箱] ==============")
+    gen_box.log.logger.info(u"============== [开始计算股票箱] ==============")
     start_timestamp = time.time()
     valid_stock_box = gen_box.generate()
     end_timestamp = time.time()
-    gen_box.log.logger.info(u"============== [结束计算票箱] ==============")
+    gen_box.log.logger.info(u"============== [结束计算股票箱] ==============")
 
     current_datetime = Common.get_current_datetime()
 
