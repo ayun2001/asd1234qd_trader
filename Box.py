@@ -16,8 +16,6 @@ box_config_filename = "%s/%s" % (Common.CONST_DIR_CONF, Common.CONST_CONFIG_ADAP
 
 # ============================================
 # 预设值
-
-Common.V_TRADE_X_MOD = Common.load_v_trade_x_mod()
 MIN_DATA_CHECK_HOURS = 4
 MIN_DATA_CHECK_DAYS = 4
 MIN_60M_TIMEDELTA = MIN_DATA_CHECK_HOURS * 4

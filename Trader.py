@@ -41,6 +41,10 @@ ZERO_KDJ_J_VALUE = 0
 HALF_KDJ_J_VALUE = 50
 MAX_KDJ_J_VALUE = 99.9
 
+# ============================================
+# 挂载交易模块
+Common.V_TRADE_X_MOD = Common.load_v_trade_x_mod()
+
 
 # ============================================
 # 函数定义
