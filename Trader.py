@@ -622,7 +622,7 @@ class TradeExecutor(object):
                             continue
 
                         # 0: 深圳账号， 1: 上海账号
-                        current_trade_account_id = Common.get_decrypted_string(self.config["trade_id"][market_code])
+                        trade_account_id = Common.get_decrypted_string(self.config["trade_id"][market_code])
 
                         # 检查股票交易卖点, 如果没有买入信号, 跳过后端的代码
                         if not self._check_stock_buy_point(
@@ -642,27 +642,44 @@ class TradeExecutor(object):
                             if once_buy_count > 0 and max_can_buy_count > 0:
                                 time.sleep(MIN_TASK_WAITING_TIME)
 
-                            # 直到当前购买了足量得股票，跳出循环
+                            # 当前购买了足量得股票，完成交易，跳出循环
                             if max_can_buy_count <= 0:
                                 # 增加已经购买的股票总数
                                 current_have_bought_count += 1
-                                # 合并交易数据
-                                trader_records_set.append(trade_records)
                                 # 相关数据
                                 deal_avg_price = float(numpy.mean(map(lambda x: x["price"], trade_records)))  # 计算成交价格的平均值
                                 deal_count = int(numpy.sum(map(lambda x: x["count"], trade_records)))  # 计算成交股票的总股数
-                                deal_value = int(numpy.sum(map(lambda x: x["total"], trade_records)))  # 计算成交的总金额
+                                deal_value = float(numpy.sum(map(lambda x: x["total"], trade_records)))  # 计算成交的总金额
                                 # 写入购买仓位
                                 position_data[stock_code] = {
                                     "timestamp": Common.get_current_timestamp(),
+                                    "datetime": Common.get_current_datetime(),
+                                    "trade_account_id": trade_account_id,
                                     "market_code": market_code,
                                     "market_desc": market_desc,
                                     "stock_name": stock_name,
                                     "price": deal_avg_price,
                                     "count": deal_count,
                                     "total": deal_value,
-                                    "trade_account_id": current_trade_account_id,
                                 }
+                                # 合并交易数据, 提供给其他部分分析
+                                trader_records_set.append({
+                                    "timestamp": Common.get_current_timestamp(),
+                                    "datetime": Common.get_current_datetime(),
+                                    "trade_account_id": trade_account_id,
+                                    "order_type": Common.CONST_STOCK_SELL_DESC,
+                                    "order_type_id": Common.CONST_STOCK_SELL,
+                                    "market_code": market_code,
+                                    "market_desc": market_desc,
+                                    "stock_code": stock_code,
+                                    "stock_name": stock_name,
+                                    "class_type": stock_class_type,
+                                    "price": deal_avg_price,
+                                    "count": deal_count,
+                                    "total": deal_value,
+                                    "revenue_value": 0.0,
+                                    "revenue_change": 0.0,
+                                })
                                 # 记录日志
                                 self.log.logger.info(
                                     u"执行动作 市场: %s, 股票: %s, 名称：%s, 类型: %s, 信号: %s, 价格: %.2f, 数量: %d, 总值: %.2f 买入交易完成!" % (
@@ -698,7 +715,7 @@ class TradeExecutor(object):
                             # 发送买入订单 - 4 市价委托(上海五档即成剩撤/ 深圳五档即成剩撤) -- 此时价格没有用处，用 0 传入即可
                             if not self._send_safe_order(
                                     market_desc=market_desc, stock_code=stock_code, stock_name=stock_name,
-                                    class_type=stock_class_type, account_id=current_trade_account_id, action_id=Common.CONST_STOCK_BUY,
+                                    class_type=stock_class_type, account_id=trade_account_id, action_id=Common.CONST_STOCK_BUY,
                                     trade_price=avg_level5_price, trade_count=once_buy_count):
                                 continue
 
@@ -713,7 +730,7 @@ class TradeExecutor(object):
                             trade_records.append({
                                 "timestamp": Common.get_current_timestamp(),
                                 "datetime": Common.get_current_datetime(),
-                                "trade_account_id": current_trade_account_id,
+                                "trade_account_id": trade_account_id,
                                 "order_type": Common.CONST_STOCK_BUY_DESC,
                                 "order_type_id": Common.CONST_STOCK_BUY,
                                 "market_code": market_code,
@@ -780,8 +797,6 @@ class TradeExecutor(object):
 
                     # 直到当前没有任何股票可以卖了，跳出循环
                     if position_count <= 0:
-                        # 合并交易数据
-                        trader_records_set.append(trade_records)
                         # 删除持仓记录
                         del position_data[stock_code]
                         # 相关数据
@@ -793,6 +808,24 @@ class TradeExecutor(object):
                             deal_revenue_change = float(deal_revenue_value / (deal_value - deal_revenue_value))  # 计算成交总盈利
                         except ZeroDivisionError:
                             deal_revenue_change = 0.0
+                        # 合并交易数据, 提供给其他部分分析
+                        trader_records_set.append({
+                            "timestamp": Common.get_current_timestamp(),
+                            "datetime": Common.get_current_datetime(),
+                            "trade_account_id": trade_account_id,
+                            "order_type": Common.CONST_STOCK_SELL_DESC,
+                            "order_type_id": Common.CONST_STOCK_SELL,
+                            "market_code": market_code,
+                            "market_desc": market_desc,
+                            "stock_code": stock_code,
+                            "stock_name": stock_name,
+                            "class_type": stock_class_type,
+                            "price": deal_avg_price,
+                            "count": deal_count,
+                            "total": deal_value,
+                            "revenue_value": deal_revenue_value,
+                            "revenue_change": round(deal_revenue_change, 2),
+                        })
                         # 记录日志
                         self.log.logger.info(
                             u"执行动作 市场: %s, 股票: %s, 名称：%s, 类型: %s, 信号: %s, 价格: %.2f, 数量: %d, 总值: %.2f, 营收(元): %.2f, 营收率(%%): %.2f 卖出交易完成!" % (
