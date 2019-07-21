@@ -25,6 +25,8 @@ MIN_CHANGE_STOP_RAISE_RATIO = 9.9
 MAX_KDJ_J_VALUE = 99.9
 MAX_MACD_DEA_VALUE = 75
 MIN_MACD_DEA_VALUE = 0
+MIN_VALID_TRADE_DAYS = 10  # 20190721 确定了最长涨停间隔
+
 # ============================================
 # 挂载交易模块
 Common.V_TRADE_X_MOD = Common.load_v_trade_x_mod()
@@ -105,7 +107,7 @@ def _generate_box_mail_message(data):
 
 # ============================================
 # 生成股票盒
-class GenerateBox(object):
+class BoxGenerator(object):
     def __init__(self):
         if not Common.file_exist(Common.CONST_DIR_LOG):
             Common.create_directory(Common.CONST_DIR_LOG)
@@ -235,27 +237,30 @@ class GenerateBox(object):
         history_data_frame_index_list = history_data_frame.index
         history_data_count = len(history_data_frame_index_list)
         # 这里需要高度关注下，因为默认可能只有14天
-        if history_data_count < (Common.CONST_K_LENGTH / 2 if Common.CONST_K_LENGTH < 3 else 14):
+        if history_data_count < (Common.CONST_K_LENGTH / 2 if Common.CONST_K_LENGTH < 3 else MIN_VALID_TRADE_DAYS):
             self.log.logger.error(u"参与计算得市场: %s, 股票: %s, 名称：%s, K数据: %d (不够>=14)" % (
                 market_desc, stock_code, stock_name, history_data_count))
             return
-        express_stock_hist_data_frame = history_data_frame[["close", "low", "open", "pct_change"]]
+        express_stock_hist_data_frame = history_data_frame[["open", "close", "high", "low", "pct_change"]]
         for item_date_time in history_data_frame_index_list:
             try:
-                close_value, low_value, open_value, pct_change_value = express_stock_hist_data_frame.loc[
+                open_value, close_value, high_value, low_value, pct_change_value = express_stock_hist_data_frame.loc[
                     item_date_time].values
                 # 只要涨停的, 涨幅必须大于99%的, 有可能1字涨停后，后面有连续高开不封涨停的情况
                 if pct_change_value > MIN_CHANGE_STOP_RAISE_RATIO and close_value >= open_value:
                     interval_days = history_data_count - list(history_data_frame_index_list).index(item_date_time)
-                    if MIN_DATA_CHECK_DAYS <= interval_days < history_data_count:  # 这里是老薛的要求，涨停后必须还有3天的数据观察期
+                    # 这里是老薛的要求，涨停后必须还有3天的数据观察期, 这里要处理下，要不然会出现离涨停几十天的股票
+                    # 目前我只希望看离涨停只有14个有效交易日的
+                    if MIN_DATA_CHECK_DAYS <= interval_days < MIN_VALID_TRADE_DAYS:
                         # 生成对应股票待机算的数据
                         stock_content_info = {
-                            "meta_data": {"days": interval_days, "datetime": item_date_time, "close": close_value,
-                                          "low": low_value, "stock_code": stock_code, "stock_name": stock_name,
-                                          "market_name": market_name, "market_desc": market_desc},
+                            "meta_data": {
+                                "days": interval_days, "datetime": item_date_time, "close": close_value,
+                                "high": high_value, "low": low_value, "stock_code": stock_code,
+                                "stock_name": stock_name, "market_name": market_name, "market_desc": market_desc},
                             "data_frame": _delete_old_data(history_data_frame, interval_days)}  # 这里需要去掉涨停之前的历史数据
                         self.log.logger.info(
-                            u"[第1阶段] 正在分析 市场: %s, 股票: %s, 名称: %s, 涨停价(元): %.3f, 涨停时间: %s, 距近时间(天): %d" % (
+                            u"[第1阶段] 正在分析 市场: %s, 股票: %s, 名称: %s, 涨停价(元): %.3f, 涨停时间: %s, 距今时间(天): %d" % (
                                 market_desc, stock_code, stock_name, close_value, item_date_time, interval_days))
                         # 保存数据
                         output_dataset[market_name][stock_code] = stock_content_info
@@ -407,6 +412,8 @@ class GenerateBox(object):
                     max_turn_over = max(stock_turn_over_list)
                     meta_close_price = stock_meta_data["close"]
                     meta_low_price = stock_meta_data["low"]
+                    meta_high_price = stock_meta_data["high"]
+                    meta_middle_price = meta_high_price - (meta_high_price - meta_low_price) * 0.618  # 当前K线最高价跌去 0.618
                     stock_name = stock_meta_data["stock_name"]
                     interval_days = stock_meta_data["days"]
                     market_name = stock_meta_data["market_name"]
@@ -450,7 +457,7 @@ class GenerateBox(object):
                             continue
 
                     # 根据条件聚合分类出(二，四类股票)
-                    if meta_close_price > min_close_price >= meta_low_price:
+                    if meta_close_price > min_close_price >= meta_middle_price:
                         # Type2 二类
                         if market_name == Common.CONST_SH_MARKET and max_turn_over <= Common.CONST_SH_STOCK_TURNOVER and not bool_filter_result:
                             valid_stock_data_set[market_name][Common.CONST_STOCK_TYPE_2][stock_code] = stock_meta_data
@@ -510,24 +517,24 @@ class GenerateBox(object):
         return selected_stock_box
 
 
-def gen_box_main():
-    gen_box = GenerateBox()
+def box_generator_main():
+    box = BoxGenerator()
 
     if Common.check_today_is_holiday_time():
-        gen_box.log.logger.warning(u"节假日休假, 股票市场不交易, 跳过")
+        box.log.logger.warning(u"节假日休假, 股票市场不交易, 跳过")
         exit(0)
 
     # 计算股数据，并记录时间锚点
-    gen_box.log.logger.info(u"============== [开始计算股票箱] ==============")
+    box.log.logger.info(u"============== [开始计算股票箱] ==============")
     start_timestamp = time.time()
-    valid_stock_box = gen_box.generate()
+    valid_stock_box = box.generate()
     end_timestamp = time.time()
-    gen_box.log.logger.info(u"============== [结束计算股票箱] ==============")
+    box.log.logger.info(u"============== [结束计算股票箱] ==============")
 
     current_datetime = Common.get_current_datetime()
 
     if valid_stock_box is None:
-        gen_box.log.logger.error(u"生成的表股票箱为空")
+        box.log.logger.error(u"生成的表股票箱为空")
         Mail.send_mail(title=u"[%s] 股票箱计算错误" % current_datetime, msg="[ERROR]")
         exit(0)
 
@@ -535,8 +542,8 @@ def gen_box_main():
     total_compute_time = Common.change_seconds_to_time(int(end_timestamp - start_timestamp))
     mail_message, summary_message = _generate_box_mail_message(valid_stock_box)
     sendmail_message = mail_message + u"<p>计算总费时: %s</p>" % total_compute_time
-    gen_box.log.logger.info(summary_message)
-    gen_box.log.logger.info(u"计算总费时: %s" % total_compute_time)
+    box.log.logger.info(summary_message)
+    box.log.logger.info(u"计算总费时: %s" % total_compute_time)
 
     # 保存股票盒
     _save_box_data(data={"timestamp": Common.get_current_timestamp(), "value": valid_stock_box})
@@ -546,7 +553,7 @@ def gen_box_main():
 
 if __name__ == '__main__':
     # 运行主程序, 这里需要使用线程函数的join的超时功能, 防止程序一直在后台运行
-    current_thread = threading.Thread(target=gen_box_main)
+    current_thread = threading.Thread(target=box_generator_main)
     current_thread.daemon = True  # 所有daemon值为True的子线程将随主线程一起结束，而不论是否运行完成。
     current_thread.start()
     current_thread.join(timeout=MAX_BOX_THREAD_RUNNING_TIME)

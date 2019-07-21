@@ -209,11 +209,22 @@ class TradeExecutor(object):
 
     # 创建交易连接，拥有自动重试功能
     def _create_safe_order_connect(self):
+        multiplying_factor = 0
         while True:
+            multiplying_factor += 1
+            # 判断重新连接的次数是否超过最大次数
+            if multiplying_factor > Common.CONST_MAX_CONNECT_RETRIES:
+                multiplying_factor = 1
+                Common.V_TRADE_X_MOD = Common.load_v_trade_x_mod()
+                self.log.logger.info(u"重新加载底层驱动, 并重置等待时间")
+            # 关闭之前的连接
+            OrderAdapter.destroy_connect_instance(self.order_connect_instance)
             self.order_connect_instance, err_info = OrderAdapter.create_connect_instance(self.config)
-            if err_info is not None:
-                self.log.logger.error(u"创建交易服务器连接实例失败: %s" % err_info)
-                time.sleep(Common.CONST_RETRY_CONNECT_INTERVAL)  # 休息指定的事件，重新创建连接对象
+            if self.connect_instance is None:
+                retry_delay_time = Common.CONST_RETRY_CONNECT_INTERVAL * multiplying_factor
+                self.log.logger.error(u"创建交易服务器连接实例失败: %s, 等待 %s 后重试" % (
+                    err_info, Common.change_seconds_to_time(retry_delay_time)))
+                time.sleep(retry_delay_time)  # 休息指定的事件，重新创建连接对象
                 continue
             else:
                 self.log.logger.info(u"选中交易服务器 # %s" % err_info)
@@ -221,20 +232,42 @@ class TradeExecutor(object):
 
     # 创建行情连接，拥有自动重试功能
     def _create_safe_hq_connect(self):
+        multiplying_factor = 0
         while True:
-            self.hq_connect_instance, err_info = HQAdapter.create_connect_instance(self.config)
-            if self.hq_connect_instance is None:
-                self.log.logger.error(u"创建行情服务器连接实例失败: %s" % err_info)
-                time.sleep(Common.CONST_RETRY_CONNECT_INTERVAL)  # 休息指定的事件，重新创建连接对象
+            multiplying_factor += 1
+            # 判断重新连接的次数是否超过最大次数
+            if multiplying_factor > Common.CONST_MAX_CONNECT_RETRIES:
+                multiplying_factor = 1
+                Common.V_TRADE_X_MOD = Common.load_v_trade_x_mod()
+                self.log.logger.info(u"重新加载底层驱动, 并重置等待时间")
+            # 关闭之前的连接
+            HQAdapter.destroy_connect_instance(self.connect_instance)
+            # 重新创建行服务器连接
+            self.connect_instance, err_info = HQAdapter.create_connect_instance(self.config)
+            if self.connect_instance is None:
+                retry_delay_time = Common.CONST_RETRY_CONNECT_INTERVAL * multiplying_factor
+                self.log.logger.error(u"创建行情服务器连接实例失败: %s, 等待 %s 后重试" % (
+                    err_info, Common.change_seconds_to_time(retry_delay_time)))
+                time.sleep(retry_delay_time)  # 休息指定的事件，重新创建连接对象
                 continue
             else:
-                self.hq_connect_instance.SetTimeout(Common.CONST_CONNECT_TIMEOUT, Common.CONST_CONNECT_TIMEOUT)
+                self.connect_instance.SetTimeout(Common.CONST_CONNECT_TIMEOUT, Common.CONST_CONNECT_TIMEOUT)
                 self.log.logger.info(u"选中行情服务器 # %s" % err_info)
                 break
 
     # 获得历史数据，拥有自动重试功能
     def _get_safe_history_data_frame(self, market_code, market_desc, stock_code, stock_name, ktype, kcount):
+        multiplying_factor = 0
         while True:
+            multiplying_factor += 1
+
+            # 判断重新连接的次数是否超过最大次数
+            if multiplying_factor > Common.CONST_MAX_CONNECT_RETRIES:
+                multiplying_factor = 1
+                Common.V_TRADE_X_MOD = Common.load_v_trade_x_mod()
+                self.log.logger.info(u"重新加载底层驱动, 并重置等待时间")
+
+            # 执行获得历史K线数据
             if self.hq_connect_instance is not None:
                 # 获得股票的K线信息
                 history_data_frame, err_info = HQAdapter.get_history_data_frame(
@@ -249,13 +282,19 @@ class TradeExecutor(object):
                 self.log.logger.error(
                     u"获得市场: %s, 股票: %s, 名称：%s, 历史数据错误: %s" % (market_desc, stock_code, stock_name, err_info))
                 # 发现连接错误 10038 需要重连
-                if err_info.find("errCode=10038") > -1:
-                    time.sleep(Common.CONST_RETRY_CONNECT_INTERVAL)  # 休息指定的时间，重新创建连接对象
-                    self.hq_connect_instance, err_info = HQAdapter.create_connect_instance(self.config)
-                    if self.hq_connect_instance is None:
+                if err_info.find("errCode=10038") > -1 or err_info.find(u"断开") > -1:
+                    retry_delay_time = Common.CONST_RETRY_CONNECT_INTERVAL * multiplying_factor
+                    self.log.logger.info(u"等待: %s 后重试连接行情服务器" % Common.change_seconds_to_time(retry_delay_time))
+                    # 休息指定的时间，重新创建连接对象
+                    time.sleep(retry_delay_time)
+                    # 关闭之前的连接
+                    HQAdapter.destroy_connect_instance(self.connect_instance)
+                    # 重新创建行服务器连接
+                    self.connect_instance, err_info = HQAdapter.create_connect_instance(self.config)
+                    if self.connect_instance is None:
                         self.log.logger.error(u"重新创建行情服务器连接实例失败: %s" % err_info)
                     else:
-                        self.hq_connect_instance.SetTimeout(Common.CONST_CONNECT_TIMEOUT, Common.CONST_CONNECT_TIMEOUT)
+                        self.connect_instance.SetTimeout(Common.CONST_CONNECT_TIMEOUT, Common.CONST_CONNECT_TIMEOUT)
                         self.log.logger.info(u"重新创建行情服务器连接实例成功, 选中行情服务器 # %s" % err_info)
                 else:
                     return None  # 错误，返回None
@@ -264,9 +303,18 @@ class TradeExecutor(object):
 
     # 获得过票5当数据，拥有自动重试功能
     def _get_safe_stock_quotes(self, market_code, market_desc, stock_code, stock_name, class_type):
+        multiplying_factor = 0
         while True:
+            multiplying_factor += 1
+
+            # 判断重新连接的次数是否超过最大次数
+            if multiplying_factor > Common.CONST_MAX_CONNECT_RETRIES:
+                multiplying_factor = 1
+                Common.V_TRADE_X_MOD = Common.load_v_trade_x_mod()
+                self.log.logger.info(u"重新加载底层驱动, 并重置等待时间")
+
+            # 获得5档价格数据
             if self.hq_connect_instance is not None:
-                # 获得5档价格数据
                 level5_quotes_dataset, err_info = HQAdapter.get_stock_quotes(
                     self.hq_connect_instance, [(market_code, stock_code)])
             else:
@@ -278,14 +326,19 @@ class TradeExecutor(object):
                 self.log.logger.error(u"获得 市场: %s, 股票: %s, 名称：%s, 类型：%s, 5档行情数据错误: %s" % (
                     market_desc, stock_code, stock_name, class_type, err_info))
                 # 发现连接错误 10038 需要重连
-                if err_info.find("errCode=10038") > -1:
-                    time.sleep(Common.CONST_RETRY_CONNECT_INTERVAL)  # 休息指定的时间，重新创建连接对象
-                    self.hq_connect_instance, err_info = HQAdapter.create_connect_instance(self.config)
-                    if self.hq_connect_instance is None:
+                if err_info.find("errCode=10038") > -1 or err_info.find(u"断开") > -1:
+                    retry_delay_time = Common.CONST_RETRY_CONNECT_INTERVAL * multiplying_factor
+                    self.log.logger.info(u"等待: %s 后重试连接行情服务器" % Common.change_seconds_to_time(retry_delay_time))
+                    # 休息指定的时间，重新创建连接对象
+                    time.sleep(retry_delay_time)
+                    # 关闭之前的连接
+                    HQAdapter.destroy_connect_instance(self.connect_instance)
+                    # 重新创建行服务器连接
+                    self.connect_instance, err_info = HQAdapter.create_connect_instance(self.config)
+                    if self.connect_instance is None:
                         self.log.logger.error(u"重新创建行情服务器连接实例失败: %s" % err_info)
                     else:
-                        self.hq_connect_instance.SetTimeout(
-                            Common.CONST_CONNECT_TIMEOUT, Common.CONST_CONNECT_TIMEOUT)
+                        self.connect_instance.SetTimeout(Common.CONST_CONNECT_TIMEOUT, Common.CONST_CONNECT_TIMEOUT)
                         self.log.logger.info(u"重新创建行情服务器连接实例成功, 选中行情服务器 # %s" % err_info)
                 else:
                     return None  # 错误，返回None
@@ -327,7 +380,7 @@ class TradeExecutor(object):
         # 获得60分钟的历史数据, 根据60分钟的数据作为判断
         history_data_frame = self._get_safe_history_data_frame(
             market_code=market_code, stock_code=stock_code, market_desc=market_desc, stock_name=stock_name,
-            ktype=Common.CONST_K_60M, kcount=Common.CONST_K_LENGTH)
+            ktype=Common.CONST_K_60M, kcount=Common.CONST_K_LENGTH * 3)
 
         if history_data_frame is None:
             return False
@@ -345,7 +398,7 @@ class TradeExecutor(object):
         # j值在最近4天内不能出现大于等于100
         bool_max_j_value = max_j_value >= MAX_KDJ_J_VALUE
 
-        # 不能出现小时内涨幅超过 5%的
+        # 不能出现小时内涨幅超过 5%的, 止盈条件
         bool_more_than_spec_raise = max_pct_change_value > MIN_SELL_RAISE_RATIO
 
         # 判断 KDJ的J值 死叉
@@ -358,13 +411,13 @@ class TradeExecutor(object):
         else:
             bool_down_cross_kdj = False
 
-        # 触发止损条件 (3%)
+        # 触发止损条件 (下跌3%)
         if pct_change_list[0] < MIN_STOP_LOSS_RATIO:  # 已经倒序，第一个就是当前这个小时
             self.log.logger.info(u"触发止损条件 市场: %s, 股票: %s, 名称：%s, 类型：%s, 发生卖出" % (
                 market_desc, stock_code, stock_name, class_type))
             return True
 
-        # 触发卖出条件 (上涨超过3%，KDJ_J> 100, KDJ死叉了)
+        # 触发卖出条件 (上涨超过3%，KDJ_J> 100, KDJ死叉了) 止盈条件
         if bool_more_than_spec_raise and (bool_max_j_value or bool_down_cross_kdj):
             self.log.logger.info(u"触发卖出条件 市场: %s, 股票: %s, 名称：%s, 类型：%s, 发生卖出" % (
                 market_desc, stock_code, stock_name, class_type))
