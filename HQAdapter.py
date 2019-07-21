@@ -250,6 +250,8 @@ def get_history_data_frame(instance, market, market_desc, code, name, ktype=Comm
             TA.make_rsi_data(history_data_frame)
             # 添加 CCI 数据属性
             TA.make_cci_data(history_data_frame)
+            # 添加 MOM 数据属性
+            TA.make_mom_data(history_data_frame)
             # 添加 cross 数据
             TA.make_macd_cross(history_data_frame)
             TA.make_kdj_cross(history_data_frame)

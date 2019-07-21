@@ -66,6 +66,7 @@ class TA(object):
         try:
             dataset["ma5"] = dataset["close"].rolling(window=5).mean()
             dataset["ma10"] = dataset["close"].rolling(window=10).mean()
+            dataset["ma15"] = dataset["close"].rolling(window=15).mean()
             dataset["ma20"] = dataset["close"].rolling(window=20).mean()
             dataset["ma30"] = dataset["close"].rolling(window=30).mean()
             dataset["ma60"] = dataset["close"].rolling(window=60).mean()
@@ -75,9 +76,9 @@ class TA(object):
     @staticmethod
     def make_rsi_data(dataset, n1=6, n2=12, n3=24):
         try:
-            dataset["rsi6"] = talib.RSI(dataset["close"].values, n1)
-            dataset["rsi12"] = talib.RSI(dataset["close"].values, n2)
-            dataset["rsi24"] = talib.RSI(dataset["close"].values, n3)
+            dataset["rsi6"] = talib.RSI(dataset["close"].values, timeperiod=n1)
+            dataset["rsi12"] = talib.RSI(dataset["close"].values, timeperiod=n2)
+            dataset["rsi24"] = talib.RSI(dataset["close"].values, timeperiod=n3)
         except Exception as err:
             raise Exception, u"添加 RSI 指标数据错误: %s" % err.message
 
@@ -100,3 +101,10 @@ class TA(object):
             dataset["cci"] = talib.CCI(dataset["high"].values, dataset["low"].values, dataset["close"].values)
         except Exception as err:
             raise Exception, u"添加 CCI 指标数据错误: %s" % err.message
+
+    @staticmethod
+    def make_mom_data(dataset, n1=5):
+        try:
+            dataset["mom"] = talib.MOM(dataset["close"].values, timeperiod=n1)
+        except Exception as err:
+            raise Exception, u"添加 MOM 指标数据错误: %s" % err.message
