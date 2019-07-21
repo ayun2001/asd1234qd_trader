@@ -26,8 +26,13 @@ class Logger(object):
                  # 如果需要看到路径，将 %(filename) 替换成 %(pathname)
                  fmt=u'[%(asctime)s] %(filename)s [行:%(lineno)d] -> %(levelname)s %(message)s'):
         self.logger = logging.getLogger(filename)
-        format_str = logging.Formatter(fmt)  # 设置日志格式
         self.logger.setLevel(self.level_relations.get(level))  # 设置日志级别
+
+        # 为Python编译成pyd后，文件名就消失了
+        if not debug:
+            fmt = u'[%(asctime)s] -> %(levelname)s %(message)s'
+
+        format_str = logging.Formatter(fmt)  # 设置日志格式
 
         time_handler = handlers.TimedRotatingFileHandler(
             filename=filename, when=when, backupCount=backup_count,
