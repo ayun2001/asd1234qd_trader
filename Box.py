@@ -326,8 +326,7 @@ class BoxGenerator(object):
         # 判断 macd 上涨趋势
         if len(macd_cross_express_list) > Common.CONST_DATA_LIST_LEN_ZERO:
             try:
-                up_index_id = macd_cross_list.index("up_cross")
-                bool_dea_value = macd_dea_list[up_index_id] >= MIN_MACD_DEA_VALUE
+                bool_dea_value = macd_dea_list[0] >= MIN_MACD_DEA_VALUE  # 计算的最后一个K线满足站上0的分界线就好
                 bool_macd_up_cross = macd_cross_express_list[0] == "up_cross" and bool_dea_value
             except ValueError or IndexError:
                 bool_macd_up_cross = False
